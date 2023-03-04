@@ -1,17 +1,17 @@
 {
-    "name": ":vendor_slug/:package_slug",
-    "description": ":package_description",
+    "name": "malzariey/filament-daterangepicker-filter",
+    "description": "This package uses daterangepciker library to filter date by a range or predefined date ranges (Today , Yesterday ...etc)",
     "keywords": [
-        ":vendor_name",
+        "Malzariey",
         "laravel",
-        ":package_slug"
+        "filament-daterangepicker-filter"
     ],
-    "homepage": "https://github.com/:vendor_slug/:package_slug",
+    "homepage": "https://github.com/malzariey/filament-daterangepicker-filter",
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": "author@domain.com",
+            "name": "Majid Al-Zariey",
+            "email": "malzariey@gmail.com",
             "role": "Developer"
         }
     ],
@@ -19,41 +19,33 @@
         "php": "^8.0",
         "filament/filament": "^2.0",
         "spatie/laravel-package-tools": "^1.13.5",
-        "illuminate/contracts": "^9.0"
+        "illuminate/contracts": "^10.0"
     },
     "require-dev": {
-        "laravel/pint": "^1.0",
         "nunomaduro/collision": "^6.0",
-        "nunomaduro/larastan": "^2.0.1",
         "orchestra/testbench": "^7.0",
         "pestphp/pest": "^1.21",
         "pestphp/pest-plugin-laravel": "^1.1",
         "pestphp/pest-plugin-livewire": "^1.0",
         "pestphp/pest-plugin-parallel": "^0.3",
-        "phpstan/extension-installer": "^1.1",
-        "phpstan/phpstan-deprecation-rules": "^1.0",
-        "phpstan/phpstan-phpunit": "^1.0",
         "phpunit/phpunit": "^9.5",
         "spatie/laravel-ray": "^1.26"
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src",
-            "VendorName\\Skeleton\\Database\\Factories\\": "database/factories"
+            "Malzariey\\FilamentDaterangepickerFilter\\": "src",
+            "Malzariey\\FilamentDaterangepickerFilter\\Database\\Factories\\": "database/factories"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests"
+            "Malzariey\\FilamentDaterangepickerFilter\\Tests\\": "tests"
         }
     },
     "scripts": {
-        "pint": "vendor/bin/pint",
         "test:pest": "vendor/bin/pest --parallel",
-        "test:phpstan": "vendor/bin/phpstan analyse",
         "test": [
-            "@test:pest",
-            "@test:phpstan"
+            "@test:pest"
         ]
     },
     "config": {
@@ -67,10 +59,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
+                "Malzariey\\FilamentDaterangepickerFilter\\FilamentDaterangepickerFilterServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
+                "FilamentDaterangepickerFilter": "Malzariey\\FilamentDaterangepickerFilter\\Facades\\FilamentDaterangepickerFilter"
             }
         }
     },
