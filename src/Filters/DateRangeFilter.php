@@ -64,6 +64,7 @@ class DateRangeFilter extends BaseFilter
 
         return [
             DateRangePicker::make($this->column)
+                ->label($this->getLabel())
                 ->timezone($this->timezone)
                 ->minDate($this->minDate)
                 ->maxDate($this->maxDate),

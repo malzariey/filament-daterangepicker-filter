@@ -12,9 +12,9 @@
     :state-path="$getStatePath()"
 >
     <div
-        x-data="{locale: @js(app()->getLocale()),
-        }
-        "
+        x-data="{locale: @js(app()->getLocale()),state:@entangle($getStatePath())}"
+        x-init="initPicker(state)"
+        id="date-range-picker-blade"
         x-on:keydown.esc="isOpen() && $event.stopPropagation()"
         {{ $attributes->merge($getExtraAttributes())->class(['filament-forms-date-time-picker-component relative']) }}
         {{ $getExtraAlpineAttributeBag() }}
@@ -39,20 +39,20 @@
                     'dark:text-gray-300' => $isDisabled() && config('forms.dark_mode'),
                 ]) }}
             >
-                <input
-                    readonly
-                    name="daterange"
-                    placeholder="{{$getPlaceholder()}}"
-                    wire:key="{{ $this->id }}.{{ $getStatePath() }}.{{ $field::class }}.display-text"
-                    wire:model="{{$getStatePath() }}"
-                    {!! ($id = $getId()) ? "id=\"{$id}\"" : null !!}
-                    @class([
-                        'w-full h-full p-0 placeholder-gray-400 bg-transparent border-0 outline-none focus:placeholder-gray-500 focus:ring-0',
-                        'dark:bg-gray-700 dark:placeholder-gray-400' => config('forms.dark_mode'),
-                        'cursor-default' => $isDisabled(),
-                    ])
-                />
-
+                <div wire:ignore class="daterange-body" id="range-container">
+                    <input
+                        readonly
+                        name="daterange"
+                        placeholder="{{$getPlaceholder()}}"
+                        wire:key="{{ $this->id }}.{{ $getStatePath() }}.{{ $field::class }}.display-text"
+                        {!! ($id = $getId()) ? "id=\"{$id}\"" : null !!}
+                        @class([
+                            'w-full h-full p-0 placeholder-gray-400 bg-transparent border-0 outline-none focus:placeholder-gray-500 focus:ring-0',
+                            'dark:bg-gray-700 dark:placeholder-gray-400' => config('forms.dark_mode'),
+                            'cursor-default' => $isDisabled(),
+                        ])
+                    />
+                </div>
                 <span
                     class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none rtl:right-auto rtl:left-0 rtl:pl-2">
                 <svg @class([
@@ -66,14 +66,13 @@
             </button>
 
         </div>
-        <script type="module">
-
-            document.addEventListener("DOMContentLoaded", function (event) {
+        <script>
+            function initPicker(state) {
                 window.$(function () {
                     window.$('input[name="daterange"]').daterangepicker({
                         alwaysShowCalendars: {{$isAlwaysShowCalender()? 'true' : 'false'}},
                         {!! $getMaxDate() !== null?"maxDate: moment('".$getMaxDate()."'),":"" !!}
-                        {!! $getMinDate() !== null?"minDate: moment('".$getMinDate()."'),":"" !!}
+                            {!! $getMinDate() !== null?"minDate: moment('".$getMinDate()."'),":"" !!}
                         locale: {
                             format: "{{$getDisplayFormat()}}",
                             separator: " - ",
@@ -117,16 +116,13 @@
                             'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
                         }
                     }, function (start, end, label) {
-                        @this.
-                        set('{{$getStatePath()}}', start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
+                    @this.
+                    set('{{$getStatePath()}}', start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
 
-                    }).val('');
+                    }).val(state);
                 });
-            });
 
+            }
         </script>
     </div>
 </x-dynamic-component>
-
-
-
