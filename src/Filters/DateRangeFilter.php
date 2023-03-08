@@ -27,6 +27,18 @@ class DateRangeFilter extends BaseFilter
 
     protected string|Closure|null $timezone = null;
 
+
+    public function withIndicater(){
+
+        $this->indicateUsing(function (array $data): ?string {
+            if (!$data[$this->column]) {
+                return null;
+            }
+            return __('message.period') . ' '.  $this->label? "[$this->label] ":"" . $data[$this->column];
+        });
+
+        return $this;
+    }
     public function apply(Builder $query, array $data = []): Builder
     {
         $dates = explode(' ', $data[$this->column]);
