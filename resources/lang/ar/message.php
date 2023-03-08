@@ -25,6 +25,7 @@ return [
     'september' =>"سبتمبر",
     'october' =>"أكتوبر",
     'november' =>"نوفمبر",
+    'december' =>"ديسمبر",
     'today' =>"اليوم",
     'yesterday' =>"أمس",
     'last_7_days' =>"أخر 7 أيام",
