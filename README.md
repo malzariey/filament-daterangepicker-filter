@@ -17,13 +17,6 @@ You can install the package via composer:
 composer require malzariey/filament-daterangepicker-filter
 ```
 
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag="filament-daterangepicker-filter-migrations"
-php artisan migrate
-```
-
 You can publish the config file with:
 
 ```bash
@@ -50,23 +43,9 @@ $filament-daterangepicker-filter = new Malzariey\FilamentDaterangepickerFilter()
 echo $filament-daterangepicker-filter->echoPhrase('Hello, Malzariey!');
 ```
 
-## Testing
-
-```bash
-composer test
-```
-
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
-## Contributing
-
-Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
 
 ## Credits
 
