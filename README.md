@@ -1,4 +1,4 @@
-# This package uses daterangepciker library to filter date by a range or predefined date ranges (Today , Yesterday ...etc)
+# Filament Filter using DateRangePicker Library
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/malzariey/filament-daterangepicker-filter.svg?style=flat-square)](https://packagist.org/packages/malzariey/filament-daterangepicker-filter)
 [![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/malzariey/filament-daterangepicker-filter/run-tests?label=tests)](https://github.com/malzariey/filament-daterangepicker-filter/actions?query=workflow%3Arun-tests+branch%3Amain)
@@ -7,7 +7,7 @@
 
 
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+This package uses daterangepciker library to filter date by a range or predefined date ranges (Today , Yesterday ...etc)
 
 ## Installation
 
@@ -19,30 +19,23 @@ composer require malzariey/filament-daterangepicker-filter
 
 You can publish the config file with:
 
-```bash
-php artisan vendor:publish --tag="filament-daterangepicker-filter-config"
-```
-
 Optionally, you can publish the views using
 
 ```bash
 php artisan vendor:publish --tag="filament-daterangepicker-filter-views"
 ```
 
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
 
 ## Usage
 
+As a Field
 ```php
-$filament-daterangepicker-filter = new Malzariey\FilamentDaterangepickerFilter();
-echo $filament-daterangepicker-filter->echoPhrase('Hello, Malzariey!');
+DateRangePicker::make('created_at'),
 ```
-
+As a Filter
+```php
+DateRangeFilter::make('created_at')->columnSpan(2)->label('Your Label')->withIndicater(),,
+```
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
