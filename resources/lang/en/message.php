@@ -26,6 +26,7 @@ return [
     'october' =>"October",
     'november' =>"November",
     'december' =>"December",
+    'today' => "Today",
     'yesterday' =>"Yesterday",
     'last_7_days' =>"Last 7 Days",
     'last_30_days' =>"Last 30 Days",
