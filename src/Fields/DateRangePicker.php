@@ -24,9 +24,13 @@ class DateRangePicker extends Forms\Components\Field
     protected array $extraTriggerAttributes = [];
     protected int | null $firstDayOfWeek = null;
     protected string | Closure | null $format = null;
-    protected bool | Closure $isWithoutDate = false;
-    protected bool | Closure $isWithoutSeconds = false;
-    protected bool | Closure $isWithoutTime = false;
+    // protected bool | Closure $isWithoutDate = false;
+    // protected bool | Closure $isWithoutSeconds = false;
+    // protected bool | Closure $isWithoutTime = false;
+    protected bool $timePicker = false;
+    protected int $timePickerIncrement = 30;
+    protected bool $autoApply = false;
+    protected bool $linkedCalendars = false;
     protected bool | Closure $shouldCloseOnDateSelection = false;
     protected CarbonInterface | string | Closure | null $maxDate = null;
     protected CarbonInterface | string | Closure | null $minDate = null;
@@ -324,4 +328,53 @@ class DateRangePicker extends Forms\Components\Field
         return $this->alwaysShowCalender;
     }
 
+    public function setTimePickerOption(bool $condition = true): static
+    {
+        $this->timePicker = $condition;
+
+        return $this;
+    }
+
+    public function getTimePickerOption(): string
+    {
+        return $this->timePicker ? 'true' : 'false';
+    }
+
+    public function setTimePickerIncrementOption(int $increment = 1): static
+    {
+        $this->timePickerIncrement = $increment;
+
+        return $this;
+    }
+
+    public function getTimePickerIncrementOption(): int
+    {
+        return $this->timePickerIncrement;
+    }
+
+
+    public function setAutoApplyOption(bool $condition = true): static
+    {
+        $this->autoApply = $condition;
+
+        return $this;
+    }
+
+    // NOTE: auto apply will not be enabled by daterangepicker.js if timePicker is set
+    public function getAutoApplyOption(): string
+    {
+        return $this->autoApply ? 'true' : 'false';
+    }
+
+    public function setLinkedCalendarsOption(bool $condition = true): static
+    {
+        $this->linkedCalendars = $condition;
+
+        return $this;
+    }
+
+    public function getLinkedCalendarsOption(): string
+    {
+        return $this->linkedCalendars ? 'true' : 'false';
+    }
 }
