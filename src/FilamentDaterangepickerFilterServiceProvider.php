@@ -22,17 +22,17 @@ class FilamentDaterangepickerFilterServiceProvider extends PluginServiceProvider
     ];
 
     protected array $styles = [
-        'daterangepicker' => __DIR__.'/../resources/dist/css/daterangepicker.css',
+        'filament-daterangepicker-filter' => __DIR__ . '/../resources/dist/css/filament-daterangepicker-filter.css',
     ];
 
-    protected array $scripts = [
+    protected array $scripts = [];
+
+    protected array $beforeCoreScripts = [
+        'jquery.min' => __DIR__ . '/../resources/dist/js/jquery.min.js',
+        'moment' => __DIR__ . '/../resources/dist/js/moment.min.js',
+        'filament-daterangepicker-filter' => __DIR__ . '/../resources/dist/js/filament-daterangepicker-filter.js',
     ];
 
-     protected array $beforeCoreScripts = [
-         'jquery.min' => __DIR__.'/../resources/dist/js/jquery.min.js',
-         'moment' => __DIR__.'/../resources/dist/js/moment.min.js',
-         'daterangepicker' => __DIR__.'/../resources/dist/js/daterangepicker.min.js',
-     ];
 
     public function configurePackage(Package $package): void
     {
