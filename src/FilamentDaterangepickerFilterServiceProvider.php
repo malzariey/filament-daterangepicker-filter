@@ -29,7 +29,7 @@ class FilamentDaterangepickerFilterServiceProvider extends PluginServiceProvider
     ];
 
      protected array $beforeCoreScripts = [
-         'jquery' => __DIR__.'/../resources/dist/js/jquery.min.js',
+         'jquery.min' => __DIR__.'/../resources/dist/js/jquery.min.js',
          'moment' => __DIR__.'/../resources/dist/js/moment.min.js',
          'daterangepicker' => __DIR__.'/../resources/dist/js/daterangepicker.min.js',
      ];
