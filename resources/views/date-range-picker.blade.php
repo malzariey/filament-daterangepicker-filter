@@ -71,8 +71,12 @@
                 window.$(function () {
                     window.$('input[name="daterange"]').daterangepicker({
                         alwaysShowCalendars: {{$isAlwaysShowCalender()? 'true' : 'false'}},
+                        autoApply: {{ $getAutoApplyOption() }},
+                        linkedCalendars: {{ $getLinkedCalendarsOption() }},
                         {!! $getMaxDate() !== null?"maxDate: moment('".$getMaxDate()."'),":"" !!}
                         {!! $getMinDate() !== null?"minDate: moment('".$getMinDate()."'),":"" !!}
+                        timePicker: {{ $getTimePickerOption() }},
+                        timePickerIncrement: {{ $getTimePickerIncrementOption() }},
                         locale: {
                             format: "{{$getDisplayFormat()}}",
                             separator: " - ",
@@ -120,7 +124,7 @@
                             '{!!__('filament-daterangepicker-filter::message.last_year')!!}'    : [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
                         }
                     }, function (start, end, label) {
-                    @this.set('{!!$getStatePath()!!}', start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
+                    @this.set('{!!$getStatePath()!!}', start.format('{!! $getDisplayFormat() !!}') + ' - ' + end.format('{!! $getDisplayFormat() !!}'));
                     }).val(state);
                 });
 
