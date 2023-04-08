@@ -28,35 +28,17 @@ class DateRangeFilter extends BaseFilter
     protected string|Closure|null $timezone = null;
 
 
-    public function withIndicater(){
+    public function withIndicater()
+    {
 
         $this->indicateUsing(function (array $data): ?string {
             if (!$data[$this->column]) {
                 return null;
             }
-            return __('filament-daterangepicker-filter::message.period') . ' '.  ($this->label? "[$this->label] ":""). $data[$this->column];
+            return __('filament-daterangepicker-filter::message.period') . ' ' . ($this->label ? "[$this->label] " : "") . $data[$this->column];
         });
 
         return $this;
-    }
-    public function apply(Builder $query, array $data = []): Builder
-    {
-        $dates = explode(' ', $data[$this->column]);
-        if (count($dates) == 3) {
-            $from = $dates[0];
-            $to = $dates[2];
-        } else {
-            $from = null;
-            $to = null;
-        }
-        return $query
-            ->when(
-                $from !== null && $to !== null,
-                fn(Builder $query, $date): Builder => $query->whereBetween($this->column, [
-                    Carbon::createFromFormat($this->displayFormat,$from)->startOfDay(),
-                    Carbon::createFromFormat($this->displayFormat,$to)->endOfDay(),
-                ]),
-            );
     }
 
     public function operator(string $operator): self
@@ -118,6 +100,7 @@ class DateRangeFilter extends BaseFilter
 //        $this->displayFormat = config('tables.date_format', $this->displayFormat);
 
         $this->useColumn($this->getName());
+        $this->query(fn($query, $data) => $this->dateRangeQuery($query, $data));
     }
 
     public function useColumn(string $column): self
@@ -125,5 +108,25 @@ class DateRangeFilter extends BaseFilter
         $this->column = $column;
 
         return $this;
+    }
+
+    public function dateRangeQuery(Builder $query, array $data = []): Builder
+    {
+        $dates = explode(' ', $data[$this->column]);
+        if (count($dates) == 3) {
+            $from = $dates[0];
+            $to = $dates[2];
+        } else {
+            $from = null;
+            $to = null;
+        }
+        return $query
+            ->when(
+                $from !== null && $to !== null,
+                fn(Builder $query, $date): Builder => $query->whereBetween($this->column, [
+                    Carbon::createFromFormat($this->displayFormat, $from)->startOfDay(),
+                    Carbon::createFromFormat($this->displayFormat, $to)->endOfDay(),
+                ]),
+            );
     }
 }
