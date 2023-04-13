@@ -28,7 +28,7 @@ class DateRangeFilter extends BaseFilter
     protected string|Closure|null $timezone = null;
 
 
-    public function withIndicater()
+    public function withIndicater(): self
     {
 
         $this->indicateUsing(function (array $data): ?string {
@@ -111,8 +111,13 @@ class DateRangeFilter extends BaseFilter
     }
 
     public function dateRangeQuery(Builder $query, array $data = []): Builder
-    {
+    {        
+        if(is_null($data[$this->column])){
+            return $query;
+        }
+        
         $dates = explode(' ', $data[$this->column]);
+
         if (count($dates) == 3) {
             $from = $dates[0];
             $to = $dates[2];
@@ -120,6 +125,7 @@ class DateRangeFilter extends BaseFilter
             $from = null;
             $to = null;
         }
+
         return $query
             ->when(
                 $from !== null && $to !== null,
