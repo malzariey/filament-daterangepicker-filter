@@ -24,9 +24,6 @@ class DateRangePicker extends Forms\Components\Field
     protected array $extraTriggerAttributes = [];
     protected int | null $firstDayOfWeek = null;
     protected string | Closure | null $format = null;
-    // protected bool | Closure $isWithoutDate = false;
-    // protected bool | Closure $isWithoutSeconds = false;
-    // protected bool | Closure $isWithoutTime = false;
     protected bool $timePicker = false;
     protected int $timePickerIncrement = 30;
     protected bool $autoApply = false;
@@ -39,49 +36,6 @@ class DateRangePicker extends Forms\Components\Field
     protected int | Closure | null $hoursStep = null;
     protected int | Closure | null $minutesStep = null;
     protected int | Closure | null $secondsStep = null;
-
-//    protected function setUp(): void
-//    {
-//        parent::setUp();
-//
-//        $this->afterStateHydrated(static function (DateTimePicker $component, $state): void {
-//            if (blank($state)) {
-//                return;
-//            }
-//
-//            if (! $state instanceof CarbonInterface) {
-//                try {
-//                    $state = Carbon::createFromFormat($component->getFormat(), $state);
-//                } catch (InvalidFormatException $exception) {
-//                    $state = Carbon::parse($state);
-//                }
-//            }
-//
-//            $state->setTimezone($component->getTimezone());
-//
-//            $component->state((string) $state);
-//        });
-//
-//        $this->dehydrateStateUsing(static function (DateTimePicker $component, $state) {
-//            if (blank($state)) {
-//                return null;
-//            }
-//
-//            if (! $state instanceof CarbonInterface) {
-//                $state = Carbon::parse($state);
-//            }
-//
-//            $state->shiftTimezone($component->getTimezone());
-//            $state->setTimezone(config('app.timezone'));
-//
-//            return $state->format($component->getFormat());
-//        });
-//
-//        $this->rule(
-//            'date',
-//            static fn (DateTimePicker $component): bool => $component->hasDate(),
-//        );
-//    }
 
     public function displayFormat(string | Closure | null $format): static
     {
@@ -155,27 +109,6 @@ class DateRangePicker extends Forms\Components\Field
         return $this;
     }
 
-//    public function hoursStep(int | Closure | null $hoursStep): static
-//    {
-//        $this->hoursStep = $hoursStep;
-//
-//        return $this;
-//    }
-
-//    public function minutesStep(int | Closure | null $minutesStep): static
-//    {
-//        $this->minutesStep = $minutesStep;
-//
-//        return $this;
-//    }
-
-//    public function secondsStep(int | Closure | null $secondsStep): static
-//    {
-//        $this->secondsStep = $secondsStep;
-//
-//        return $this;
-//    }
-
     public function timezone(string | Closure | null $timezone): static
     {
         $this->timezone = $timezone;
@@ -183,40 +116,6 @@ class DateRangePicker extends Forms\Components\Field
         return $this;
     }
 
-//    public function weekStartsOnMonday(): static
-//    {
-//        $this->firstDayOfWeek(1);
-//
-//        return $this;
-//    }
-
-//    public function weekStartsOnSunday(): static
-//    {
-//        $this->firstDayOfWeek(7);
-//
-//        return $this;
-//    }
-
-//    public function withoutDate(bool | Closure $condition = true): static
-//    {
-//        $this->isWithoutDate = $condition;
-//
-//        return $this;
-//    }
-
-//    public function withoutSeconds(bool | Closure $condition = true): static
-//    {
-//        $this->isWithoutSeconds = $condition;
-//
-//        return $this;
-//    }
-
-//    public function withoutTime(bool | Closure $condition = true): static
-//    {
-//        $this->isWithoutTime = $condition;
-//
-//        return $this;
-//    }
 
 //    public function closeOnDateSelection(bool | Closure $condition = true): static
 //    {
@@ -377,4 +276,8 @@ class DateRangePicker extends Forms\Components\Field
     {
         return $this->linkedCalendars ? 'true' : 'false';
     }
+
+
+
+
 }

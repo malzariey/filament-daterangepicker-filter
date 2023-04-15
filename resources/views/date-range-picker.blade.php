@@ -13,7 +13,12 @@
 >
     <div
         x-data="{locale: @js(app()->getLocale()),state:@entangle($getStatePath())}"
-        x-init="initPicker(state)"
+        x-init="initPicker{{$getName()}}(state, 'daterange{{$getName()}}');
+         $watch('state', function(value) {
+            if(value == null){
+                clearEvent('daterange{{$getName()}}');
+            }
+         });"
         id="date-range-picker-blade"
         x-on:keydown.esc="isOpen() && $event.stopPropagation()"
         {{ $attributes->merge($getExtraAttributes())->class(['filament-forms-date-time-picker-component relative']) }}
@@ -42,7 +47,7 @@
                 <div wire:ignore class="daterange-body" id="range-container">
                     <input
                         readonly
-                        name="daterange"
+                        name="daterange{{$getName()}}"
                         placeholder="{{$getPlaceholder()}}"
                         wire:key="{{ $this->id }}.{{ $getStatePath() }}.{{ $field::class }}.display-text"
                         {!! ($id = $getId()) ? "id=\"{$id}\"" : null !!}
@@ -67,14 +72,14 @@
 
         </div>
         <script>
-            function initPicker(state) {
+            function initPicker{{$getName()}}(state, name) {
                 window.$(function () {
-                    window.$('input[name="daterange"]').daterangepicker({
+                    window.$('input[name="' + name + '"]').daterangepicker({
                         alwaysShowCalendars: {{$isAlwaysShowCalender()? 'true' : 'false'}},
                         autoApply: {{ $getAutoApplyOption() }},
                         linkedCalendars: {{ $getLinkedCalendarsOption() }},
                         {!! $getMaxDate() !== null?"maxDate: moment('".$getMaxDate()."'),":"" !!}
-                        {!! $getMinDate() !== null?"minDate: moment('".$getMinDate()."'),":"" !!}
+                            {!! $getMinDate() !== null?"minDate: moment('".$getMinDate()."'),":"" !!}
                         timePicker: {{ $getTimePickerOption() }},
                         timePickerIncrement: {{ $getTimePickerIncrementOption() }},
                         locale: {
@@ -114,20 +119,28 @@
                             firstDay: 6
                         },
                         ranges: {
-                            '{!!__('filament-daterangepicker-filter::message.today')!!}'        : [moment(), moment()],
-                            '{!!__('filament-daterangepicker-filter::message.yesterday')!!}'    : [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                            '{!!__('filament-daterangepicker-filter::message.last_7_days')!!}'  : [moment().subtract(6, 'days'), moment()],
-                            '{!!__('filament-daterangepicker-filter::message.last_30_days')!!}' : [moment().subtract(29, 'days'), moment()],
-                            '{!!__('filament-daterangepicker-filter::message.this_month')!!}'   : [moment().startOf('month'), moment().endOf('month')],
-                            '{!!__('filament-daterangepicker-filter::message.last_month')!!}'   : [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-                            '{!!__('filament-daterangepicker-filter::message.this_year')!!}'    : [moment().startOf('year'), moment().endOf('year')],
-                            '{!!__('filament-daterangepicker-filter::message.last_year')!!}'    : [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
+                            '{!!__('filament-daterangepicker-filter::message.today')!!}': [moment(), moment()],
+                            '{!!__('filament-daterangepicker-filter::message.yesterday')!!}': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                            '{!!__('filament-daterangepicker-filter::message.last_7_days')!!}': [moment().subtract(6, 'days'), moment()],
+                            '{!!__('filament-daterangepicker-filter::message.last_30_days')!!}': [moment().subtract(29, 'days'), moment()],
+                            '{!!__('filament-daterangepicker-filter::message.this_month')!!}': [moment().startOf('month'), moment().endOf('month')],
+                            '{!!__('filament-daterangepicker-filter::message.last_month')!!}': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                            '{!!__('filament-daterangepicker-filter::message.this_year')!!}': [moment().startOf('year'), moment().endOf('year')],
+                            '{!!__('filament-daterangepicker-filter::message.last_year')!!}': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
                         }
                     }, function (start, end, label) {
-                    @this.set('{!!$getStatePath()!!}', start.format('{!! $getDisplayFormat() !!}') + ' - ' + end.format('{!! $getDisplayFormat() !!}'));
+                        @this.
+                        set('{!!$getStatePath()!!}', start.format('{!! $getDisplayFormat() !!}') + ' - ' + end.format('{!! $getDisplayFormat() !!}'));
                     }).val(state);
                 });
 
+                $('input[name="' + name + '"]').on('cancel.daterangepicker', function (ev, picker) {
+                    $(this).val('');
+                });
+
+            }
+            function clearEvent(name) {
+                $('input[name="' + name + '"]').trigger('cancel.daterangepicker');
             }
         </script>
     </div>

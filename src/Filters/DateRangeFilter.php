@@ -97,8 +97,6 @@ class DateRangeFilter extends BaseFilter
     {
         parent::setUp();
 
-//        $this->displayFormat = config('tables.date_format', $this->displayFormat);
-
         $this->useColumn($this->getName());
         $this->query(fn($query, $data) => $this->dateRangeQuery($query, $data));
     }
@@ -111,11 +109,11 @@ class DateRangeFilter extends BaseFilter
     }
 
     public function dateRangeQuery(Builder $query, array $data = []): Builder
-    {        
+    {
         if(is_null($data[$this->column])){
             return $query;
         }
-        
+
         $dates = explode(' ', $data[$this->column]);
 
         if (count($dates) == 3) {
