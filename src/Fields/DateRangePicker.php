@@ -22,7 +22,7 @@ class DateRangePicker extends Forms\Components\Field
     protected bool | Closure $alwaysShowCalender = true;
     protected string | Closure | null $displayFormat = "DD/MM/YYYY";
     protected array $extraTriggerAttributes = [];
-    protected int | null $firstDayOfWeek = null;
+    protected int | null $firstDayOfWeek = 1;
     protected string | Closure | null $format = null;
     protected bool $timePicker = false;
     protected int $timePickerIncrement = 30;
@@ -58,7 +58,7 @@ class DateRangePicker extends Forms\Components\Field
     public function firstDayOfWeek(int | null $day): static
     {
         if ($day < 0 || $day > 7) {
-            $day = null;
+            $day = $this->getDefaultFirstDayOfWeek();
         }
 
         $this->firstDayOfWeek = $day;
@@ -104,7 +104,7 @@ class DateRangePicker extends Forms\Components\Field
 
     public function resetFirstDayOfWeek(): static
     {
-        $this->firstDayOfWeek(null);
+        $this->firstDayOfWeek($this->getDefaultFirstDayOfWeek());
 
         return $this;
     }
