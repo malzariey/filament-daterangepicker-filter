@@ -116,7 +116,7 @@
                                 "{!!__('filament-daterangepicker-filter::message.december')!!}"
 
                             ],
-                            firstDay: 6
+                            firstDay: {{$getFirstDayOfWeek()}}
                         },
                         ranges: {
                             '{!!__('filament-daterangepicker-filter::message.today')!!}': [moment(), moment()],
