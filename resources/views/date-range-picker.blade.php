@@ -73,12 +73,19 @@
         </div>
         <script>
             function initPicker{{$getName()}}(state, name) {
+                if(state == null){
+                    state = '';
+                }
+
                 window.$(function () {
                     window.$('input[name="' + name + '"]').daterangepicker({
                         alwaysShowCalendars: {{$isAlwaysShowCalender()? 'true' : 'false'}},
                         autoApply: {{ $getAutoApplyOption() }},
                         linkedCalendars: {{ $getLinkedCalendarsOption() }},
-                        {!! $getMaxDate() !== null?"maxDate: moment('".$getMaxDate()."'),":"" !!}
+                        autoUpdateInput: false,
+                        {!! $getStartDate() !== null?"startDate: moment('".$getStartDate()."'),":"" !!}
+                            {!! $getEndDate() !== null?"endDate: moment('".$getEndDate()."'),":"" !!}
+                            {!! $getMaxDate() !== null?"maxDate: moment('".$getMaxDate()."'),":"" !!}
                             {!! $getMinDate() !== null?"minDate: moment('".$getMinDate()."'),":"" !!}
                         timePicker: {{ $getTimePickerOption() }},
                         timePickerIncrement: {{ $getTimePickerIncrementOption() }},
@@ -129,16 +136,21 @@
                             '{!!__('filament-daterangepicker-filter::message.last_year')!!}': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
                         }
                     }, function (start, end, label) {
-                        @this.
-                        set('{!!$getStatePath()!!}', start.format('{!! $getDisplayFormat() !!}') + ' - ' + end.format('{!! $getDisplayFormat() !!}'));
+                    @this.
+                    set('{!!$getStatePath()!!}', start.format('{!! $getDisplayFormat() !!}') + ' - ' + end.format('{!! $getDisplayFormat() !!}'));
                     }).val(state);
+                });
+
+                $('input[name="' + name + '"]').on('apply.daterangepicker', function(ev, picker) {
+                @this.
+                set('{!!$getStatePath()!!}', picker.startDate.format('{!! $getDisplayFormat() !!}') + ' - ' + picker.endDate.format('{!! $getDisplayFormat() !!}'));
                 });
 
                 $('input[name="' + name + '"]').on('cancel.daterangepicker', function (ev, picker) {
                     $(this).val('');
                 });
-
             }
+
             function clearEvent(name) {
                 $('input[name="' + name + '"]').trigger('cancel.daterangepicker');
             }

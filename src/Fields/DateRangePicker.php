@@ -19,43 +19,31 @@ class DateRangePicker extends Forms\Components\Field
 
     protected string $view = 'filament-daterangepicker-filter::date-range-picker';
 
-    protected bool | Closure $alwaysShowCalender = true;
-    protected string | Closure | null $displayFormat = "DD/MM/YYYY";
+    protected bool|Closure $alwaysShowCalender = true;
+    protected string|Closure|null $displayFormat = "DD/MM/YYYY";
     protected array $extraTriggerAttributes = [];
-    protected int | null $firstDayOfWeek = 1;
-    protected string | Closure | null $format = null;
+    protected int|null $firstDayOfWeek = 1;
+    protected string|Closure|null $format = null;
     protected bool $timePicker = false;
     protected int $timePickerIncrement = 30;
     protected bool $autoApply = false;
-    protected bool $linkedCalendars = false;
-    protected bool | Closure $shouldCloseOnDateSelection = false;
-    protected CarbonInterface | string | Closure | null $maxDate = null;
-    protected CarbonInterface | string | Closure | null $minDate = null;
-    protected string | Closure | null $timezone = null;
-    protected array | Closure $disabledDates = [];
-    protected int | Closure | null $hoursStep = null;
-    protected int | Closure | null $minutesStep = null;
-    protected int | Closure | null $secondsStep = null;
+    protected bool $linkedCalendars = true;
+    protected CarbonInterface|string|Closure|null $maxDate = null;
+    protected CarbonInterface|string|Closure|null $minDate = null;
+    protected CarbonInterface|string|Closure|null $startDate = null;
+    protected CarbonInterface|string|Closure|null $endDate = null;
+    protected string|Closure|null $timezone = null;
+    protected array|Closure $disabledDates = [];
 
-    public function displayFormat(string | Closure | null $format): static
+    //Javascript Format
+    public function displayFormat(string|Closure|null $format): static
     {
         $this->displayFormat = $format;
 
         return $this;
     }
 
-    public function extraTriggerAttributes(array | Closure $attributes, bool $merge = false): static
-    {
-        if ($merge) {
-            $this->extraAttributes[] = $attributes;
-        } else {
-            $this->extraAttributes = [$attributes];
-        }
-
-        return $this;
-    }
-
-    public function firstDayOfWeek(int | null $day): static
+    public function firstDayOfWeek(int|null $day): static
     {
         if ($day < 0 || $day > 7) {
             $day = $this->getDefaultFirstDayOfWeek();
@@ -66,36 +54,61 @@ class DateRangePicker extends Forms\Components\Field
         return $this;
     }
 
-    public function format(string | Closure | null $format): static
+    public function format(string|Closure|null $format): static
     {
         $this->format = $format;
 
         return $this;
     }
 
-    public function maxDate(CarbonInterface | string | Closure | null $date): static
+    public function maxDate(CarbonInterface|string|Closure|null $date): static
     {
         $this->maxDate = $date;
 
         $this->rule(static function (DateRangePicker $component) {
             return "before_or_equal:{$component->getMaxDate()}";
-        }, static fn (DateRangePicker $component): bool => (bool) $component->getMaxDate());
+        }, static fn(DateRangePicker $component): bool => (bool)$component->getMaxDate());
 
         return $this;
     }
 
-    public function minDate(CarbonInterface | string | Closure | null $date): static
+    public function minDate(CarbonInterface|string|Closure|null $date): static
     {
         $this->minDate = $date;
 
         $this->rule(static function (DateRangePicker $component) {
             return "after_or_equal:{$component->getMinDate()}";
-        }, static fn (DateRangePicker $component): bool => (bool) $component->getMinDate());
+        }, static fn(DateRangePicker $component): bool => (bool)$component->getMinDate());
 
         return $this;
     }
 
-    public function disabledDates(array | Closure $dates): static
+    public function startDate(CarbonInterface|string|Closure|null $date): static
+    {
+        $this->startDate = $date;
+
+        return $this;
+    }
+
+    public function endDate(CarbonInterface|string|Closure|null $date): static
+    {
+        $this->endDate = $date;
+
+        return $this;
+    }
+
+    public function getStartDate()
+    {
+        return $this->startDate;
+    }
+
+    public function getEndDate()
+    {
+        return $this->endDate;
+    }
+
+
+    public function disabledDates(array|Closure $dates): static
     {
         $this->disabledDates = $dates;
 
@@ -109,20 +122,13 @@ class DateRangePicker extends Forms\Components\Field
         return $this;
     }
 
-    public function timezone(string | Closure | null $timezone): static
+    public function timezone(string|Closure|null $timezone): static
     {
         $this->timezone = $timezone;
 
         return $this;
     }
 
-
-//    public function closeOnDateSelection(bool | Closure $condition = true): static
-//    {
-//        $this->shouldCloseOnDateSelection = $condition;
-//
-//        return $this;
-//    }
 
     public function getDisplayFormat(): string
     {
@@ -132,11 +138,11 @@ class DateRangePicker extends Forms\Components\Field
             return $format;
         }
 
-        if (! $this->hasTime()) {
+        if (!$this->hasTime()) {
             return config('forms.components.date_time_picker.display_formats.date', 'M j, Y');
         }
 
-        if (! $this->hasDate()) {
+        if (!$this->hasDate()) {
             return $this->hasSeconds() ?
                 config('forms.components.date_time_picker.display_formats.time_with_seconds', 'H:i:s') :
                 config('forms.components.date_time_picker.display_formats.time', 'H:i');
@@ -178,13 +184,13 @@ class DateRangePicker extends Forms\Components\Field
 
         $format = $this->hasDate() ? 'Y-m-d' : '';
 
-        if (! $this->hasTime()) {
+        if (!$this->hasTime()) {
             return $format;
         }
 
         $format = $format ? "{$format} H:i" : 'H:i';
 
-        if (! $this->hasSeconds()) {
+        if (!$this->hasSeconds()) {
             return $format;
         }
 
@@ -215,7 +221,8 @@ class DateRangePicker extends Forms\Components\Field
     {
         return config('forms.components.date_time_picker.first_day_of_week', 1);
     }
-    public function alwaysShowCalender(bool | Closure $condition = true): static
+
+    public function alwaysShowCalender(bool|Closure $condition = true): static
     {
         $this->alwaysShowCalender = $condition;
 
@@ -276,8 +283,6 @@ class DateRangePicker extends Forms\Components\Field
     {
         return $this->linkedCalendars ? 'true' : 'false';
     }
-
-
 
 
 }
