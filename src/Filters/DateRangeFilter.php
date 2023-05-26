@@ -144,8 +144,6 @@ class DateRangeFilter extends BaseFilter
     {
         parent::setUp();
 
-        $this->useColumn($this->getName());
-        $this->query(fn($query, $data) => $this->dateRangeQuery($query, $data));
 //        $this->make()
 //        $this->default($this->startDate->format($this->displayFormat) + " - " + $this->endDate->format($this->displayFormat));
     }
@@ -157,13 +155,15 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function dateRangeQuery(Builder $query, array $data = []): Builder
+    public function apply(Builder $query, array $data = []): Builder
     {
-        if (is_null($data[$this->column])) {
+        $datesString = data_get($data, $this->column);
+
+        if (empty($datesString)) {
             return $query;
         }
 
-        $dates = explode(' ', $data[$this->column]);
+        $dates = explode(' ', $datesString);
 
         if (count($dates) == 3) {
             $from = $dates[0];
