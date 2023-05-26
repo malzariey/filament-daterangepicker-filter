@@ -69,12 +69,14 @@ class DateRangeFilter extends BaseFilter
 
     public function withIndicater(): self
     {
-
         $this->indicateUsing(function (array $data): ?string {
-            if (!$data[$this->column]) {
+            $datesString = data_get($data, $this->column);
+
+            if (empty($datesString)) {
                 return null;
             }
-            return __('filament-daterangepicker-filter::message.period') . ' ' . ($this->label ? "[$this->label] " : "") . $data[$this->column];
+
+            return __('filament-daterangepicker-filter::message.period') . ' ' . ($this->label ? "[$this->label] " : "") . $datesString;
         });
 
         return $this;
