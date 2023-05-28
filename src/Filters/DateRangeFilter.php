@@ -110,7 +110,7 @@ class DateRangeFilter extends BaseFilter
         if ($schema !== null) {
             return $schema;
         }
-        $this->setUp();
+
         $defult = null;
 
         if ($this->startDate != null && $this->endDate != null) {
