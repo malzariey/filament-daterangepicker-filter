@@ -146,6 +146,8 @@ class DateRangeFilter extends BaseFilter
     {
         parent::setUp();
 
+          $this->useColumn($this->getName());
+
 //        $this->make()
 //        $this->default($this->startDate->format($this->displayFormat) + " - " + $this->endDate->format($this->displayFormat));
     }
