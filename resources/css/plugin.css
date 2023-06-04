@@ -343,7 +343,7 @@
   }
 
   .daterangepicker .ranges li:hover {
-    color: #fff;
+      @apply text-primary-500 bg-white !important
   }
 
   .daterangepicker .ranges li.active {
