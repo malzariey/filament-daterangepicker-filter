@@ -67,7 +67,7 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function withIndicater(): self
+    public function withIndicator(): self
     {
         $this->indicateUsing(function (array $data): ?string {
             $datesString = data_get($data, $this->column);
@@ -145,11 +145,7 @@ class DateRangeFilter extends BaseFilter
     protected function setUp(): void
     {
         parent::setUp();
-
-          $this->useColumn($this->getName());
-
-//        $this->make()
-//        $this->default($this->startDate->format($this->displayFormat) + " - " + $this->endDate->format($this->displayFormat));
+        $this->useColumn($this->getName());
     }
 
     public function useColumn(string $column): self
@@ -161,6 +157,24 @@ class DateRangeFilter extends BaseFilter
 
     public function apply(Builder $query, array $data = []): Builder
     {
+        if ($this->isHidden()) {
+            return $query;
+        }
+
+        if (! ($data['isActive'] ?? true)) {
+            return $query;
+        }
+
+        if ($this->hasQueryModificationCallback()) {
+            $callback = $this->modifyQueryUsing;
+            $this->evaluate($callback, [
+                'data' => $data,
+                'query' => $query,
+                'state' => $data,
+            ]);
+            return $query;
+        }
+
         $datesString = data_get($data, $this->column);
 
         if (empty($datesString)) {
@@ -211,6 +225,13 @@ class DateRangeFilter extends BaseFilter
     public function minDate(CarbonInterface|string|Closure|null $date): static
     {
         $this->minDate = $date;
+
+        return $this;
+    }
+
+    public function alwaysShowCalendar(bool $alwaysShow = true): static
+    {
+        $this->alwaysShowCalender = $alwaysShow;
 
         return $this;
     }

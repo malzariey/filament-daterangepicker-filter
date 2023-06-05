@@ -54,6 +54,7 @@
         this.linkedCalendars = true;
         this.autoUpdateInput = true;
         this.alwaysShowCalendars = false;
+        this.isVisible = false;
         this.ranges = {};
         this.handleApplyUsing = null;
         this.name = null;
@@ -1204,12 +1205,14 @@
         },
 
         showCalendars: function() {
+            this.isVisible = true;
             this.container.addClass('show-calendar');
             this.move();
             this.element.trigger('showCalendar.daterangepicker', this);
         },
 
         hideCalendars: function() {
+            this.isVisible = false;
             this.container.removeClass('show-calendar');
             this.element.trigger('hideCalendar.daterangepicker', this);
         },
@@ -1218,7 +1221,9 @@
             var label = e.target.getAttribute('data-range-key');
             this.chosenLabel = label;
             if (label == this.locale.customRangeLabel) {
-                this.showCalendars();
+                if(!this.alwaysShowCalendars && !this.isVisible) {
+                    this.showCalendars();
+                }
             } else {
                 var dates = this.ranges[label];
                 this.startDate = dates[0];
@@ -1404,7 +1409,10 @@
                 } else {
                     this.chosenLabel = null;
                 }
-                this.showCalendars();
+
+                if(!this.alwaysShowCalendars && !this.isVisible) {
+                    this.showCalendars();
+                }
             }
         },
 
