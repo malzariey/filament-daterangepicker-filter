@@ -83,6 +83,7 @@
                 x-ref="button"
                 aria-label="{{ $getPlaceholder() }}"
                 dusk="filament.forms.{{ $getStatePath() }}.open"
+                @click='show()'
                 type="button"
                 tabindex="-1"
                 @if ($isDisabled()) disabled @endif
