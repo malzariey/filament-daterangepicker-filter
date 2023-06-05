@@ -117,9 +117,7 @@ export default (Alpine) => {
                         }, function (start, end) {
                             handleValueChangeUsing(start.format(displayFormat) + ' - ' + end.format(displayFormat), name)
                         });
-
                         $('input[name="'+name+'"]').val(this.state);
-                        this.$refs.button
                         this.$watch('state', function(value) {
                             if(value == null){
                                 value = '';
@@ -127,9 +125,6 @@ export default (Alpine) => {
                             $('input[name="'+name+'"]').val(value);
                         })
                 },
-                show: function () {
-                       this.dateRangePicker.show();
-                }
             }
         },
     )

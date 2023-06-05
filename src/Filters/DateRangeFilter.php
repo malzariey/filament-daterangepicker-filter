@@ -76,7 +76,7 @@ class DateRangeFilter extends BaseFilter
                 return null;
             }
 
-            return __('filament-daterangepicker-filter::message.period') . ' ' . ($this->label ? "[$this->label] " : "") . $datesString;
+            return __('filament-daterangepicker-filter::message.period') . ' ' . ($this->label ? "[$this->label] " : "$this->column ") . "[$datesString]";
         });
 
         return $this;

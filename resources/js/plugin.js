@@ -1034,6 +1034,7 @@
         },
 
         move: function() {
+            console.log('move')
             var parentOffset = { top: 0, left: 0 },
                 containerTop,
                 drops = this.drops;
