@@ -28,14 +28,62 @@ php artisan vendor:publish --tag="filament-daterangepicker-filter-views"
 
 ## Usage
 
-As a Field
+### As a Field
 ```php
 DateRangePicker::make('created_at'),
 ```
-As a Filter
+### As a Filter
 ```php
-DateRangeFilter::make('created_at')->columnSpan(2)->label('Your Label')->withIndicater(),,
+DateRangeFilter::make('created_at'),
 ```
+### Options
+```
+                ->label('My Picker')
+                ->timezone('UTC')
+                //Default Start Date
+                ->startDate(Carbon::now())
+                //Default EndDate
+                ->endDate(Carbon::now())
+                ->firstDayOfWeek(1)
+                ->alwaysShowCalender(false)
+                ->setTimePickerOption(true)
+                ->setTimePickerIncrementOption(2)
+                //No need for Apply button
+                ->setAutoApplyOption(true)
+                //Show two Calendars
+                ->setLinkedCalendarsOption(true)
+                ->disabledDates(['array of Dates'])
+                ->minDate(\Carbon\Carbon::now()->subMonth())
+                ->maxDate(\Carbon\Carbon::now()->addMonth())
+                //Filament Date Format (PHP)
+                ->displayFormat('date format')
+                //Picker Date Format (Javascript)
+                ->format('date format')
+```
+### In Admin Panal
+
+#### Light mode
+
+![DateRangePicker Widget](./art/light.png)
+
+#### Dark mode
+
+![DateRangePicker Widget](./art/dark.png)
+
+<br>
+
+# Styling
+
+If you're [building a custom Filament theme](https://filamentphp.com/docs/2.x/admin/appearance#building-themes), you need one more step to make the calendar theme match your custom theme.
+
+Add this line to your `resources/css/filament.css` file.
+
+```css
+@import '../../vendor/malzariey/filament-daterangepicker-filter/resources/css/filament-daterangepicker.css';
+```
+
+<br>
+
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
