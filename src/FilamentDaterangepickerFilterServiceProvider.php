@@ -22,13 +22,13 @@ class FilamentDaterangepickerFilterServiceProvider extends PluginServiceProvider
     ];
 
     protected array $styles = [
-        'filament-daterangepicker-filter' => __DIR__ . '/../resources/dist/css/filament-daterangepicker-filter.css',
+        'filament-daterangepicker-filter' => __DIR__ . '/../dist/filament-daterangepicker.css',
     ];
 
     protected array $scripts = [];
 
     protected array $beforeCoreScripts = [
-        'filament-daterangepicker-filter' => __DIR__ . '/../resources/dist/js/filament-daterangepicker-filter.js',
+        'filament-daterangepicker-filter' => __DIR__ . '/../dist/filament-daterangepicker.js',
     ];
 
 

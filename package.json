@@ -1,23 +1,16 @@
 {
     "private": true,
     "scripts": {
-        "dev:styles": "npx tailwindcss -i resources/css/plugin.css -o resources/dist/css/filament-daterangepicker-filter.css --postcss --watch",
-        "dev:scripts": "esbuild resources/js/filament-daterangepicker.js --bundle --sourcemap=inline --outfile=resources/dist/filament-daterangepicker-filter.js --watch",
-        "build:styles": "npx tailwindcss -i resources/css/plugin.css -o resources/dist/css/filament-daterangepicker-filter.css --postcss --minify && npm run purge",
-        "build:scripts": "esbuild resources/js/filament-daterangepicker.js --bundle --minify --outfile=resources/dist/js/filament-daterangepicker-filter.js",
-        "purge": "filament-purge -i resources/dist/css/filament-daterangepicker-filter.css -o resources/dist/css/filament-daterangepicker-filter.css",
-        "dev": "npm-run-all --parallel dev:*",
-        "build": "npm-run-all build:*"
+        "dev": "mix watch",
+        "build": "mix --production",
+        "purge": "filament-purge -i dist/filament-daterangepicker.css -o dist/filament-daterangepicker.css"
     },
     "devDependencies": {
-        "@awcodes/filament-plugin-purge": "^1.0.2",
-        "autoprefixer": "^10.4.7",
-        "esbuild": "^0.8.57",
-        "npm-run-all": "^4.1.5",
-        "postcss": "^8.4.14",
-        "prettier": "^2.7.1",
-        "prettier-plugin-tailwindcss": "^0.1.13",
-        "tailwindcss": "^3.1.6"
+        "autoprefixer": "^10.1.0",
+        "laravel-mix": "^6.0.6",
+        "postcss": "^8.2.1",
+        "tailwindcss": "^3.0.23",
+        "@awcodes/filament-plugin-purge": "^1.0.1"
     },
     "dependencies": {
         "jquery": "^3.6.4",

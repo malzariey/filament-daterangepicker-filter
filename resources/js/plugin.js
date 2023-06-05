@@ -1,5 +1,3 @@
-import $ from "./jquery.min";
-
 /**
 * @version: 3.1
 * @author: Dan Grossman http://www.dangrossman.info/
@@ -69,7 +67,7 @@ import $ from "./jquery.min";
 
         this.buttonClasses = 'btn btn-sm';
         this.applyButtonClasses = 'filament-link inline-flex items-center justify-center gap-0.5 font-medium outline-none hover:underline focus:underline text-sm text-primary-600 hover:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400';
-        this.cancelButtonClasses = 'filament-link inline-flex items-center justify-center gap-0.5 font-medium outline-none hover:underline focus:underline text-sm text-danger-600 hover:text-danger-500 dark:text-danger-500 dark:hover:text-danger-400';
+        this.cancelButtonClasses = 'filament-link inline-flex items-center justify-center gap-0.5 font-medium outline-none hover:underline focus:underline text-sm text-gray-600 hover:text-gray-500 dark:text-white dark:hover:text-white';
 
         this.locale = {
             direction: 'ltr',
@@ -355,10 +353,10 @@ import $ from "./jquery.min";
 
             var list = '<ul>';
             for (range in this.ranges) {
-                list += '<li data-range-key="' + range + '" class="hover:bg-primary-600">' + range + '</li>';
+                list += '<li data-range-key="' + range + '" class="hover:bg-primary-500 hover:text-white">' + range + '</li>';
             }
             if (this.showCustomRangeLabel) {
-                list += '<li data-range-key="' + this.locale.customRangeLabel + '" class="hover:bg-primary-600">' + this.locale.customRangeLabel + '</li>';
+                list += '<li data-range-key="' + this.locale.customRangeLabel + '" class="hover:bg-primary-500 hover:text-white">' + this.locale.customRangeLabel + '</li>';
             }
             list += '</ul>';
             this.container.find('.ranges').prepend(list);
@@ -616,6 +614,9 @@ import $ from "./jquery.min";
             //highlight any predefined range matching the current start and end dates
             this.container.find('.ranges li').removeClass('active');
             this.container.find('.ranges li').removeClass('bg-primary-500');
+            this.container.find('.ranges li').removeClass('dark:bg-primary-500');
+            this.container.find('.ranges li').removeClass('text-white');
+            this.container.find('.ranges li').removeClass('dark:text-white');
             if (this.endDate == null) return;
 
             this.calculateChosenLabel();
@@ -703,7 +704,7 @@ import $ from "./jquery.min";
             if (this.showWeekNumbers || this.showISOWeekNumbers)
                 html += '<th></th>';
 
-            if ((!minDate || minDate.isBefore(calendar.firstDay)) && (!this.linkedCalendars || side == 'left')) {
+            if ((!minDate || !minDate.isValid() || minDate.isBefore(calendar.firstDay)) && (!this.linkedCalendars || side == 'left')) {
                 html += '<th class="prev available"><span></span></th>';
             } else {
                 html += '<th></th>';
@@ -745,7 +746,8 @@ import $ from "./jquery.min";
             }
 
             html += '<th colspan="5" class="month">' + dateHtml + '</th>';
-            if ((!maxDate || maxDate.isAfter(calendar.lastDay)) && (!this.linkedCalendars || side == 'right' || this.singleDatePicker)) {
+            console.log(maxDate)
+            if ((!maxDate || !maxDate.isValid() || maxDate.isAfter(calendar.lastDay)) && (!this.linkedCalendars || side == 'right' || this.singleDatePicker)) {
                 html += '<th class="next available"><span></span></th>';
             } else {
                 html += '<th></th>';
@@ -814,15 +816,20 @@ import $ from "./jquery.min";
 
                     //highlight the currently selected start date
                     if (calendar[row][col].format('YYYY-MM-DD') == this.startDate.format('YYYY-MM-DD'))
-                        classes.push('active', 'start-date');
-
-                    //highlight the currently selected end date
-                    if (this.endDate != null && calendar[row][col].format('YYYY-MM-DD') == this.endDate.format('YYYY-MM-DD'))
-                        classes.push('active', 'end-date');
+                        classes.push('active', 'start-date','text-white','bg-primary-500','dark:bg-primary-500','dark:text-white');
 
                     //highlight dates in-between the selected dates
                     if (this.endDate != null && calendar[row][col] > this.startDate && calendar[row][col] < this.endDate)
-                        classes.push('in-range');
+                        classes.push('in-range','bg-[#ebf4f8]' ,'dark:bg-white');
+                    //highlight the currently selected end date
+                    if (this.endDate != null && calendar[row][col].format('YYYY-MM-DD') == this.endDate.format('YYYY-MM-DD')) {
+                        classes.push('active', 'end-date', 'bg-primary-500');
+                        const index = classes.indexOf('in-range');
+                        if (index !== -1) {
+                            classes.splice(index, 1);
+                        }
+                    }
+
 
                     //apply custom classes for this date
                     var isCustom = this.isCustomDate(calendar[row][col]);
@@ -842,7 +849,7 @@ import $ from "./jquery.min";
                     if (!disabled)
                         cname += 'available';
 
-                    html += '<td class="' + cname.replace(/^\s+|\s+$/g, '') + '" data-title="' + 'r' + row + 'c' + col + '">' + calendar[row][col].date() + '</td>';
+                    html += '<td class="hover:bg-primary-500 hover:text-white ' + cname.replace(/^\s+|\s+$/g, '') + '" data-title="' + 'r' + row + 'c' + col + '">' + calendar[row][col].date() + '</td>';
 
                 }
                 html += '</tr>';
@@ -1281,9 +1288,9 @@ import $ from "./jquery.min";
                     var dt = cal.hasClass('left') ? leftCalendar.calendar[row][col] : rightCalendar.calendar[row][col];
 
                     if ((dt.isAfter(startDate) && dt.isBefore(date)) || dt.isSame(date, 'day')) {
-                        $(el).addClass('in-range');
+                        $(el).addClass('in-range bg-[#ebf4f8] dark:bg-white dark:text-black');
                     } else {
-                        $(el).removeClass('in-range');
+                        $(el).removeClass('in-range bg-[#ebf4f8] dark:bg-white dark:text-black');
                     }
 
                 });
@@ -1379,14 +1386,14 @@ import $ from "./jquery.min";
                     //ignore times when comparing dates if time picker seconds is not enabled
                     if (this.startDate.format(format) == this.ranges[range][0].format(format) && this.endDate.format(format) == this.ranges[range][1].format(format)) {
                         customRange = false;
-                        this.chosenLabel = this.container.find('.ranges li:eq(' + i + ')').addClass('active bg-primary-500').attr('data-range-key');
+                        this.chosenLabel = this.container.find('.ranges li:eq(' + i + ')').addClass('active bg-primary-500 text-white').attr('data-range-key');
                         break;
                     }
                 } else {
                     //ignore times when comparing dates if time picker is not enabled
                     if (this.startDate.format('YYYY-MM-DD') == this.ranges[range][0].format('YYYY-MM-DD') && this.endDate.format('YYYY-MM-DD') == this.ranges[range][1].format('YYYY-MM-DD')) {
                         customRange = false;
-                        this.chosenLabel = this.container.find('.ranges li:eq(' + i + ')').addClass('active bg-primary-500').attr('data-range-key');
+                        this.chosenLabel = this.container.find('.ranges li:eq(' + i + ')').addClass('active bg-primary-500 text-white').attr('data-range-key');
                         break;
                     }
                 }
@@ -1394,7 +1401,7 @@ import $ from "./jquery.min";
             }
             if (customRange) {
                 if (this.showCustomRangeLabel) {
-                    this.chosenLabel = this.container.find('.ranges li:last').addClass('active bg-primary-500').attr('data-range-key');
+                    this.chosenLabel = this.container.find('.ranges li:last').addClass('active bg-primary-500 text-white').attr('data-range-key');
                 } else {
                     this.chosenLabel = null;
                 }

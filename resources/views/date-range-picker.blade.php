@@ -14,6 +14,7 @@
     :required="$isRequired()"
     :state-path="$getStatePath()"
 >
+    <div class="bg-[#ebf4f8]"></div>
     <div
         x-ref="container"
         wire:ignore

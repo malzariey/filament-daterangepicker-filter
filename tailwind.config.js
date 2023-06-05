@@ -1,29 +1,19 @@
 const colors = require('tailwindcss/colors')
-function withOpacityValue(variable) {
-    return ({ opacityValue }) => {
-        if (opacityValue === undefined) {
-            return `rgb(var(${variable}))`
-        }
-        return `rgb(var(${variable}) / ${opacityValue})`
-    }
-}
-/** @type {import('tailwindcss').Config} */
+
 module.exports = {
-    content: ['./resources/views/**/*.blade.php', './src/**/*.php'],
+    content: [
+        './resources/views/**/*.blade.php',
+    ],
     darkMode: 'class',
 
     theme: {
         extend: {
             colors: {
                 danger: colors.rose,
-                primary: colors.amber,
+                primary: colors.blue,
                 success: colors.green,
-                warning: colors.amber,
+                warning: colors.yellow,
             },
         },
     },
-    corePlugins: {
-        preflight: false,
-    },
-    plugins: [],
-}
+};

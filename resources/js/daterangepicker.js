@@ -1,6 +1,6 @@
 import DateRangePicker from './plugin';
-import $ from './jquery.min';
-import moment from './moment.min';
+import $ from 'jquery';
+import moment from 'moment';
 
 export default (Alpine) => {
     Alpine.data(
@@ -55,10 +55,10 @@ export default (Alpine) => {
         }) => {
             return {
                         dateRangePicker: null,
-
                         state: state,
-
                         init: function () {
+                            console.log('init max', maxDate != null ? moment(maxDate) : null )
+                            console.log('init min', minDate != null ? moment(minDate) : null)
                             this.dateRangePicker = new DateRangePicker(this.$refs.daterange,{
                                 name: name,
                                 alwaysShowCalendars: alwaysShowCalendars,

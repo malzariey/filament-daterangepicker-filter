@@ -1,4 +1,5 @@
 @tailwind utilities;
+@tailwind components;
 
 .daterangepicker {
     position: absolute;
@@ -179,10 +180,10 @@
   }
 
   .daterangepicker td.available:hover, .daterangepicker th.available:hover {
-    background-color: #eee;
-    @apply dark:bg-gray-500;
+    /*background-color: #eee;*/
+    /*@apply dark:bg-gray-500;*/
     border-color: transparent;
-    color: inherit;
+    /*color: inherit;*/
   }
 
   .daterangepicker td.week, .daterangepicker th.week {
@@ -190,20 +191,28 @@
     color: #ccc;
   }
 
-  .daterangepicker td.off, .daterangepicker td.off.in-range, .daterangepicker td.off.start-date, .daterangepicker td.off.end-date {
-    background-color: #fff;
+  .daterangepicker td.off, .daterangepicker td.off.in-range{
+    /*background-color: #fff;*/
     @apply dark:bg-gray-800;
     border-color: transparent;
     color: #999;
   }
 
+    .daterangepicker td.off.start-date, .daterangepicker td.off.end-date {
+        /*background-color: #fff;*/
+        @apply dark:bg-gray-800;
+        border-color: transparent;
+        color: #FFF;
+    }
   .daterangepicker td.in-range {
-    background-color: #ebf4f8;
-
     border-color: transparent;
     color: #000;
     border-radius: 0;
   }
+
+.daterangepicker td.in-range:hover {
+    color: #FFF;
+}
 
   .daterangepicker td.start-date {
     border-radius: 4px 0 0 4px;
@@ -211,6 +220,7 @@
 
   .daterangepicker td.end-date {
     border-radius: 0 4px 4px 0;
+      color: #FFF;
   }
 
   .daterangepicker td.start-date.end-date {
@@ -218,10 +228,19 @@
   }
 
   .daterangepicker td.active, .daterangepicker td.active:hover {
-   @apply bg-primary-600;
     border-color: transparent;
-    color: #fff;
+    /*color: #fff;*/
   }
+
+  /*.daterangepicker td.active, .daterangepicker td.active:hover, .daterangepicker .ranges ul li.active {*/
+  /* @apply bg-primary-500;*/
+  /*}*/
+ /* .drp-buttons .applyBtn{*/
+ /*     @apply text-primary-600 hover:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400;*/
+ /* }*/
+ /*.drp-buttons .cancelBtn{*/
+ /*     @apply text-gray-600 hover:text-gray-500 dark:text-white dark:hover:text-white;*/
+ /* }*/
 
   .daterangepicker th.month {
     width: auto;
@@ -340,10 +359,6 @@
     font-size: 12px;
     padding: 8px 12px;
     cursor: pointer;
-  }
-
-  .daterangepicker .ranges li:hover {
-      @apply text-primary-500 bg-white !important
   }
 
   .daterangepicker .ranges li.active {
