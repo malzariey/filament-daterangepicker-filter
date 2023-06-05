@@ -63,6 +63,7 @@ DateRangeFilter::make('created_at'),
                 ->query(
                     fn(Builder $query) => $query->whereNot('name', '=','majid')
                 )
+                ->withIndicator()
 ```
 ### In Admin Panal
 
