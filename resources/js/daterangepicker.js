@@ -121,6 +121,8 @@ export default (Alpine) => {
                         this.$watch('state', function(value) {
                             if(value == null){
                                 value = '';
+                                this.dateRangePicker.setStartDate(moment())
+                                this.dateRangePicker.setEndDate(moment())
                             }
                             $('input[name="'+name+'"]').val(value);
                         })
