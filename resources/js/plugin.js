@@ -746,7 +746,6 @@
             }
 
             html += '<th colspan="5" class="month">' + dateHtml + '</th>';
-            console.log(maxDate)
             if ((!maxDate || !maxDate.isValid() || maxDate.isAfter(calendar.lastDay)) && (!this.linkedCalendars || side == 'right' || this.singleDatePicker)) {
                 html += '<th class="next available"><span></span></th>';
             } else {

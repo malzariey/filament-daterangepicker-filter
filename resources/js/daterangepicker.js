@@ -57,8 +57,6 @@ export default (Alpine) => {
                         dateRangePicker: null,
                         state: state,
                         init: function () {
-                            console.log('init max', maxDate != null ? moment(maxDate) : null )
-                            console.log('init min', minDate != null ? moment(minDate) : null)
                             this.dateRangePicker = new DateRangePicker(this.$refs.daterange,{
                                 name: name,
                                 alwaysShowCalendars: alwaysShowCalendars,
@@ -116,7 +114,7 @@ export default (Alpine) => {
                                         [this_year]:      [moment().startOf('year'), moment().endOf('year')],
                                         [last_year]:      [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
                                 }
-                        }, function (start, end, label) {
+                        }, function (start, end) {
                             handleValueChangeUsing(start.format(displayFormat) + ' - ' + end.format(displayFormat), name)
                         });
 
