@@ -59,6 +59,10 @@ DateRangeFilter::make('created_at'),
                 ->displayFormat('date format')
                 //Picker Date Format (Javascript)
                 ->format('date format')
+                //Updating Query
+                ->query(
+                    fn(Builder $query) => $query->whereNot('name', '=','majid')
+                )
 ```
 ### In Admin Panal
 
