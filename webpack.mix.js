@@ -11,9 +11,9 @@ const mix = require('laravel-mix');
  |
  */
 
-mix
-    .js('resources/js/filament-daterangepicker.js', 'dist')
-    .postCss('resources/css/filament-daterangepicker.css', 'dist', [
+mix.setPublicPath('./')
+    .js('resources/js/filament-daterangepicker.js', '/dist')
+    .postCss('resources/css/filament-daterangepicker.css', '/dist', [
         require('tailwindcss'),
         require('autoprefixer'),
-    ]);
+    ]).version();
