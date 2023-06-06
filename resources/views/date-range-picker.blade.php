@@ -14,10 +14,12 @@
     :required="$isRequired()"
     :state-path="$getStatePath()"
 >
+    <div
+        wire:ignore
+    >
     <div class="bg-[#ebf4f8]"></div>
     <div
         x-ref="container"
-        wire:ignore
         x-data="dateRangeComponent({
                 state:  @entangle($getStatePath()),
                 name: @js($name),
@@ -98,7 +100,7 @@
                     'dark:text-gray-300' => $isDisabled() && config('forms.dark_mode'),
                 ]) }}
             >
-                <div class="relative inline-block w-full px-2">
+                <div class="relative inline-block w-full px-2"  id="{{$name}}.container" wire:key="{{$name}}.container">
                     <input
                         readonly
                         x-ref="daterange"
@@ -128,5 +130,7 @@
             </button>
 
         </div>
+    </div>
+
     </div>
 </x-dynamic-component>

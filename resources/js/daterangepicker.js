@@ -1,6 +1,6 @@
-import DateRangePicker from './plugin';
 import $ from 'jquery';
 import moment from 'moment';
+import './plugin';
 
 export default (Alpine) => {
     Alpine.data(
@@ -57,7 +57,9 @@ export default (Alpine) => {
                         dateRangePicker: null,
                         state: state,
                         init: function () {
-                            this.dateRangePicker = new DateRangePicker(this.$refs.daterange,{
+                            $(this.$refs.daterange).daterangepicker(
+                            // this.dateRangePicker = new DateRangePicker(this.$refs.daterange,
+                                {
                                 name: name,
                                 alwaysShowCalendars: alwaysShowCalendars,
                                 autoApply: autoApply,
@@ -117,14 +119,23 @@ export default (Alpine) => {
                         }, function (start, end) {
                             handleValueChangeUsing(start.format(displayFormat) + ' - ' + end.format(displayFormat), name)
                         });
-                        $('input[name="'+name+'"]').val(this.state);
-                        this.$watch('state', function(value) {
+                        this.dateRangePicker = $(this.$refs.daterange).data('daterangepicker');
+                        if(this.state != null){
+                            const dates = this.state.split(' - ');
+                            if(dates.length == 2 && this.dateRangePicker != null){
+                                this.dateRangePicker.setStartDate(dates[0]);
+                                this.dateRangePicker.setEndDate(dates[1]);
+                            }
+                        }
+                        $(this.$refs.daterange).val(this.state);
+                        let parent = this;
+                        this.$watch('state', function(value)  {
                             if(value == null){
                                 value = '';
-                                this.dateRangePicker.setStartDate(moment())
-                                this.dateRangePicker.setEndDate(moment())
+                                parent.dateRangePicker.setStartDate(moment());
+                                parent.dateRangePicker.setEndDate(moment());
                             }
-                            $('input[name="'+name+'"]').val(value);
+                            $(parent.$refs.daterange).val(value);
                         })
                 },
             }
