@@ -2,6 +2,7 @@
 
 namespace Malzariey\FilamentDaterangepickerFilter;
 
+use Composer\InstalledVersions;
 use Filament\PluginServiceProvider;
 use Illuminate\Support\Facades\Vite;
 use Spatie\LaravelPackageTools\Package;
@@ -9,7 +10,7 @@ use Spatie\LaravelPackageTools\Package;
 class FilamentDaterangepickerFilterServiceProvider extends PluginServiceProvider
 {
     public static string $name = 'filament-daterangepicker-filter';
-    private static float $version = 1.1;
+    private static string $version = 'dev';
 
     protected array $resources = [
         // CustomResource::class,
@@ -32,6 +33,8 @@ class FilamentDaterangepickerFilterServiceProvider extends PluginServiceProvider
 
     public function configurePackage(Package $package): void
     {
+        static::$version = InstalledVersions::getVersion('malzariey/filament-daterangepicker-filter');
+
         $this->beforeCoreScripts = [
             'filament-daterangepicker-filter'.static::$version => __DIR__ . '/../dist/filament-daterangepicker.js',
         ];
