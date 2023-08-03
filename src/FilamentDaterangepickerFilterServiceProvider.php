@@ -3,45 +3,42 @@
 namespace Malzariey\FilamentDaterangepickerFilter;
 
 use Composer\InstalledVersions;
-use Filament\PluginServiceProvider;
-use Illuminate\Support\Facades\Vite;
+use Filament\Support\Assets\Css;
+use Filament\Support\Assets\Js;
+use Filament\Support\Facades\FilamentAsset;
 use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
-class FilamentDaterangepickerFilterServiceProvider extends PluginServiceProvider
+class FilamentDaterangepickerFilterServiceProvider extends PackageServiceProvider
 {
     public static string $name = 'filament-daterangepicker-filter';
     private static string $version = 'dev';
 
-    protected array $resources = [
-        // CustomResource::class,
-    ];
-
-    protected array $pages = [
-        // CustomPage::class,
-    ];
-
-    protected array $widgets = [
-        // CustomWidget::class,
-    ];
-
-    protected array $styles = [];
-
-    protected array $scripts = [];
-
-    protected array $beforeCoreScripts = [];
-
-
     public function configurePackage(Package $package): void
     {
+        $package->name(static::$name)
+            ->hasViews()
+            ->hasTranslations();
+    }
+
+    public function packageBooted(): void
+    {
+        FilamentAsset::register($this->getAssets(), package: $this->getAssetPackageName());
+    }
+
+    protected function getAssetPackageName(): ?string
+    {
+        return 'filament-daterangepicker-filter';
+    }
+
+    protected function getAssets(): array
+    {
         static::$version = InstalledVersions::getVersion('malzariey/filament-daterangepicker-filter');
+        $assetId = $this->getAssetPackageName() . static::$version;
 
-        $this->beforeCoreScripts = [
-            'filament-daterangepicker-filter'.static::$version => __DIR__ . '/../dist/filament-daterangepicker.js',
+        return [
+            Js::make($assetId, __DIR__ . '/../dist/filament-daterangepicker.js'),
+            Css::make($assetId, __DIR__ . '/../dist/filament-daterangepicker.css'),
         ];
-        $this->styles = [
-            'filament-daterangepicker-filter'.static::$version => __DIR__ . '/../dist/filament-daterangepicker.css',
-        ];
-
-        $package->name(static::$name)->hasViews()->hasTranslations();
     }
 }
