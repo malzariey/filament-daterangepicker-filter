@@ -94,9 +94,8 @@ class DateRangeFilter extends BaseFilter
 
     public function defaultToday()
     {
-        $this->startDate = Carbon::now();
-
-        $this->endDate = Carbon::now();
+        $this->startDate = now();
+        $this->endDate = now();
 
         return $this;
     }

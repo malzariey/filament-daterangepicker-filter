@@ -3,16 +3,7 @@
 @endphp
 <x-dynamic-component
     :component="$getFieldWrapperView()"
-    :id="$getId()"
-    :label="$getLabel()"
-    :label-sr-only="$isLabelHidden()"
-    :helper-text="$getHelperText()"
-    :hint="$getHint()"
-    :hint-action="$getHintAction()"
-    :hint-color="$getHintColor()"
-    :hint-icon="$getHintIcon()"
-    :required="$isRequired()"
-    :state-path="$getStatePath()"
+    :field="$field"
 >
     <div
         wire:ignore
@@ -106,7 +97,7 @@
                         x-ref="daterange"
                         name="{{$name}}"
                         placeholder="{{$getPlaceholder()}}"
-                        wire:key="{{ $this->id }}.{{ $getStatePath() }}.{{ $field::class }}.display-text"
+                        wire:key="{{ $this->id() }}.{{ $getStatePath() }}.{{ $field::class }}.display-text"
                         {!! ($id = $getId()) ? "id=\"{$id}\"" : null !!}
                         @class([
                             'w-full h-full p-0 placeholder-gray-400 bg-transparent border-0 outline-none focus:placeholder-gray-500 focus:ring-0',
