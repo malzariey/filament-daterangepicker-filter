@@ -80,7 +80,7 @@
                 tabindex="-1"
                 @if ($isDisabled()) disabled @endif
                 {{ $getExtraTriggerAttributeBag()->class([
-                    'bg-white relative w-full border py-2 pl-3 rtl:pr-3 text-start cursor-default rounded-lg shadow-sm outline-none',
+                    'bg-white dark:bg-white/5 relative w-full border py-2 pl-3 rtl:pr-3 text-start cursor-default rounded-lg shadow-sm outline-none',
                     'focus-within:ring-1 focus-within:border-primary-500 focus-within:ring-inset focus-within:ring-primary-500' => ! $isDisabled(),
                     'dark:bg-gray-700' => config('forms.dark_mode'),
                     'border-gray-300' => ! $errors->has($getStatePath()),
@@ -100,7 +100,7 @@
                         wire:key="{{ $this->id() }}.{{ $getStatePath() }}.{{ $field::class }}.display-text"
                         {!! ($id = $getId()) ? "id=\"{$id}\"" : null !!}
                         @class([
-                            'w-full h-full p-0 placeholder-gray-400 bg-transparent border-0 outline-none focus:placeholder-gray-500 focus:ring-0',
+                            'w-full h-full p-0 placeholder-gray-400 bg-transparent border-0 outline-none focus:placeholder-gray-500 focus:ring-0 bg-transparent',
                             'dark:bg-gray-700 dark:placeholder-gray-400' => config('forms.dark_mode'),
                             'cursor-default' => $isDisabled(),
                         ])

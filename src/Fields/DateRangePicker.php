@@ -62,20 +62,12 @@ class DateRangePicker extends Forms\Components\Field
     {
         $this->maxDate = $date;
 
-        $this->rule(static function (DateRangePicker $component) {
-            return "before_or_equal:{$component->getMaxDate()}";
-        }, static fn(DateRangePicker $component): bool => (bool)$component->getMaxDate());
-
         return $this;
     }
 
     public function minDate(CarbonInterface|string|Closure|null $date): static
     {
         $this->minDate = $date;
-
-        $this->rule(static function (DateRangePicker $component) {
-            return "after_or_equal:{$component->getMinDate()}";
-        }, static fn(DateRangePicker $component): bool => (bool)$component->getMinDate());
 
         return $this;
     }
