@@ -69,11 +69,11 @@ DateRangeFilter::make('created_at'),
 
 #### Light mode
 
-![DateRangePicker Widget](./art/light.png)
+![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/main/art/light.png)
 
 #### Dark mode
 
-![DateRangePicker Widget](./art/dark.png)
+![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/main/art/dark.png)
 
 <br>
 
