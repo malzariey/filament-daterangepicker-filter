@@ -31,7 +31,7 @@ return [
      'last_7_days' =>"Ост. 7 днів",
      'last_30_days' =>"Ост. 30 днів",
      'this_month' =>"Цей місяць",
-     'last_month' =>"Ост. місяць",
+     'last_month' =>"Минулий місяць",
      'this_year' =>"Цей рік",
-     'last_year' =>"Ост. рік"
+     'last_year' =>"Минулий рік"
 ];
