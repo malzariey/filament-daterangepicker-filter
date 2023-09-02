@@ -20,7 +20,7 @@
         <div
             x-ref="container"
             x-data="dateRangeComponent({
-                state: @entangle($getStatePath()),
+                state: @entangle($statePath),
                 name: @js($name),
                 alwaysShowCalendars: @js($isAlwaysShowCalender()),
                 autoApply: @js($getAutoApplyOption()),
@@ -68,7 +68,7 @@
                 last_year: '{!! __('filament-daterangepicker-filter::message.last_year') !!}',
                 handleValueChangeUsing: (value, name) => {
                     if (name == '{{ $name }}') {
-                        @this.set('{!! $getStatePath() !!}', value);
+                        @this.set('{!! $statePath !!}', value);
                     }
                 },
             })"
@@ -97,7 +97,7 @@
                 <button
                     x-ref="button"
                     aria-label="{{ $getPlaceholder() }}"
-                    dusk="filament.forms.{{ $getStatePath() }}.open"
+                    dusk="filament.forms.{{ $statePath }}.open"
                     type="button"
                     tabindex="-1"
                     class="w-full"
@@ -109,7 +109,7 @@
                     >
                         <x-filament::input
                             x-ref="daterange"
-                            wire:key="{{ $this->id() }}.{{ $getStatePath() }}.{{ $field::class }}.display-text"
+                            wire:key="{{ $this->id() }}.{{ $statePath }}.{{ $field::class }}.display-text"
                             :attributes="\Filament\Support\prepare_inherited_attributes(
                                 $getExtraInputAttributeBag(),
                             )->merge(
