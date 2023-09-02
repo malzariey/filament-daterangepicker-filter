@@ -9,6 +9,7 @@
     $suffixActions = $getSuffixActions();
     $suffixIcon = $getSuffixIcon();
     $suffixLabel = $getSuffixLabel();
+    $statePath = $getStatePath();
 @endphp
 
 <x-dynamic-component
