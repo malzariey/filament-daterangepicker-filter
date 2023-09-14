@@ -58,14 +58,7 @@
                 friday: '{!! __('filament-daterangepicker-filter::message.fr') !!}',
                 saturday: '{!! __('filament-daterangepicker-filter::message.sa') !!}',
                 firstDay: @js($getFirstDayOfWeek()),
-                today: '{!! __('filament-daterangepicker-filter::message.today') !!}',
-                yesterday: '{!! __('filament-daterangepicker-filter::message.yesterday') !!}',
-                last_7_days: '{!! __('filament-daterangepicker-filter::message.last_7_days') !!}',
-                last_30_days: '{!! __('filament-daterangepicker-filter::message.last_30_days') !!}',
-                this_month: '{!! __('filament-daterangepicker-filter::message.this_month') !!}',
-                last_month: '{!! __('filament-daterangepicker-filter::message.last_month') !!}',
-                this_year: '{!! __('filament-daterangepicker-filter::message.this_year') !!}',
-                last_year: '{!! __('filament-daterangepicker-filter::message.last_year') !!}',
+                ranges: @js($getRanges()),
                 handleValueChangeUsing: (value, name) => {
                     if (name == '{{ $name }}') {
                         @this.set('{!! $statePath !!}', value);

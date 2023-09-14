@@ -64,6 +64,9 @@ DateRangeFilter::make('created_at'),
                     fn(Builder $query) => $query->whereNot('name', '=','majid')
                 )
                 ->withIndicator()
+                ->ranges([
+                    'Last 3 days' => [now()->subDays(3), now()],
+                ])
 ```
 ### In Admin Panal
 

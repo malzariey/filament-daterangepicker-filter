@@ -43,16 +43,16 @@ export default (Alpine) => {
             november,
             december,
             firstDay,
-            today,
-            yesterday,
-            last_7_days,
-            last_30_days,
-            this_month,
-            last_month,
-            this_year,
-            last_year,
+            ranges,
             handleValueChangeUsing,
         }) => {
+            var momentRanges = {};
+            for (var key in ranges) {
+                var dateRange = ranges[key];
+                var momentDateRange = dateRange.map((dateString) => moment(dateString));
+                momentRanges[key] = momentDateRange;
+            }
+
             return {
                         dateRangePicker: null,
                         state: state,
@@ -106,16 +106,7 @@ export default (Alpine) => {
                                         ],
                                         firstDay: firstDay
                                 },
-                                ranges: {
-                                        [today]  :        [moment(), moment()],
-                                        [yesterday]:      [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                                        [last_7_days]:    [moment().subtract(6, 'days'), moment()],
-                                        [last_30_days]:   [moment().subtract(29, 'days'), moment()],
-                                        [this_month]:     [moment().startOf('month'), moment().endOf('month')],
-                                        [last_month]:     [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-                                        [this_year]:      [moment().startOf('year'), moment().endOf('year')],
-                                        [last_year]:      [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
-                                }
+                                ranges: momentRanges,
                         }, function (start, end) {
                             handleValueChangeUsing(start.format(displayFormat) + ' - ' + end.format(displayFormat), name)
                         });
