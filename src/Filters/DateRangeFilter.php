@@ -49,6 +49,8 @@ class DateRangeFilter extends BaseFilter
 
     protected int|Closure|null $secondsStep = null;
 
+    protected array|Closure $ranges = [];
+
     public function resetFirstDayOfWeek(): static
     {
         $this->firstDayOfWeek($this->getDefaultFirstDayOfWeek());
@@ -138,6 +140,7 @@ class DateRangeFilter extends BaseFilter
                 ->maxDate($this->maxDate)
                 ->displayFormat($this->displayFormat)
                 ->format($this->format)
+                ->ranges($this->ranges)
         ];
     }
 
@@ -287,6 +290,13 @@ class DateRangeFilter extends BaseFilter
     public function timezone(string|Closure|null $timezone): static
     {
         $this->timezone = $timezone;
+
+        return $this;
+    }
+
+    public function ranges(array|Closure $ranges): static
+    {
+        $this->ranges = $ranges;
 
         return $this;
     }
