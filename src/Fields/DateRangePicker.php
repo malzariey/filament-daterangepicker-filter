@@ -19,7 +19,7 @@ class DateRangePicker extends Field implements HasAffixActions
 
     protected string $view = 'filament-daterangepicker-filter::date-range-picker';
 
-    protected bool|Closure $alwaysShowCalender = true;
+    protected bool|Closure $alwaysShowCalendar = true;
     protected string|Closure|null $displayFormat = "DD/MM/YYYY";
     protected array $extraTriggerAttributes = [];
     protected int|null $firstDayOfWeek = 1;
@@ -142,9 +142,11 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this;
     }
 
-    public function ranges(array|Closure $ranges) : static
+    public function ranges(null|array|Closure $ranges) : static
     {
-        $this->ranges = $ranges;
+        if (! is_null($ranges)) {
+            $this->ranges = $ranges;
+        }
 
         return $this;
     }
@@ -241,16 +243,16 @@ class DateRangePicker extends Field implements HasAffixActions
         return config('forms.components.date_time_picker.first_day_of_week', 1);
     }
 
-    public function alwaysShowCalender(bool|Closure $condition = true) : static
+    public function alwaysShowCalendar(bool|Closure $condition = true) : static
     {
-        $this->alwaysShowCalender = $condition;
+        $this->alwaysShowCalendar = $condition;
 
         return $this;
     }
 
-    public function isAlwaysShowCalender() : bool
+    public function isAlwaysShowCalendar() : bool
     {
-        return $this->alwaysShowCalender;
+        return $this->alwaysShowCalendar;
     }
 
     public function setTimePickerOption(bool $condition = true) : static

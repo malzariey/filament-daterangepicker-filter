@@ -1,6 +1,6 @@
 @php
     $name = uniqid();
-    
+
     $isPrefixInline = $isPrefixInline();
     $isSuffixInline = $isSuffixInline();
     $prefixActions = $getPrefixActions();
@@ -22,7 +22,7 @@
             x-data="dateRangeComponent({
                 state: @entangle($statePath),
                 name: @js($name),
-                alwaysShowCalendars: @js($isAlwaysShowCalender()),
+                alwaysShowCalendars: @js($isAlwaysShowCalendar()),
                 autoApply: @js($getAutoApplyOption()),
                 linkedCalendars: @js($getLinkedCalendarsOption()),
                 autoUpdateInput: false,

@@ -45,7 +45,7 @@ DateRangeFilter::make('created_at'),
                 //Default EndDate
                 ->endDate(Carbon::now())
                 ->firstDayOfWeek(1)
-                ->alwaysShowCalender(false)
+                ->alwaysShowCalendar(false)
                 ->setTimePickerOption(true)
                 ->setTimePickerIncrementOption(2)
                 //No need for Apply button
