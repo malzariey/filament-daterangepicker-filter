@@ -29,7 +29,7 @@ class DateRangeFilter extends BaseFilter
 
     protected string|Closure|null $timezone = null;
 
-    protected bool|Closure $alwaysShowCalender = true;
+    protected bool|Closure $alwaysShowCalendar = true;
 
     protected int|null $firstDayOfWeek = 1;
 
@@ -49,7 +49,7 @@ class DateRangeFilter extends BaseFilter
 
     protected int|Closure|null $secondsStep = null;
 
-    protected array|Closure $ranges = [];
+    protected null|array|Closure $ranges = null;
 
     public function resetFirstDayOfWeek(): static
     {
@@ -130,7 +130,7 @@ class DateRangeFilter extends BaseFilter
                 ->startDate($this->startDate)
                 ->endDate($this->endDate)
                 ->firstDayOfWeek($this->firstDayOfWeek)
-                ->alwaysShowCalender($this->alwaysShowCalender)
+                ->alwaysShowCalendar($this->alwaysShowCalendar)
                 ->setTimePickerOption($this->timePicker)
                 ->setTimePickerIncrementOption($this->timePickerIncrement)
                 ->setAutoApplyOption($this->autoApply)
@@ -233,7 +233,7 @@ class DateRangeFilter extends BaseFilter
 
     public function alwaysShowCalendar(bool $alwaysShow = true): static
     {
-        $this->alwaysShowCalender = $alwaysShow;
+        $this->alwaysShowCalendar = $alwaysShow;
 
         return $this;
     }
@@ -300,6 +300,4 @@ class DateRangeFilter extends BaseFilter
 
         return $this;
     }
-
-
 }
