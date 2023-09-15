@@ -8,7 +8,6 @@ use Filament\Forms\Components\Concerns\{HasAffixes, HasExtraInputAttributes, Has
 use Filament\Forms\Components\Contracts\HasAffixActions;
 use Filament\Forms\Components\Field;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
-
 use Illuminate\View\ComponentAttributeBag;
 
 class DateRangePicker extends Field implements HasAffixActions
