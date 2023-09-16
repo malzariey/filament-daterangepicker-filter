@@ -56,6 +56,8 @@ class DateRangeFilter extends BaseFilter
     protected bool $disableCustomRange = false;
 
     protected string $separator = ' - ';
+    protected bool|Closure $isLabelHidden = false;
+    protected string|Closure|null $placeholder = null;
 
 
     public function resetFirstDayOfWeek() : static
@@ -111,19 +113,21 @@ class DateRangeFilter extends BaseFilter
             return $schema;
         }
 
-        $defult = null;
+        $default = null;
 
         if ($this->startDate != null && $this->endDate != null) {
-            $defult = $this->startDate->format($this->format) . $this->separator . $this->endDate->format($this->format);
+            $default = $this->startDate->format($this->format) . $this->separator . $this->endDate->format($this->format);
         } else if ($this->startDate != null && $this->endDate == null) {
-            $defult = $this->startDate->format($this->format) . $this->separator . $this->startDate->format($this->format);
+            $default = $this->startDate->format($this->format) . $this->separator . $this->startDate->format($this->format);
         } else if ($this->startDate == null && $this->endDate != null) {
-            $defult = $this->endDate->format($this->format) . $this->separator . $this->endDate->format($this->format);
+            $default = $this->endDate->format($this->format) . $this->separator . $this->endDate->format($this->format);
         }
 
         return [
             DateRangePicker::make($this->column)
-                ->default($defult)
+                ->default($default)
+                ->hiddenLabel($this->isLabelHidden)
+                ->placeholder($this->placeholder)
                 ->label($this->getLabel())
                 ->timezone($this->timezone)
                 ->startDate($this->startDate)
@@ -320,6 +324,20 @@ class DateRangeFilter extends BaseFilter
     public function separator(string $separator) : static
     {
         $this->separator = $separator;
+
+        return $this;
+    }
+
+    public function hiddenLabel(bool|Closure $condition = true) : static
+    {
+        $this->isLabelHidden = $condition;
+
+        return $this;
+    }
+
+    public function placeholder(string|Closure|null $placeholder) : static
+    {
+        $this->placeholder = $placeholder;
 
         return $this;
     }
