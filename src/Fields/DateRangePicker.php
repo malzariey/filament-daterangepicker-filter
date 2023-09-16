@@ -241,6 +241,10 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function isAlwaysShowCalendar() : bool
     {
+        if ($this->disableCustomRange) {
+            return false;
+        }
+
         return $this->alwaysShowCalendar;
     }
 

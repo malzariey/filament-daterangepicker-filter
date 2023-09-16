@@ -33,7 +33,7 @@
                 timePicker: @js($getTimePickerOption()),
                 timePickerIncrement: @js($getTimePickerIncrementOption()),
                 displayFormat: @js($getDisplayFormat()),
-                disableCustomRange: {{ $getDisableCustomRange() ? 'true' : 'false' }},
+                disableCustomRange: @js($getDisableCustomRange()),
                 applyLabel: '{!! __('filament-daterangepicker-filter::message.apply') !!}',
                 cancelLabel: '{!! __('filament-daterangepicker-filter::message.cancel') !!}',
                 fromLabel: '{!! __('filament-daterangepicker-filter::message.from') !!}',

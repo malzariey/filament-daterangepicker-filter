@@ -130,15 +130,18 @@ export default (Alpine) => {
                         },
                         function(start, end) {
                             handleValueChangeUsing(start.format(displayFormat) + separator + end.format(displayFormat), name)
-                        });
+                        }
+                    );
+
                     this.dateRangePicker = $(this.$refs.daterange).data('daterangepicker');
                     if (this.state != null) {
-                        const dates = this.state.split(this.separator);
+                        const dates = this.state.split(separator);
                         if (dates.length == 2 && this.dateRangePicker != null) {
                             this.dateRangePicker.setStartDate(dates[0]);
                             this.dateRangePicker.setEndDate(dates[1]);
                         }
                     }
+
                     $(this.$refs.daterange).val(this.getRangeLabel(this.state));
                     let parent = this;
                     this.$watch('state', function(value) {
