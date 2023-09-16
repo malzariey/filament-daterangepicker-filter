@@ -67,6 +67,9 @@ DateRangeFilter::make('created_at'),
                 ->ranges([
                     'Last 3 days' => [now()->subDays(3), now()],
                 ])
+                ->useRangeLabels()
+                ->disableCustomRange()
+                ->separator(' - ')
 ```
 ### In Admin Panal
 

@@ -1,6 +1,6 @@
 @php
     $name = uniqid();
-
+    
     $isPrefixInline = $isPrefixInline();
     $isSuffixInline = $isSuffixInline();
     $prefixActions = $getPrefixActions();
@@ -33,6 +33,7 @@
                 timePicker: @js($getTimePickerOption()),
                 timePickerIncrement: @js($getTimePickerIncrementOption()),
                 displayFormat: @js($getDisplayFormat()),
+                disableCustomRange: {{ $getDisableCustomRange() ? 'true' : 'false' }},
                 applyLabel: '{!! __('filament-daterangepicker-filter::message.apply') !!}',
                 cancelLabel: '{!! __('filament-daterangepicker-filter::message.cancel') !!}',
                 fromLabel: '{!! __('filament-daterangepicker-filter::message.from') !!}',
@@ -59,6 +60,8 @@
                 saturday: '{!! __('filament-daterangepicker-filter::message.sa') !!}',
                 firstDay: @js($getFirstDayOfWeek()),
                 ranges: @js($getRanges()),
+                separator: @js($getSeparator()),
+                useRangeLabels: @js($getUseRangeLabels()),
                 handleValueChangeUsing: (value, name) => {
                     if (name == '{{ $name }}') {
                         @this.set('{!! $statePath !!}', value);

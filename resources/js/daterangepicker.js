@@ -23,6 +23,7 @@ export default (Alpine) => {
             fromLabel,
             toLabel,
             customRangeLabel,
+            disableCustomRange,
             sunday,
             monday,
             tuesday,
@@ -44,6 +45,8 @@ export default (Alpine) => {
             december,
             firstDay,
             ranges,
+            separator,
+            useRangeLabels,
             handleValueChangeUsing,
         }) => {
             var momentRanges = {};
@@ -54,80 +57,98 @@ export default (Alpine) => {
             }
 
             return {
-                        dateRangePicker: null,
-                        state: state,
-                        init: function () {
-                            $(this.$refs.daterange).daterangepicker(
-                            // this.dateRangePicker = new DateRangePicker(this.$refs.daterange,
-                                {
-                                name: name,
-                                alwaysShowCalendars: alwaysShowCalendars,
-                                autoApply: autoApply,
-                                linkedCalendars: linkedCalendars,
-                                autoUpdateInput: false,
-                                startDate: startDate != null ? moment(startDate) : moment(),
-                                endDate: endDate != null ? moment(endDate) : moment(),
-                                maxDate: maxDate != null ? moment(maxDate) : null,
-                                minDate: minDate != null ? moment(minDate) : null,
-                                timePicker: timePicker,
-                                timePickerIncrement: timePickerIncrement,
-                                handleApplyUsing : handleValueChangeUsing,
-                                locale: {
-                                    format: displayFormat,
-                                        separator: " - ",
-                                        applyLabel: applyLabel,
-                                        cancelLabel: cancelLabel,
-                                        fromLabel: fromLabel,
-                                        toLabel: toLabel,
-                                        customRangeLabel: customRangeLabel,
-                                        weekLabel: "W",
-                                        daysOfWeek: [
-                                            sunday,
-                                            monday,
-                                            tuesday,
-                                            wednesday,
-                                            thursday,
-                                            friday,
-                                            saturday,
-                                        ],
-                                        monthNames: [
-                                            january,
-                                            february,
-                                            march,
-                                            april,
-                                            may,
-                                            june,
-                                            july,
-                                            august,
-                                            september,
-                                            october,
-                                            november,
-                                            december,
-                                        ],
-                                        firstDay: firstDay
-                                },
-                                ranges: momentRanges,
-                        }, function (start, end) {
-                            handleValueChangeUsing(start.format(displayFormat) + ' - ' + end.format(displayFormat), name)
-                        });
-                        this.dateRangePicker = $(this.$refs.daterange).data('daterangepicker');
-                        if(this.state != null){
-                            const dates = this.state.split(' - ');
-                            if(dates.length == 2 && this.dateRangePicker != null){
-                                this.dateRangePicker.setStartDate(dates[0]);
-                                this.dateRangePicker.setEndDate(dates[1]);
-                            }
+                dateRangePicker: null,
+                state: state,
+                getRangeLabel: function (state) {
+                    if (!state || !useRangeLabels) {
+                        return state;
+                    }
+
+                    const [from, to] = state.split(separator);
+                    const fromDate = moment(from, displayFormat);
+                    const toDate = moment(to, displayFormat);
+
+                    for (const [label, [rangeFrom, rangeTo]] of Object.entries(momentRanges)) {
+                        if (fromDate.isSame(rangeFrom) && toDate.isSame(rangeTo)) {
+                            return label;
                         }
-                        $(this.$refs.daterange).val(this.state);
-                        let parent = this;
-                        this.$watch('state', function(value)  {
-                            if(value == null){
-                                value = '';
-                                parent.dateRangePicker.setStartDate(moment());
-                                parent.dateRangePicker.setEndDate(moment());
-                            }
-                            $(parent.$refs.daterange).val(value);
-                        })
+                    }
+
+                    return state;
+                },
+                init: function () {
+                    $(this.$refs.daterange).daterangepicker(
+                        {
+                            name: name,
+                            alwaysShowCalendars: alwaysShowCalendars,
+                            autoApply: autoApply,
+                            linkedCalendars: linkedCalendars,
+                            autoUpdateInput: false,
+                            startDate: startDate != null ? moment(startDate) : moment(),
+                            endDate: endDate != null ? moment(endDate) : moment(),
+                            maxDate: maxDate != null ? moment(maxDate) : null,
+                            minDate: minDate != null ? moment(minDate) : null,
+                            timePicker: timePicker,
+                            timePickerIncrement: timePickerIncrement,
+                            handleApplyUsing: handleValueChangeUsing,
+                            showCustomRangeLabel: ! disableCustomRange,
+                            locale: {
+                                format: displayFormat,
+                                separator: separator,
+                                applyLabel: applyLabel,
+                                cancelLabel: cancelLabel,
+                                fromLabel: fromLabel,
+                                toLabel: toLabel,
+                                customRangeLabel: customRangeLabel,
+                                weekLabel: "W",
+                                daysOfWeek: [
+                                    sunday,
+                                    monday,
+                                    tuesday,
+                                    wednesday,
+                                    thursday,
+                                    friday,
+                                    saturday,
+                                ],
+                                monthNames: [
+                                    january,
+                                    february,
+                                    march,
+                                    april,
+                                    may,
+                                    june,
+                                    july,
+                                    august,
+                                    september,
+                                    october,
+                                    november,
+                                    december,
+                                ],
+                                firstDay: firstDay
+                            },
+                            ranges: momentRanges,
+                        },
+                        function(start, end) {
+                            handleValueChangeUsing(start.format(displayFormat) + separator + end.format(displayFormat), name)
+                        });
+                    this.dateRangePicker = $(this.$refs.daterange).data('daterangepicker');
+                    if (this.state != null) {
+                        const dates = this.state.split(this.separator);
+                        if (dates.length == 2 && this.dateRangePicker != null) {
+                            this.dateRangePicker.setStartDate(dates[0]);
+                            this.dateRangePicker.setEndDate(dates[1]);
+                        }
+                    }
+                    $(this.$refs.daterange).val(this.getRangeLabel(this.state));
+                    let parent = this;
+                    this.$watch('state', function(value) {
+                        if (value == null) {
+                            value = '';
+                            parent.dateRangePicker.setStartDate(moment());
+                            parent.dateRangePicker.setEndDate(moment());
+                        }
+                        $(parent.$refs.daterange).val(parent.getRangeLabel(value));
+                    })
                 },
             }
         },
