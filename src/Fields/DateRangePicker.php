@@ -21,9 +21,9 @@ class DateRangePicker extends Field implements HasAffixActions
 
     protected bool|Closure $alwaysShowCalendar = true;
     protected string|Closure|null $displayFormat = "DD/MM/YYYY";
+    protected string|Closure|null $format = 'd/m/Y';
     protected array $extraTriggerAttributes = [];
     protected int|null $firstDayOfWeek = 1;
-    protected string|Closure|null $format = null;
     protected bool $timePicker = false;
     protected int $timePickerIncrement = 30;
     protected bool $autoApply = false;
@@ -35,6 +35,10 @@ class DateRangePicker extends Field implements HasAffixActions
     protected string|Closure|null $timezone = null;
     protected array|Closure $disabledDates = [];
     protected array|Closure $ranges = [];
+    protected bool $useRangeLabels = false;
+    protected bool $disableCustomRange = false;
+    protected string $separator = ' - ';
+
 
     public static function make(string $name) : static
     {
@@ -54,6 +58,27 @@ class DateRangePicker extends Field implements HasAffixActions
         ]);
 
         return $static;
+    }
+
+    public function useRangeLabels(bool $useRangeLabels = true) : static
+    {
+        $this->useRangeLabels = $useRangeLabels;
+
+        return $this;
+    }
+
+    public function disableCustomRange(bool $disableCustomRange = true) : static
+    {
+        $this->disableCustomRange = $disableCustomRange;
+
+        return $this;
+    }
+
+    public function separator(string $separator) : static
+    {
+        $this->separator = $separator;
+
+        return $this;
     }
 
     //Javascript Format
@@ -153,25 +178,7 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function getDisplayFormat() : string
     {
-        $format = $this->evaluate($this->displayFormat);
-
-        if ($format) {
-            return $format;
-        }
-
-        if (! $this->hasTime()) {
-            return config('forms.components.date_time_picker.display_formats.date', 'M j, Y');
-        }
-
-        if (! $this->hasDate()) {
-            return $this->hasSeconds() ?
-                config('forms.components.date_time_picker.display_formats.time_with_seconds', 'H:i:s') :
-                config('forms.components.date_time_picker.display_formats.time', 'H:i');
-        }
-
-        return $this->hasSeconds() ?
-            config('forms.components.date_time_picker.display_formats.date_time_with_seconds', 'M j, Y H:i:s') :
-            config('forms.components.date_time_picker.display_formats.date_time', 'M j, Y H:i');
+        return $this->evaluate($this->displayFormat);
     }
 
     public function getExtraTriggerAttributes() : array
@@ -197,25 +204,7 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function getFormat() : string
     {
-        $format = $this->evaluate($this->format);
-
-        if ($format) {
-            return $format;
-        }
-
-        $format = $this->hasDate() ? 'Y-m-d' : '';
-
-        if (! $this->hasTime()) {
-            return $format;
-        }
-
-        $format = $format ? "{$format} H:i" : 'H:i';
-
-        if (! $this->hasSeconds()) {
-            return $format;
-        }
-
-        return "{$format}:s";
+        return $this->evaluate($this->format);
     }
 
     public function getMaxDate() : ?string
@@ -252,6 +241,10 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function isAlwaysShowCalendar() : bool
     {
+        if ($this->disableCustomRange) {
+            return false;
+        }
+
         return $this->alwaysShowCalendar;
     }
 
@@ -316,5 +309,20 @@ class DateRangePicker extends Field implements HasAffixActions
         }
 
         return $ranges;
+    }
+
+    public function getUseRangeLabels() : bool
+    {
+        return $this->useRangeLabels;
+    }
+
+    public function getDisableCustomRange() : bool
+    {
+        return $this->disableCustomRange;
+    }
+
+    public function getSeparator() : string
+    {
+        return $this->separator;
     }
 }

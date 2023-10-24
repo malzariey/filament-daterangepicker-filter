@@ -51,14 +51,23 @@ class DateRangeFilter extends BaseFilter
 
     protected null|array|Closure $ranges = null;
 
-    public function resetFirstDayOfWeek(): static
+    protected bool $useRangeLabels = false;
+
+    protected bool $disableCustomRange = false;
+
+    protected string $separator = ' - ';
+    protected bool|Closure $isLabelHidden = false;
+    protected string|Closure|null $placeholder = null;
+
+
+    public function resetFirstDayOfWeek() : static
     {
         $this->firstDayOfWeek($this->getDefaultFirstDayOfWeek());
 
         return $this;
     }
 
-    public function firstDayOfWeek(int|null $day): static
+    public function firstDayOfWeek(int|null $day) : static
     {
         if ($day < 0 || $day > 7) {
             $day = $this->getDefaultFirstDayOfWeek();
@@ -69,9 +78,9 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function withIndicator(): self
+    public function withIndicator() : self
     {
-        $this->indicateUsing(function (array $data): ?string {
+        $this->indicateUsing(function (array $data) : ?string {
             $datesString = data_get($data, $this->column);
 
             if (empty($datesString)) {
@@ -83,14 +92,6 @@ class DateRangeFilter extends BaseFilter
 
         return $this;
     }
-
-    public function operator(string $operator): self
-    {
-        $this->operator = $operator;
-
-        return $this;
-    }
-
 
     //Javascript Format
 
@@ -104,7 +105,7 @@ class DateRangeFilter extends BaseFilter
 
     //State Format
 
-    public function getFormSchema(): array
+    public function getFormSchema() : array
     {
         $schema = $this->evaluate($this->formSchema);
 
@@ -112,19 +113,21 @@ class DateRangeFilter extends BaseFilter
             return $schema;
         }
 
-        $defult = null;
+        $default = null;
 
         if ($this->startDate != null && $this->endDate != null) {
-            $defult = $this->startDate->format($this->format) . " - " . $this->endDate->format($this->format);
+            $default = $this->startDate->format($this->format) . $this->separator . $this->endDate->format($this->format);
         } else if ($this->startDate != null && $this->endDate == null) {
-            $defult = $this->startDate->format($this->format) . " - " . $this->startDate->format($this->format);
+            $default = $this->startDate->format($this->format) . $this->separator . $this->startDate->format($this->format);
         } else if ($this->startDate == null && $this->endDate != null) {
-            $defult = $this->endDate->format($this->format) . " - " . $this->endDate->format($this->format);
+            $default = $this->endDate->format($this->format) . $this->separator . $this->endDate->format($this->format);
         }
 
         return [
             DateRangePicker::make($this->column)
-                ->default($defult)
+                ->default($default)
+                ->hiddenLabel($this->isLabelHidden)
+                ->placeholder($this->placeholder)
                 ->label($this->getLabel())
                 ->timezone($this->timezone)
                 ->startDate($this->startDate)
@@ -141,23 +144,26 @@ class DateRangeFilter extends BaseFilter
                 ->displayFormat($this->displayFormat)
                 ->format($this->format)
                 ->ranges($this->ranges)
+                ->useRangeLabels($this->useRangeLabels)
+                ->disableCustomRange($this->disableCustomRange)
+                ->separator($this->separator)
         ];
     }
 
-    protected function setUp(): void
+    protected function setUp() : void
     {
         parent::setUp();
         $this->useColumn($this->getName());
     }
 
-    public function useColumn(string $column): self
+    public function useColumn(string $column) : self
     {
         $this->column = $column;
 
         return $this;
     }
 
-    public function apply(Builder $query, array $data = []): Builder
+    public function apply(Builder $query, array $data = []) : Builder
     {
         if ($this->isHidden()) {
             return $query;
@@ -196,107 +202,142 @@ class DateRangeFilter extends BaseFilter
         return $query
             ->when(
                 $from !== null && $to !== null,
-                fn(Builder $query, $date): Builder => $query->whereBetween($this->column, [
+                fn (Builder $query, $date) : Builder => $query->whereBetween($this->column, [
                     Carbon::createFromFormat($this->format, $from)->startOfDay(),
                     Carbon::createFromFormat($this->format, $to)->endOfDay(),
                 ]),
             );
     }
 
-    public function format(string|Closure|null $format): static
+    public function format(string|Closure|null $format) : static
     {
         $this->format = $format;
 
         return $this;
     }
 
-    public function displayFormat(string|Closure|null $format): static
+    public function displayFormat(string|Closure|null $format) : static
     {
         $this->displayFormat = $format;
 
         return $this;
     }
 
-    public function maxDate(CarbonInterface|string|Closure|null $date): static
+    public function maxDate(CarbonInterface|string|Closure|null $date) : static
     {
         $this->maxDate = $date;
 
         return $this;
     }
 
-    public function minDate(CarbonInterface|string|Closure|null $date): static
+    public function minDate(CarbonInterface|string|Closure|null $date) : static
     {
         $this->minDate = $date;
 
         return $this;
     }
 
-    public function alwaysShowCalendar(bool $alwaysShow = true): static
+    public function alwaysShowCalendar(bool $alwaysShow = true) : static
     {
         $this->alwaysShowCalendar = $alwaysShow;
 
         return $this;
     }
 
-    public function disabledDates(array|Closure $dates): static
+    public function disabledDates(array|Closure $dates) : static
     {
         $this->disabledDates = $dates;
 
         return $this;
     }
 
-    public function setLinkedCalendarsOption(bool $condition = true): static
+    public function setLinkedCalendarsOption(bool $condition = true) : static
     {
         $this->linkedCalendars = $condition;
 
         return $this;
     }
 
-    public function setAutoApplyOption(bool $condition = true): static
+    public function setAutoApplyOption(bool $condition = true) : static
     {
         $this->autoApply = $condition;
 
         return $this;
     }
 
-    public function setTimePickerIncrementOption(int $increment = 1): static
+    public function setTimePickerIncrementOption(int $increment = 1) : static
     {
         $this->timePickerIncrement = $increment;
 
         return $this;
     }
 
-    public function setTimePickerOption(bool $condition = true): static
+    public function setTimePickerOption(bool $condition = true) : static
     {
         $this->timePicker = $condition;
 
         return $this;
     }
 
-    public function endDate(CarbonInterface|string|Closure|null $date): static
+    public function endDate(CarbonInterface|string|Closure|null $date) : static
     {
         $this->endDate = $date;
 
         return $this;
     }
 
-    public function startDate(CarbonInterface|string|Closure|null $date): static
+    public function startDate(CarbonInterface|string|Closure|null $date) : static
     {
         $this->startDate = $date;
 
         return $this;
     }
 
-    public function timezone(string|Closure|null $timezone): static
+    public function timezone(string|Closure|null $timezone) : static
     {
         $this->timezone = $timezone;
 
         return $this;
     }
 
-    public function ranges(array|Closure $ranges): static
+    public function ranges(array|Closure $ranges) : static
     {
         $this->ranges = $ranges;
+
+        return $this;
+    }
+
+    public function useRangeLabels(bool $useRangeLabels = true) : static
+    {
+        $this->useRangeLabels = $useRangeLabels;
+
+        return $this;
+    }
+
+    public function disableCustomRange(bool $disableCustomRange = true) : static
+    {
+        $this->disableCustomRange = $disableCustomRange;
+
+        return $this;
+    }
+
+    public function separator(string $separator) : static
+    {
+        $this->separator = $separator;
+
+        return $this;
+    }
+
+    public function hiddenLabel(bool|Closure $condition = true) : static
+    {
+        $this->isLabelHidden = $condition;
+
+        return $this;
+    }
+
+    public function placeholder(string|Closure|null $placeholder) : static
+    {
+        $this->placeholder = $placeholder;
 
         return $this;
     }

@@ -1419,7 +1419,7 @@
         clickApply: function(e) {
             this.hide();
             this.element.trigger('apply.daterangepicker', this);
-            this.handleApplyUsing(this.startDate.format(this.locale.format) + ' - ' + this.endDate.format(this.locale.format), this.name)
+            this.handleApplyUsing(this.startDate.format(this.locale.format) + this.locale.separator + this.endDate.format(this.locale.format), this.name)
         },
 
         clickCancel: function(e) {
