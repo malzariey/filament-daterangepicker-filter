@@ -105,18 +105,16 @@
                             wire:key="{{ $this->id() }}.{{ $statePath }}.{{ $field::class }}.display-text"
                             :attributes="\Filament\Support\prepare_inherited_attributes(
                                 $getExtraInputAttributeBag(),
-                            )->merge(
-                                [
-                                    'id' => $getId(),
-                                    'name' => $name,
-                                    'disabled' => $isDisabled(),
-                                    'placeholder' => $getPlaceholder(),
-                                    'required' => $isRequired(),
-                                    'readonly' => true,
-                                    'type' => 'text',
-                                ],
-                                escape: false,
-                            )"
+                            )->merge([
+                                'id' => $getId(),
+                                'name' => $name,
+                                'disabled' => $isDisabled(),
+                                'placeholder' => $getPlaceholder(),
+                                'required' => $isRequired(),
+                                'readonly' => true,
+                                'type' => 'text',
+                                $applyStateBindingModifiers('wire:model') => $statePath,
+                            ], escape: false)"
                         />
                     </div>
                 </button>
