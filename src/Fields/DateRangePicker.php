@@ -4,11 +4,13 @@ namespace Malzariey\FilamentDaterangepickerFilter\Fields;
 
 use Carbon\CarbonInterface;
 use Closure;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Concerns\{HasAffixes, HasExtraInputAttributes, HasPlaceholder};
 use Filament\Forms\Components\Contracts\HasAffixActions;
 use Filament\Forms\Components\Field;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
 use Illuminate\View\ComponentAttributeBag;
+use Livewire\Component;
 
 class DateRangePicker extends Field implements HasAffixActions
 {
@@ -18,7 +20,6 @@ class DateRangePicker extends Field implements HasAffixActions
     use HasExtraAlpineAttributes;
 
     protected string $view = 'filament-daterangepicker-filter::date-range-picker';
-
     protected bool|Closure $alwaysShowCalendar = true;
     protected string|Closure|null $displayFormat = "DD/MM/YYYY";
     protected string|Closure|null $format = 'd/m/Y';
@@ -28,6 +29,7 @@ class DateRangePicker extends Field implements HasAffixActions
     protected int $timePickerIncrement = 30;
     protected bool $autoApply = false;
     protected bool $linkedCalendars = true;
+
     protected CarbonInterface|string|Closure|null $maxDate = null;
     protected CarbonInterface|string|Closure|null $minDate = null;
     protected CarbonInterface|string|Closure|null $startDate = null;
@@ -38,7 +40,6 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool $useRangeLabels = false;
     protected bool $disableCustomRange = false;
     protected string $separator = ' - ';
-
 
     public static function make(string $name) : static
     {
@@ -96,6 +97,26 @@ class DateRangePicker extends Field implements HasAffixActions
         }
 
         $this->firstDayOfWeek = $day;
+
+        return $this;
+    }
+
+    public function clearable(bool $enable = true) : static{
+
+        if($enable){
+            $this->suffixAction(
+                    Action::make('clear')
+                        ->action(function($livewire, $action){
+                            $livewire->dispatch('clear',id: $livewire->getId());
+                            $action->icon('heroicon-m-calendar-days');
+                        })
+                        ->icon('heroicon-m-calendar-days')
+                );
+            $this->suffixIcon(null);
+        }else{
+            $this->suffixIcon('heroicon-m-calendar-days');
+            $this->suffixActions([]);
+        }
 
         return $this;
     }

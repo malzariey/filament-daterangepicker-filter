@@ -152,7 +152,16 @@ export default (Alpine) => {
                         }
                         $(parent.$refs.daterange).val(parent.getRangeLabel(value));
                     })
+
+                    window.addEventListener('clear', (event) => {
+                        if(event.detail.id === name) {
+                            state = null;
+                            handleValueChangeUsing(null, name);
+                            $(parent.$refs.daterange).val(null);
+                        }
+                    })
                 },
+
             }
         },
     )

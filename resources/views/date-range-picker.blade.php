@@ -1,6 +1,5 @@
 @php
-    $name = uniqid();
-    
+    $name = $getId();
     $isPrefixInline = $isPrefixInline();
     $isSuffixInline = $isSuffixInline();
     $prefixActions = $getPrefixActions();
@@ -71,6 +70,7 @@
             id="date-range-picker-{{ $name }}"
             wire:key="date-range-picker-{{ $name }}"
             x-on:keydown.esc="isOpen() && $event.stopPropagation()"
+
             {{ $attributes->merge($getExtraAttributes())->class(['filament-forms-date-time-picker-component relative']) }}
             {{ $getExtraAlpineAttributeBag() }}
         >
