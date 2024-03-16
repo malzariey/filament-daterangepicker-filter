@@ -5,7 +5,10 @@ module.exports = {
         './resources/views/**/*.blade.php',
     ],
     darkMode: 'class',
-
+    safelist: [
+        'bg-[#ebf4f8]',
+        'dark:bg-white',
+    ],
     theme: {
         extend: {
             colors: {
