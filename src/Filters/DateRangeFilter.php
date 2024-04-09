@@ -45,6 +45,9 @@ class DateRangeFilter extends BaseFilter
 
     protected array|Closure $disabledDates = [];
 
+    protected bool|Closure $disableRange = false;
+
+
     protected null|array|Closure $ranges = null;
 
     protected bool $useRangeLabels = false;
@@ -73,6 +76,13 @@ class DateRangeFilter extends BaseFilter
         }
 
         $this->firstDayOfWeek = $day;
+
+        return $this;
+    }
+
+    public function disableRanges(bool|Closure $disableRanges = true) : static
+    {
+        $this->disableRange = $disableRanges;
 
         return $this;
     }
@@ -139,6 +149,7 @@ class DateRangeFilter extends BaseFilter
                 ->startDate($this->startDate)
                 ->endDate($this->endDate)
                 ->firstDayOfWeek($this->firstDayOfWeek)
+                ->disableRanges($this->disableRange)
                 ->alwaysShowCalendar($this->alwaysShowCalendar)
                 ->setTimePickerOption($this->timePicker)
                 ->setTimePickerIncrementOption($this->timePickerIncrement)
@@ -197,11 +208,11 @@ class DateRangeFilter extends BaseFilter
             return $query;
         }
 
-        $dates = explode(' ', $datesString);
+        $dates = explode($this->separator, $datesString);
 
-        if (count($dates) == 3) {
+        if (count($dates) == 2) {
             $from = $dates[0];
-            $to = $dates[2];
+            $to = $dates[1];
         } else {
             $from = null;
             $to = null;

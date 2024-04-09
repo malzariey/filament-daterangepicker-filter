@@ -43,6 +43,7 @@ class DateRangePicker extends Field implements HasAffixActions
     protected array|Closure $disabledDates = [];
     protected array|Closure $ranges = [];
     protected bool $useRangeLabels = false;
+    protected bool|Closure $disableRange = false;
     protected bool $disableCustomRange = false;
     protected string $separator = ' - ';
 
@@ -79,6 +80,13 @@ class DateRangePicker extends Field implements HasAffixActions
     public function disableCustomRange(bool $disableCustomRange = true) : static
     {
         $this->disableCustomRange = $disableCustomRange;
+
+        return $this;
+    }
+
+    public function disableRanges(bool|Closure $disableRanges = true) : static
+    {
+        $this->disableRange = $disableRanges;
 
         return $this;
     }
@@ -257,6 +265,11 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this->evaluate($this->disabledDates);
     }
 
+    public function getDisableRanges() : bool
+    {
+        return $this->evaluate($this->disableRange);
+    }
+
     public function getTimezone() : string
     {
         return $this->evaluate($this->timezone) ?? config('app.timezone');
@@ -335,6 +348,10 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function getRanges() : ?array
     {
+        if($this->getDisableRanges()){
+            return [];
+        }
+
         $ranges = $this->evaluate($this->ranges);
 
         if(empty($ranges)){

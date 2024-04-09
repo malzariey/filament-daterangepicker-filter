@@ -196,6 +196,14 @@ DateRangeFilter::make('created_at')->opens(OpenDirection::LEFT)
 
 The `filament-daterangepicker-filter` provides a quick  way to clear the date range selections. If you have selected a date range and want to remove it, simply click on the calendar icon within the field.
 
+#### Disabling Predefined Ranges
+
+If you wish to disable the predefined ranges feature and provide users with a custom selection only, you may use the `disableRanges()` method. This will remove any preset date ranges from the picker.
+
+```php
+DateRangeFilter::make('created_at')->disableRanges()
+```
+
 ### Screenshots
 
 #### Light mode
