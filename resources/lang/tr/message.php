@@ -34,4 +34,6 @@ return [
     'last_month' =>"Geçen Ay",
     'this_year' =>"Bu Yıl",
     'last_year' =>"Geçen Yıl",
+    'clear' =>"Temizle",
+
 ];

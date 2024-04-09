@@ -7,6 +7,8 @@ use Closure;
 use Filament\Tables\Filters\BaseFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
+use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
 class DateRangeFilter extends BaseFilter
@@ -43,12 +45,6 @@ class DateRangeFilter extends BaseFilter
 
     protected array|Closure $disabledDates = [];
 
-    protected int|Closure|null $hoursStep = null;
-
-    protected int|Closure|null $minutesStep = null;
-
-    protected int|Closure|null $secondsStep = null;
-
     protected null|array|Closure $ranges = null;
 
     protected bool $useRangeLabels = false;
@@ -57,9 +53,12 @@ class DateRangeFilter extends BaseFilter
 
     protected string $separator = ' - ';
     protected bool|Closure $isLabelHidden = false;
+
     protected string|Closure|null $placeholder = null;
 
+    protected OpenDirection|Closure $opens = OpenDirection::LEFT;
 
+    protected DropDirection|Closure $drops = DropDirection::AUTO;
     public function resetFirstDayOfWeek() : static
     {
         $this->firstDayOfWeek($this->getDefaultFirstDayOfWeek());
@@ -93,18 +92,23 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    //Javascript Format
-
     public function defaultToday()
     {
-        $this->startDate = now();
-        $this->endDate = now();
+        $this->startDate = $this->now();
+        $this->endDate = $this->now();
 
         return $this;
     }
 
-    //State Format
+    public function now() : CarbonInterface|string|Closure
+    {
+        return now()->timezone($this->getTimezone());
+    }
 
+    public function getTimezone() : string
+    {
+        return $this->evaluate($this->timezone) ?? config('app.timezone');
+    }
     public function getFormSchema() : array
     {
         $schema = $this->evaluate($this->formSchema);
@@ -130,6 +134,8 @@ class DateRangeFilter extends BaseFilter
                 ->placeholder($this->placeholder)
                 ->label($this->getLabel())
                 ->timezone($this->timezone)
+                ->opens($this->opens)
+                ->drops($this->drops)
                 ->startDate($this->startDate)
                 ->endDate($this->endDate)
                 ->firstDayOfWeek($this->firstDayOfWeek)
@@ -154,6 +160,8 @@ class DateRangeFilter extends BaseFilter
     {
         parent::setUp();
         $this->useColumn($this->getName());
+        $this->withIndicator();
+
     }
 
     public function useColumn(string $column) : self
@@ -306,6 +314,23 @@ class DateRangeFilter extends BaseFilter
 
         return $this;
     }
+
+    public function opens(OpenDirection|Closure $direction) : static
+    {
+        $this->opens = $direction;
+
+        return $this;
+
+    }
+
+    public function drops(DropDirection|Closure $direction) : static
+    {
+        $this->drops = $direction;
+
+        return $this;
+
+    }
+
 
     public function useRangeLabels(bool $useRangeLabels = true) : static
     {

@@ -34,4 +34,6 @@ return [
     'last_month' => "上個月",
     'this_year' => "今年",
     'last_year' => "去年",
+    'clear' =>"清除",
+
 ];

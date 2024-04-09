@@ -34,4 +34,6 @@ return [
     'last_month' => 'Tháng trước',
     'this_year' => 'Năm nay',
     'last_year' => 'Năm trước',
+    'clear' =>  "Xóa",
+
 ];

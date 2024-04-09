@@ -33,6 +33,8 @@
                 timePickerIncrement: @js($getTimePickerIncrementOption()),
                 displayFormat: @js($getDisplayFormat()),
                 disableCustomRange: @js($getDisableCustomRange()),
+                opens: '{{$getOpens()}}',
+                drops: '{{$getDrops()}}',
                 applyLabel: '{!! __('filament-daterangepicker-filter::message.apply') !!}',
                 cancelLabel: '{!! __('filament-daterangepicker-filter::message.cancel') !!}',
                 fromLabel: '{!! __('filament-daterangepicker-filter::message.from') !!}',
@@ -61,6 +63,7 @@
                 ranges: @js($getRanges()),
                 separator: @js($getSeparator()),
                 useRangeLabels: @js($getUseRangeLabels()),
+                disabledDates: @js($getDisabledDates()),
                 handleValueChangeUsing: (value, name) => {
                     if (name == '{{ $name }}') {
                         @this.set('{!! $statePath !!}', value);

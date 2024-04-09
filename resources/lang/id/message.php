@@ -34,4 +34,5 @@ return [
     'last_month' =>"Bulan Lalu",
     'this_year' =>"Tahun Ini",
     'last_year' =>"Tahun Lalu",
+    'clear' =>"Hapus",
 ];

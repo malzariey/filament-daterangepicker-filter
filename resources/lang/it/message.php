@@ -34,4 +34,6 @@ return [
     'last_month' => "Ultimo mese",
     'this_year' => "Quest\'anno",
     'last_year' => "Ultimo anno",
+    'clear' =>"Pulisci",
+
 ];

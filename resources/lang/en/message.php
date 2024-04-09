@@ -34,4 +34,6 @@ return [
     'last_month' =>"Last Month",
     'this_year' =>"This Year",
     'last_year' =>"Last Year",
+    'clear' => "Clear",
+
 ];

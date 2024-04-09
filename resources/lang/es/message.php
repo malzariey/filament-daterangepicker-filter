@@ -34,4 +34,6 @@ return [
     'last_month' => 'Mes anterior',
     'this_year' => 'Este año',
     'last_year' => 'Año anterior',
+    'clear' =>"Borrar",
+
 ];

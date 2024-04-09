@@ -33,5 +33,7 @@ return [
     'this_month' =>"Этот месяц",
     'last_month' =>"Посл. месяц",
     'this_year' =>"Этот год",
-    'last_year' =>"Посл. год"
+    'last_year' =>"Посл. год",
+    'clear' =>"Очистить",
+
 ];

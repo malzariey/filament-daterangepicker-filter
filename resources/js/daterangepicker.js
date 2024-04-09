@@ -24,6 +24,9 @@ export default (Alpine) => {
             toLabel,
             customRangeLabel,
             disableCustomRange,
+            disabledDates,
+            drops,
+            opens,
             sunday,
             monday,
             tuesday,
@@ -77,6 +80,12 @@ export default (Alpine) => {
                     return state;
                 },
                 init: function () {
+                    let momentDatesArray = [];
+
+                    if(disabledDates !== undefined && disabledDates.length > 0 ) {
+                        momentDatesArray = disabledDates.map(dateString => moment(dateString));
+                    }
+
                     $(this.$refs.daterange).daterangepicker(
                         {
                             name: name,
@@ -84,6 +93,8 @@ export default (Alpine) => {
                             autoApply: autoApply,
                             linkedCalendars: linkedCalendars,
                             autoUpdateInput: false,
+                            drops: drops,
+                            opens: opens,
                             startDate: startDate != null ? moment(startDate) : moment(),
                             endDate: endDate != null ? moment(endDate) : moment(),
                             maxDate: maxDate != null ? moment(maxDate) : null,
@@ -127,6 +138,14 @@ export default (Alpine) => {
                                 firstDay: firstDay
                             },
                             ranges: momentRanges,
+                            isInvalidDate: (date) => {
+                                if(momentDatesArray.length > 0 ) {
+                                    return momentDatesArray.some(disabledDate => disabledDate.isSame(date, 'day'));
+                                }else{
+                                    return false;
+                                }
+                            },
+
                         },
                         function(start, end) {
                             handleValueChangeUsing(start.format(displayFormat) + separator + end.format(displayFormat), name)
@@ -151,14 +170,6 @@ export default (Alpine) => {
                             parent.dateRangePicker.setEndDate(moment());
                         }
                         $(parent.$refs.daterange).val(parent.getRangeLabel(value));
-                    })
-
-                    window.addEventListener('clear', (event) => {
-                        if(event.detail.id === name) {
-                            state = null;
-                            handleValueChangeUsing(null, name);
-                            $(parent.$refs.daterange).val(null);
-                        }
                     })
                 },
 

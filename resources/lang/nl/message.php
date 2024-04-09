@@ -34,4 +34,6 @@ return [
     'last_month' =>"Vorige Maand",
     'this_year' =>"Huidig Jaar",
     'last_year' =>"Vorig Jaar",
+    'clear' =>"Verwijderen",
+
 ];
