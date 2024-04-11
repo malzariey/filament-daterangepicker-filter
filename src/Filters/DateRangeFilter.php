@@ -7,6 +7,7 @@ use Closure;
 use Filament\Tables\Filters\BaseFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use JetBrains\PhpStorm\Deprecated;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
@@ -30,12 +31,15 @@ class DateRangeFilter extends BaseFilter
     protected string|Closure|null $format = 'd/m/Y';
 
     protected string|Closure|null $timezone = null;
-
     protected bool|Closure $alwaysShowCalendar = true;
 
     protected int|null $firstDayOfWeek = 1;
 
     protected bool $timePicker = false;
+
+    protected bool | Closure $timePickerSecond = false;
+
+    protected bool | Closure $timePicker24 = false;
 
     protected int $timePickerIncrement = 30;
 
@@ -44,9 +48,7 @@ class DateRangeFilter extends BaseFilter
     protected bool $linkedCalendars = true;
 
     protected array|Closure $disabledDates = [];
-
     protected bool|Closure $disableRange = false;
-
 
     protected null|array|Closure $ranges = null;
 
@@ -151,10 +153,12 @@ class DateRangeFilter extends BaseFilter
                 ->firstDayOfWeek($this->firstDayOfWeek)
                 ->disableRanges($this->disableRange)
                 ->alwaysShowCalendar($this->alwaysShowCalendar)
-                ->setTimePickerOption($this->timePicker)
-                ->setTimePickerIncrementOption($this->timePickerIncrement)
-                ->setAutoApplyOption($this->autoApply)
-                ->setLinkedCalendarsOption($this->linkedCalendars)
+                ->timePicker($this->timePicker)
+                ->timePickerSecond($this->timePickerSecond)
+                ->timePicker24($this->timePicker24)
+                ->timePickerIncrement($this->timePickerIncrement)
+                ->autoApply($this->autoApply)
+                ->linkedCalendars($this->linkedCalendars)
                 ->disabledDates($this->disabledDates)
                 ->minDate($this->minDate)
                 ->maxDate($this->maxDate)
@@ -269,7 +273,7 @@ class DateRangeFilter extends BaseFilter
 
         return $this;
     }
-
+    #[Deprecated(since: '2.5.1')]
     public function setLinkedCalendarsOption(bool $condition = true) : static
     {
         $this->linkedCalendars = $condition;
@@ -277,6 +281,13 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
+    public function linkedCalendars(bool $condition = true) : static
+    {
+        $this->linkedCalendars = $condition;
+
+        return $this;
+    }
+    #[Deprecated(since: '2.5.1')]
     public function setAutoApplyOption(bool $condition = true) : static
     {
         $this->autoApply = $condition;
@@ -284,6 +295,16 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
+    /**
+     * Does not work with TimePicker
+     */
+    public function autoApply(bool $condition = true) : static
+    {
+        $this->autoApply = $condition;
+
+        return $this;
+    }
+    #[Deprecated(since: '2.5.1')]
     public function setTimePickerIncrementOption(int $increment = 1) : static
     {
         $this->timePickerIncrement = $increment;
@@ -291,9 +312,39 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
+    public function timePickerIncrement(int $increment = 1) : static
+    {
+        $this->timePickerIncrement = $increment;
+
+        return $this;
+    }
+
+
+    #[Deprecated(since: '2.5.1')]
     public function setTimePickerOption(bool $condition = true) : static
     {
         $this->timePicker = $condition;
+
+        return $this;
+    }
+
+    public function timePicker(bool $condition = true) : static
+    {
+        $this->timePicker = $condition;
+
+        return $this;
+    }
+
+    public function timePicker24(bool | Closure $condition = true) : static
+    {
+        $this->timePicker24 = $condition;
+
+        return $this;
+    }
+
+    public function timePickerSecond(bool | Closure $condition = true) : static
+    {
+        $this->timePickerSecond = $condition;
 
         return $this;
     }

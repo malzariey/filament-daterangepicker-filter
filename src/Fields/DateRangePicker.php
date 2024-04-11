@@ -10,6 +10,7 @@ use Filament\Forms\Components\Contracts\HasAffixActions;
 use Filament\Forms\Components\Field;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
 use Illuminate\View\ComponentAttributeBag;
+use JetBrains\PhpStorm\Deprecated;
 use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
 
@@ -23,14 +24,16 @@ class DateRangePicker extends Field implements HasAffixActions
 
     protected string $view = 'filament-daterangepicker-filter::date-range-picker';
     protected bool|Closure $alwaysShowCalendar = true;
-    protected string|Closure|null $displayFormat = "DD/MM/YYYY";
+    protected string|Closure|null $displayFormat = "DD/MM/YYYY hh:mm A";
     protected string|Closure|null $format = 'd/m/Y';
 
     protected OpenDirection|Closure $opens = OpenDirection::LEFT;
     protected DropDirection|Closure $drops = DropDirection::AUTO;
     protected array $extraTriggerAttributes = [];
     protected int|null $firstDayOfWeek = 1;
-    protected bool $timePicker = false;
+    protected bool | Closure $timePicker = false;
+    protected bool | Closure $timePicker24 = false;
+    protected bool | Closure $timePickerSecond = false;
     protected int $timePickerIncrement = 30;
     protected bool $autoApply = false;
     protected bool $linkedCalendars = true;
@@ -296,18 +299,57 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this->alwaysShowCalendar;
     }
 
-    public function setTimePickerOption(bool $condition = true) : static
+    #[Deprecated(since: '2.5.1')]
+    public function setTimePickerOption(bool | Closure $condition = true) : static
     {
         $this->timePicker = $condition;
 
         return $this;
     }
 
-    public function getTimePickerOption() : string
+    public function timePicker(bool | Closure $condition = true) : static
     {
-        return $this->timePicker ? 'true' : 'false';
+        $this->timePicker = $condition;
+
+        return $this;
     }
 
+    public function timePicker24(bool | Closure $condition = true) : static
+    {
+        $this->timePicker24 = $condition;
+
+        return $this;
+    }
+
+    public function timePickerSecond(bool | Closure $condition = true) : static
+    {
+        $this->timePickerSecond = $condition;
+
+        return $this;
+    }
+
+    #[Deprecated(since: '2.5.1')]
+    public function getTimePickerOption() : bool
+    {
+        return $this->evaluate($this->timePicker);
+    }
+
+    public function getTimePicker() : bool
+    {
+        return $this->evaluate($this->timePicker);
+    }
+
+    public function getTimePicker24() : bool
+    {
+        return $this->evaluate($this->timePicker24);
+    }
+
+    public function getTimePickerSecond() : bool
+    {
+        return $this->evaluate($this->timePickerSecond);
+    }
+
+    #[Deprecated(since: '2.5.1')]
     public function setTimePickerIncrementOption(int $increment = 1) : static
     {
         $this->timePickerIncrement = $increment;
@@ -315,25 +357,52 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this;
     }
 
+    public function timePickerIncrement(int $increment = 1) : static
+    {
+        $this->timePickerIncrement = $increment;
+
+        return $this;
+    }
+    #[Deprecated(since: '2.5.1')]
+
     public function getTimePickerIncrementOption() : int
     {
-        return $this->timePickerIncrement;
+        return $this->evaluate($this->timePickerIncrement);
     }
 
+    public function getTimePickerIncrement() : int
+    {
+        return $this->evaluate($this->timePickerIncrement);
+    }
 
+    #[Deprecated(since: '2.5.1')]
     public function setAutoApplyOption(bool $condition = true) : static
     {
         $this->autoApply = $condition;
 
         return $this;
     }
-
-    // NOTE: auto apply will not be enabled by daterangepicker.js if timePicker is set
-    public function getAutoApplyOption() : string
+    /**
+     * Does not work with TimePicker
+     */
+    public function autoApply(bool $condition = true) : static
     {
-        return $this->autoApply ? 'true' : 'false';
+        $this->autoApply = $condition;
+
+        return $this;
     }
 
+    #[Deprecated(since: '2.5.1')]
+    public function getAutoApplyOption() : bool
+    {
+        return $this->autoApply;
+    }
+
+    public function getAutoApply() : bool
+    {
+        return $this->autoApply;
+    }
+    #[Deprecated(since: '2.5.1')]
     public function setLinkedCalendarsOption(bool $condition = true) : static
     {
         $this->linkedCalendars = $condition;
@@ -341,9 +410,22 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this;
     }
 
-    public function getLinkedCalendarsOption() : string
+    public function linkedCalendars(bool $condition = true) : static
     {
-        return $this->linkedCalendars ? 'true' : 'false';
+        $this->linkedCalendars = $condition;
+
+        return $this;
+    }
+
+    #[Deprecated(since: '2.5.1')]
+    public function getLinkedCalendarsOption(): bool
+    {
+        return $this->linkedCalendars;
+    }
+
+    public function getLinkedCalendars(): bool
+    {
+        return $this->linkedCalendars;
     }
 
     public function getRanges() : ?array

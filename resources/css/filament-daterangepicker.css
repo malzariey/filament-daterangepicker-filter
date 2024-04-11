@@ -29,6 +29,12 @@
     content: '';
 }
 
+.daterangepicker .hourselect , .daterangepicker .minuteselect , .daterangepicker .secondselect {
+    @apply dark:bg-gray-800;
+    @apply dark:border-gray-700;
+    @apply bg-white;
+}
+
 .daterangepicker:before {
     top: -7px;
     border-right: 7px solid transparent;
