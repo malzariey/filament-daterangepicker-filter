@@ -16,4 +16,4 @@ mix.setPublicPath('./')
     .postCss('resources/css/filament-daterangepicker.css', '/dist', [
         require('tailwindcss'),
         require('autoprefixer'),
-    ]).version();
+    ]);
