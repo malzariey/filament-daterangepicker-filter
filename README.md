@@ -216,7 +216,7 @@ DateRangeFilter::make('created_at')->opens(OpenDirection::LEFT)
 
 #### Clearing the Date Range Picker
 
-The `filament-daterangepicker-filter` provides a quick  way to clear the date range selections. If you have selected a date range and want to remove it, simply click on the calendar icon within the field.
+If you have selected a date range and want to remove it, simply click on the calendar icon within the field.
 
 #### Disabling Predefined Ranges
 
@@ -236,8 +236,6 @@ DateRangeFilter::make('created_at')->disableRanges()
 
 ![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/main/art/dark.png)
 
-<br>
-
 # Styling
 
 If you're [building a custom Filament theme](https://filamentphp.com/docs/2.x/admin/appearance#building-themes), you need one more step to make the calendar theme match your custom theme.
@@ -250,18 +248,14 @@ Add this line to your `resources/css/filament.css` file.
 
 <br>
 
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
 ## Credits
 
 - [Majid Al-Zariey](https://github.com/malzariey)
-- [All Contributors](../../contributors)
+- [All Contributors](https://github.com/malzariey/filament-daterangepicker-filter/graphs/contributors)
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](https://github.com/malzariey/filament-daterangepicker-filter/blob/main/LICENSE.md) for more information.
 
 ## Acknowledgements
 
