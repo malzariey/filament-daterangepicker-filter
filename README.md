@@ -75,35 +75,51 @@ DateRangeFilter::make('created_at')->firstDayOfWeek(1)
 Normally, if you use the ranges option to specify pre-defined date ranges, calendars for choosing a custom date range are not shown until the user clicks "Custom Range". When this option is set to true, the calendars for choosing a custom date range.
 
 ```php
-DateRangeFilter::make('created_at')->alwaysShowCalendar(false)
+DateRangeFilter::make('created_at')->alwaysShowCalendar()
 ```
 
-#### Time Picker Option
+#### Time Picker
 Adds select boxes to choose times in addition to dates.
 
 ```php
-DateRangeFilter::make('created_at')->setTimePickerOption(true)
+DateRangeFilter::make('created_at')->timePicker()
+```
+
+#### Show Time Picker Seconds
+Show seconds in the timePicker.
+
+```php
+DateRangeFilter::make('created_at')->timePickerSecond()
+```
+
+#### Time Picker 24-Hour Format
+Use 24-hour instead of 12-hour times, removing the AM/PM selection
+
+```php
+DateRangeFilter::make('created_at')->timePicker24()
 ```
 
 #### Time Picker Increment Option
 Increment of the minutes selection list for times (i.e. 30 to allow only selection of times ending in 0 or 30).
 
 ```php
-DateRangeFilter::make('created_at')->setTimePickerIncrementOption(30)
+DateRangeFilter::make('created_at')->timePickerIncrement(30)
 ```
 
 #### Auto Apply
 Hide the apply and cancel buttons, and automatically apply a new date range as soon as two dates are clicked.
 
+Note: Does not work with `timePicker` option.
+
 ```php
-DateRangeFilter::make('created_at')->setAutoApplyOption(true)
+DateRangeFilter::make('created_at')->autoApply()
 ```
 
 #### Linked Calendars
 When enabled, the two calendars displayed will always be for two sequential months (i.e. January and February), and both will be advanced when clicking the left or right arrows above the calendars. When disabled, the two calendars can be individually advanced and display any month/year
 
 ```php
-DateRangeFilter::make('created_at')->setLinkedCalendarsOption(true)
+DateRangeFilter::make('created_at')->linkedCalendars()
 ```
 
 #### Disabled Dates
@@ -168,8 +184,11 @@ Specify the location the filter menu should drop at.
 
 ###### Options
 `DropDirection::AUTO` : Auto decide the location. (Default)
+
 `DropDirection::UP` : The picker will appear above field.
+
 `DropDirection::DOWN` : The picker will appear below field.
+
 
 ###### Example
 
@@ -183,8 +202,11 @@ Specify the location the filter menu should open to.
 ###### Options
 
 `OpenDirection::LEFT` : The picker will appear left to the field. (Default)
+
 `OpenDirection::RIGHT` : The picker will appear right to the field.
+
 `OpenDirection::CENTER` : The picker will appear center of the field.
+
 
 ###### Example
 
