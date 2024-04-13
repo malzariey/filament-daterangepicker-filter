@@ -24,7 +24,7 @@ class DateRangePicker extends Field implements HasAffixActions
 
     protected string $view = 'filament-daterangepicker-filter::date-range-picker';
     protected bool|Closure $alwaysShowCalendar = true;
-    protected string|Closure|null $displayFormat = "DD/MM/YYYY hh:mm A";
+    protected string|Closure|null $displayFormat = "DD/MM/YYYY";
     protected string|Closure|null $format = 'd/m/Y';
 
     protected OpenDirection|Closure $opens = OpenDirection::LEFT;
