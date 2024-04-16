@@ -121,6 +121,11 @@ class DateRangeFilter extends BaseFilter
     {
         return $this->evaluate($this->timezone) ?? config('app.timezone');
     }
+
+    public function getFormat() : string
+    {
+        return $this->evaluate($this->format);
+    }
     public function getFormSchema() : array
     {
         $schema = $this->evaluate($this->formSchema);
@@ -132,11 +137,11 @@ class DateRangeFilter extends BaseFilter
         $default = null;
 
         if ($this->startDate != null && $this->endDate != null) {
-            $default = $this->startDate->format($this->format) . $this->separator . $this->endDate->format($this->format);
+            $default = $this->startDate->format($this->getFormat()) . $this->separator . $this->endDate->format($this->getFormat());
         } else if ($this->startDate != null && $this->endDate == null) {
-            $default = $this->startDate->format($this->format) . $this->separator . $this->startDate->format($this->format);
+            $default = $this->startDate->format($this->getFormat()) . $this->separator . $this->startDate->format($this->getFormat());
         } else if ($this->startDate == null && $this->endDate != null) {
-            $default = $this->endDate->format($this->format) . $this->separator . $this->endDate->format($this->format);
+            $default = $this->endDate->format($this->getFormat()) . $this->separator . $this->endDate->format($this->getFormat());
         }
 
         return [
@@ -226,8 +231,8 @@ class DateRangeFilter extends BaseFilter
             ->when(
                 $from !== null && $to !== null,
                 fn (Builder $query, $date) : Builder => $query->whereBetween($this->column, [
-                    Carbon::createFromFormat($this->format, $from)->startOfDay(),
-                    Carbon::createFromFormat($this->format, $to)->endOfDay(),
+                    Carbon::createFromFormat($this->getFormat(), $from)->startOfDay()->timezone($this->getTimezone()),
+                    Carbon::createFromFormat($this->getFormat(), $to)->endOfDay()->timezone($this->getTimezone()),
                 ]),
             );
     }
