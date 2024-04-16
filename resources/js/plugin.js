@@ -816,21 +816,15 @@
 
                     //highlight the currently selected start date
                     if (calendar[row][col].format('YYYY-MM-DD') == this.startDate.format('YYYY-MM-DD'))
-                        classes.push('active', 'start-date','text-white','bg-primary-500','dark:bg-primary-500','dark:text-white');
+                        classes.push('active', 'start-date');
 
-                    // highlight dates in-between the selected dates
-                    if (this.endDate != null && calendar[row][col] > this.startDate && calendar[row][col] < this.endDate.startOf('day')) {
-                        classes.push('in-range', 'bg-[#ebf4f8]', 'dark:bg-white');
-                    }
                     //highlight the currently selected end date
-                    if (this.endDate != null && calendar[row][col].format('YYYY-MM-DD') === this.endDate.format('YYYY-MM-DD')) {
-                        classes.push('active', 'end-date', 'bg-primary-500');
-                        const index = classes.indexOf('in-range');
-                        if (index !== -1) {
-                            classes.splice(index, 1);
-                        }
-                    }
+                    if (this.endDate != null && calendar[row][col].format('YYYY-MM-DD') == this.endDate.format('YYYY-MM-DD'))
+                        classes.push('active', 'end-date');
 
+                    //highlight dates in-between the selected dates
+                    if (this.endDate != null && calendar[row][col] > this.startDate && calendar[row][col] < this.endDate)
+                        classes.push('in-range');
 
                     //apply custom classes for this date
                     var isCustom = this.isCustomDate(calendar[row][col]);

@@ -200,12 +200,7 @@
     color: #ccc;
 }
 
-.daterangepicker td.off, .daterangepicker td.off.in-range{
-    /*background-color: #fff;*/
-    @apply dark:bg-gray-800;
-    border-color: transparent;
-    color: #999;
-}
+
 
 .daterangepicker td.off.start-date, .daterangepicker td.off.end-date {
     /*background-color: #fff;*/
@@ -226,6 +221,24 @@
 .daterangepicker td.start-date {
     border-radius: 4px 0 0 4px;
 }
+
+.daterangepicker td.start-date.active {
+    @apply text-white bg-primary-500 dark:bg-primary-500 dark:text-white;
+}
+.daterangepicker td.in-range {
+    @apply bg-[#ebf4f8] dark:bg-white;
+}
+
+.daterangepicker td.end-date.active {
+    @apply bg-primary-500;
+}
+
+.daterangepicker td.off, .daterangepicker td.off.in-range ,
+.daterangepicker td.start-date.active.off  ,
+.daterangepicker td.end-date.active.off{
+    @apply bg-transparent dark:bg-gray-800 text-[#999];
+}
+
 
 .daterangepicker td.end-date {
     border-radius: 0 4px 4px 0;
