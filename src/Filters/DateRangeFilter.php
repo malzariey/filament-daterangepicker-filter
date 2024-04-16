@@ -119,7 +119,12 @@ class DateRangeFilter extends BaseFilter
 
     public function getTimezone() : string
     {
-        return $this->evaluate($this->timezone) ?? config('app.timezone');
+        return $this->evaluate($this->timezone) ?? $this->getSystemTimezone();
+    }
+
+    public function getSystemTimezone() : string
+    {
+        return config('app.timezone');
     }
 
     public function getFormat() : string
@@ -227,13 +232,24 @@ class DateRangeFilter extends BaseFilter
             $to = null;
         }
 
+        $dates = [];
+
+        if($this->timePicker){
+            $dates = [
+                Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->timezone($this->getSystemTimezone()),
+                Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->timezone($this->getSystemTimezone())
+            ];
+        }else{
+            $dates = [
+                Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->startOfDay()->timezone($this->getSystemTimezone()),
+                Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->endOfDay()->timezone($this->getSystemTimezone()),
+            ];
+        }
+
         return $query
             ->when(
                 $from !== null && $to !== null,
-                fn (Builder $query, $date) : Builder => $query->whereBetween($this->column, [
-                    Carbon::createFromFormat($this->getFormat(), $from)->startOfDay()->timezone($this->getTimezone()),
-                    Carbon::createFromFormat($this->getFormat(), $to)->endOfDay()->timezone($this->getTimezone()),
-                ]),
+                fn (Builder $query, $date) : Builder => $query->whereBetween($this->column, $dates),
             );
     }
 
