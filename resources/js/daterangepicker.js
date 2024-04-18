@@ -50,6 +50,7 @@ export default (Alpine) => {
             december,
             firstDay,
             ranges,
+            disableRange,
             separator,
             useRangeLabels,
             handleValueChangeUsing,
@@ -141,7 +142,7 @@ export default (Alpine) => {
                                 ],
                                 firstDay: firstDay
                             },
-                            ranges: momentRanges,
+                            ranges: disableRange ? undefined : momentRanges,
                             isInvalidDate: (date) => {
                                 if(momentDatesArray.length > 0 ) {
                                     return momentDatesArray.some(disabledDate => disabledDate.isSame(date, 'day'));

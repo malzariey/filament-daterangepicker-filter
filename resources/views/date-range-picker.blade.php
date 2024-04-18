@@ -63,6 +63,7 @@
                 saturday: '{!! __('filament-daterangepicker-filter::message.sa') !!}',
                 firstDay: @js($getFirstDayOfWeek()),
                 ranges: @js($getRanges()),
+                disableRange : @js($getDisableRanges()),
                 separator: @js($getSeparator()),
                 useRangeLabels: @js($getUseRangeLabels()),
                 disabledDates: @js($getDisabledDates()),
