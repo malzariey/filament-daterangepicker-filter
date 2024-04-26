@@ -24,6 +24,7 @@
                 alwaysShowCalendars: @js($isAlwaysShowCalendar()),
                 autoApply: @js($getAutoApply()),
                 linkedCalendars: @js($getLinkedCalendars()),
+                singleCalendar: @js($getSingleCalendar()),
                 autoUpdateInput: false,
                 startDate: @js($getStartDate()),
                 endDate: @js($getEndDate()),

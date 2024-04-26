@@ -16,7 +16,7 @@ class DateRangeFilter extends BaseFilter
 {
     protected string $column;
 
-    protected bool $displayRangeInLine = false;
+    protected bool | Closure $displayRangeInLine = false;
 
     protected CarbonInterface|string|Closure|null $maxDate = null;
 
@@ -33,28 +33,31 @@ class DateRangeFilter extends BaseFilter
     protected string|Closure|null $timezone = null;
     protected bool|Closure $alwaysShowCalendar = true;
 
-    protected int|null $firstDayOfWeek = 1;
+    protected int | Closure $firstDayOfWeek = 1;
 
-    protected bool $timePicker = false;
+    protected bool | Closure $timePicker = false;
 
     protected bool | Closure $timePickerSecond = false;
 
     protected bool | Closure $timePicker24 = false;
 
-    protected int $timePickerIncrement = 30;
+    protected int | Closure $timePickerIncrement = 30;
 
-    protected bool $autoApply = false;
+    protected bool | Closure $autoApply = false;
 
-    protected bool $linkedCalendars = true;
+    protected bool | Closure $linkedCalendars = true;
+
+    protected bool | Closure $singleCalendar = false;
+
 
     protected array|Closure $disabledDates = [];
     protected bool|Closure $disableRange = false;
 
     protected null|array|Closure $ranges = null;
 
-    protected bool $useRangeLabels = false;
+    protected bool | Closure $useRangeLabels = false;
 
-    protected bool $disableCustomRange = false;
+    protected bool | Closure $disableCustomRange = false;
 
     protected string $separator = ' - ';
     protected bool|Closure $isLabelHidden = false;
@@ -71,12 +74,13 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function firstDayOfWeek(int|null $day) : static
+    protected function getDefaultFirstDayOfWeek() : int
     {
-        if ($day < 0 || $day > 7) {
-            $day = $this->getDefaultFirstDayOfWeek();
-        }
+        return config('forms.components.date_time_picker.first_day_of_week', 1);
+    }
 
+    public function firstDayOfWeek(int| Closure $day) : static
+    {
         $this->firstDayOfWeek = $day;
 
         return $this;
@@ -104,10 +108,10 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function defaultToday()
+    public function defaultToday() : static
     {
-        $this->startDate = $this->now();
-        $this->endDate = $this->now();
+        $this->startDate = $this->now()->startOfDay();
+        $this->endDate = $this->now()->endOfDay();
 
         return $this;
     }
@@ -139,19 +143,8 @@ class DateRangeFilter extends BaseFilter
             return $schema;
         }
 
-        $default = null;
-
-        if ($this->startDate != null && $this->endDate != null) {
-            $default = $this->startDate->format($this->getFormat()) . $this->separator . $this->endDate->format($this->getFormat());
-        } else if ($this->startDate != null && $this->endDate == null) {
-            $default = $this->startDate->format($this->getFormat()) . $this->separator . $this->startDate->format($this->getFormat());
-        } else if ($this->startDate == null && $this->endDate != null) {
-            $default = $this->endDate->format($this->getFormat()) . $this->separator . $this->endDate->format($this->getFormat());
-        }
-
         return [
             DateRangePicker::make($this->column)
-                ->default($default)
                 ->hiddenLabel($this->isLabelHidden)
                 ->placeholder($this->placeholder)
                 ->label($this->getLabel())
@@ -206,44 +199,51 @@ class DateRangeFilter extends BaseFilter
             return $query;
         }
 
+        $datesString = data_get($data, $this->column);
+
+        if (!empty($datesString)) {
+            $dates = explode($this->separator, $datesString);
+        }else{
+            $dates = [];
+        }
+
+        if (count($dates) == 2) {
+            $from = $dates[0];
+            $to = $dates[1];
+
+            if($this->timePicker){
+                $dates = [
+                    Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->timezone($this->getSystemTimezone()),
+                    Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->timezone($this->getSystemTimezone())
+                ];
+            }else{
+                $dates = [
+                    Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->startOfDay()->timezone($this->getSystemTimezone()),
+                    Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->endOfDay()->timezone($this->getSystemTimezone()),
+                ];
+            }
+
+        } else {
+            $from = null;
+            $to = null;
+        }
+
+
         if ($this->hasQueryModificationCallback()) {
             $callback = $this->modifyQueryUsing;
             $this->evaluate($callback, [
                 'data' => $data,
                 'query' => $query,
                 'state' => $data,
+                'dateString' => $datesString,
+                'startDate' => $dates[0]?? null,
+                'endDate' => $dates[1]?? null,
             ]);
             return $query;
         }
 
-        $datesString = data_get($data, $this->column);
-
-        if (empty($datesString)) {
+        if ($dates == null) {
             return $query;
-        }
-
-        $dates = explode($this->separator, $datesString);
-
-        if (count($dates) == 2) {
-            $from = $dates[0];
-            $to = $dates[1];
-        } else {
-            $from = null;
-            $to = null;
-        }
-
-        $dates = [];
-
-        if($this->timePicker){
-            $dates = [
-                Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->timezone($this->getSystemTimezone()),
-                Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->timezone($this->getSystemTimezone())
-            ];
-        }else{
-            $dates = [
-                Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->startOfDay()->timezone($this->getSystemTimezone()),
-                Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->endOfDay()->timezone($this->getSystemTimezone()),
-            ];
         }
 
         return $query
@@ -281,7 +281,7 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function alwaysShowCalendar(bool $alwaysShow = true) : static
+    public function alwaysShowCalendar(bool| Closure $alwaysShow = true) : static
     {
         $this->alwaysShowCalendar = $alwaysShow;
 
@@ -302,12 +302,20 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function linkedCalendars(bool $condition = true) : static
+    public function linkedCalendars(bool| Closure $condition = true) : static
     {
         $this->linkedCalendars = $condition;
 
         return $this;
     }
+
+//    public function singleCalendar(bool | Closure $condition = true) : static
+//    {
+//        $this->singleCalendar = $condition;
+//
+//        return $this;
+//    }
+
     #[Deprecated(since: '2.5.1')]
     public function setAutoApplyOption(bool $condition = true) : static
     {
@@ -319,7 +327,7 @@ class DateRangeFilter extends BaseFilter
     /**
      * Does not work with TimePicker
      */
-    public function autoApply(bool $condition = true) : static
+    public function autoApply(bool| Closure $condition = true) : static
     {
         $this->autoApply = $condition;
 
@@ -333,7 +341,7 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function timePickerIncrement(int $increment = 1) : static
+    public function timePickerIncrement(int| Closure $increment = 1) : static
     {
         $this->timePickerIncrement = $increment;
 
@@ -349,7 +357,7 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function timePicker(bool $condition = true) : static
+    public function timePicker(bool| Closure $condition = true) : static
     {
         $this->timePicker = $condition;
 
@@ -415,14 +423,14 @@ class DateRangeFilter extends BaseFilter
     }
 
 
-    public function useRangeLabels(bool $useRangeLabels = true) : static
+    public function useRangeLabels(bool| Closure $useRangeLabels = true) : static
     {
         $this->useRangeLabels = $useRangeLabels;
 
         return $this;
     }
 
-    public function disableCustomRange(bool $disableCustomRange = true) : static
+    public function disableCustomRange(bool| Closure $disableCustomRange = true) : static
     {
         $this->disableCustomRange = $disableCustomRange;
 

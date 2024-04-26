@@ -34,9 +34,10 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool | Closure $timePicker = false;
     protected bool | Closure $timePicker24 = false;
     protected bool | Closure $timePickerSecond = false;
-    protected int $timePickerIncrement = 30;
-    protected bool $autoApply = false;
-    protected bool $linkedCalendars = true;
+    protected int | Closure $timePickerIncrement = 30;
+    protected bool | Closure $autoApply = false;
+    protected bool | Closure $linkedCalendars = true;
+    protected bool | Closure $singleCalendar = false;
 
     protected CarbonInterface|string|Closure|null $maxDate = null;
     protected CarbonInterface|string|Closure|null $minDate = null;
@@ -45,9 +46,9 @@ class DateRangePicker extends Field implements HasAffixActions
     protected string|Closure|null $timezone = null;
     protected array|Closure $disabledDates = [];
     protected array|Closure $ranges = [];
-    protected bool $useRangeLabels = false;
+    protected bool | Closure $useRangeLabels = false;
     protected bool|Closure $disableRange = false;
-    protected bool $disableCustomRange = false;
+    protected bool | Closure $disableCustomRange = false;
     protected string $separator = ' - ';
 
     public static function make(string $name) : static
@@ -80,7 +81,7 @@ class DateRangePicker extends Field implements HasAffixActions
         return now()->timezone($this->getTimezone());
     }
 
-    public function disableCustomRange(bool $disableCustomRange = true) : static
+    public function disableCustomRange(bool | Closure $disableCustomRange = true) : static
     {
         $this->disableCustomRange = $disableCustomRange;
 
@@ -161,6 +162,8 @@ class DateRangePicker extends Field implements HasAffixActions
     {
         $this->startDate = $date;
 
+        $this->processDefault();
+
         return $this;
     }
 
@@ -168,7 +171,33 @@ class DateRangePicker extends Field implements HasAffixActions
     {
         $this->endDate = $date;
 
+        $this->processDefault();
+
         return $this;
+    }
+
+    public function defaultToday() : static
+    {
+        $this->startDate = $this->now()->startOfDay();
+        $this->endDate = $this->now()->endOfDay();
+
+        $this->processDefault();
+
+        return $this;
+    }
+
+    public function processDefault(): void{
+        $default = null;
+
+        if ($this->getStartDate() != null && $this->getEndDate() != null) {
+            $default = $this->getStartDate()->format($this->getFormat()) . $this->separator . $this->getEndDate()->format($this->getFormat());
+        } else if ($this->getStartDate() != null && $this->getEndDate() == null) {
+            $default = $this->getStartDate()->format($this->getFormat()) . $this->separator . $this->getStartDate()->format($this->getFormat());
+        } else if ($this->getStartDate() == null && $this->getEndDate() != null) {
+            $default = $this->getEndDate()->format($this->getFormat()) . $this->separator . $this->getEndDate()->format($this->getFormat());
+        }
+
+        $this->default($default);
     }
 
     public function getStartDate()
@@ -243,9 +272,21 @@ class DateRangePicker extends Field implements HasAffixActions
         return new ComponentAttributeBag($this->getExtraTriggerAttributes());
     }
 
+    public function getSystemTimezone() : string
+    {
+        return config('app.timezone');
+    }
+
     public function getFirstDayOfWeek() : int
     {
-        return $this->firstDayOfWeek ?? $this->getDefaultFirstDayOfWeek();
+        $day = $this->evaluate($this->firstDayOfWeek);
+        if($day == null){
+            return $this->getDefaultFirstDayOfWeek();
+        }
+        if ($day < 0 || $day > 7) {
+            $day = $this->getDefaultFirstDayOfWeek();
+        }
+        return  $day;
     }
 
     public function getFormat() : string
@@ -275,7 +316,7 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function getTimezone() : string
     {
-        return $this->evaluate($this->timezone) ?? config('app.timezone');
+        return $this->evaluate($this->timezone) ?? $this->getSystemTimezone();
     }
 
     protected function getDefaultFirstDayOfWeek() : int
@@ -292,11 +333,12 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function isAlwaysShowCalendar() : bool
     {
-        if ($this->disableCustomRange) {
+
+        if ( $this->getDisableCustomRange()) {
             return false;
         }
 
-        return $this->alwaysShowCalendar;
+        return $this->evaluate($this->alwaysShowCalendar);
     }
 
     #[Deprecated(since: '2.5.1')]
@@ -357,7 +399,7 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this;
     }
 
-    public function timePickerIncrement(int $increment = 1) : static
+    public function timePickerIncrement(int | Closure $increment = 1) : static
     {
         $this->timePickerIncrement = $increment;
 
@@ -385,7 +427,7 @@ class DateRangePicker extends Field implements HasAffixActions
     /**
      * Does not work with TimePicker
      */
-    public function autoApply(bool $condition = true) : static
+    public function autoApply(bool | Closure $condition = true) : static
     {
         $this->autoApply = $condition;
 
@@ -410,9 +452,16 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this;
     }
 
-    public function linkedCalendars(bool $condition = true) : static
+    public function linkedCalendars(bool | Closure $condition = true) : static
     {
         $this->linkedCalendars = $condition;
+
+        return $this;
+    }
+
+    public function singleCalendar(bool | Closure $condition = true) : static
+    {
+        $this->singleCalendar = $condition;
 
         return $this;
     }
@@ -425,7 +474,12 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function getLinkedCalendars(): bool
     {
-        return $this->linkedCalendars;
+        return $this->evaluate($this->linkedCalendars);
+    }
+
+    public function getSingleCalendar(): bool
+    {
+        return $this->evaluate($this->singleCalendar);
     }
 
     public function getRanges() : ?array
@@ -460,12 +514,12 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function getUseRangeLabels() : bool
     {
-        return $this->useRangeLabels;
+        return $this->evaluate($this->useRangeLabels);
     }
 
     public function getDisableCustomRange() : bool
     {
-        return $this->disableCustomRange;
+        return $this->evaluate($this->disableCustomRange);
     }
 
     public function getSeparator() : string

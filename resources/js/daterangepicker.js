@@ -11,6 +11,7 @@ export default (Alpine) => {
             alwaysShowCalendars,
             autoApply,
             linkedCalendars,
+            singleCalendar,
             startDate,
             endDate,
             maxDate,
@@ -95,6 +96,7 @@ export default (Alpine) => {
                             alwaysShowCalendars: alwaysShowCalendars,
                             autoApply: autoApply,
                             linkedCalendars: linkedCalendars,
+                            singleDatePicker: singleCalendar,
                             autoUpdateInput: false,
                             drops: drops,
                             opens: opens,
@@ -106,7 +108,6 @@ export default (Alpine) => {
                             timePicker24Hour: timePicker24,
                             timePickerSeconds: timePickerSecond,
                             timePickerIncrement: timePickerIncrement,
-                            handleApplyUsing: handleValueChangeUsing,
                             showCustomRangeLabel: ! disableCustomRange,
                             locale: {
                                 format: displayFormat,
@@ -153,7 +154,11 @@ export default (Alpine) => {
 
                         },
                         function(start, end) {
-                            handleValueChangeUsing(start.format(displayFormat) + separator + end.format(displayFormat), name)
+                            if(singleCalendar){
+                                handleValueChangeUsing(start.format(displayFormat), name)
+                            }else{
+                                handleValueChangeUsing(start.format(displayFormat) + separator + end.format(displayFormat), name)
+                            }
                         }
                     );
 

@@ -56,7 +56,7 @@
         this.alwaysShowCalendars = false;
         this.isVisible = false;
         this.ranges = {};
-        this.handleApplyUsing = null;
+        // this.handleApplyUsing = null;
         this.name = null;
         this.opens = 'right';
         if (this.element.hasClass('pull-right'))
@@ -120,7 +120,7 @@
 
         this.parentEl = (options.parentEl && $(options.parentEl).length) ? $(options.parentEl) : $(this.parentEl);
         this.container = $(options.template).appendTo(this.parentEl);
-        this.handleApplyUsing = options.handleApplyUsing;
+        // this.handleApplyUsing = options.handleApplyUsing;
         this.name = options.name;
         //
         // handle all the possible options overriding defaults
@@ -1414,7 +1414,7 @@
         clickApply: function(e) {
             this.hide();
             this.element.trigger('apply.daterangepicker', this);
-            this.handleApplyUsing(this.startDate.format(this.locale.format) + this.locale.separator + this.endDate.format(this.locale.format), this.name)
+            // this.handleApplyUsing(this.startDate.format(this.locale.format) + this.locale.separator + this.endDate.format(this.locale.format), this.name)
         },
 
         clickCancel: function(e) {
