@@ -158,35 +158,35 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this;
     }
 
-    public function startDate(CarbonInterface|string|Closure|null $date) : static
+    public function startDate(CarbonInterface|string|Closure|null $date , $enforceIfNull = false) : static
     {
         $this->startDate = $date;
 
-        $this->processDefault();
+        $this->processDefault($enforceIfNull);
 
         return $this;
     }
 
-    public function endDate(CarbonInterface|string|Closure|null $date) : static
+    public function endDate(CarbonInterface|string|Closure|null $date , $enforceIfNull = false) : static
     {
         $this->endDate = $date;
 
-        $this->processDefault();
+        $this->processDefault($enforceIfNull);
 
         return $this;
     }
 
-    public function defaultToday() : static
+    public function defaultToday($enforceIfNull = false) : static
     {
         $this->startDate = $this->now()->startOfDay();
         $this->endDate = $this->now()->endOfDay();
 
-        $this->processDefault();
+        $this->processDefault($enforceIfNull);
 
         return $this;
     }
 
-    public function processDefault(): void{
+    public function processDefault($enforceIfNull = false): void{
         $default = null;
 
         if ($this->getStartDate() != null && $this->getEndDate() != null) {
@@ -196,8 +196,11 @@ class DateRangePicker extends Field implements HasAffixActions
         } else if ($this->getStartDate() == null && $this->getEndDate() != null) {
             $default = $this->getEndDate()->format($this->getFormat()) . $this->separator . $this->getEndDate()->format($this->getFormat());
         }
-
         $this->default($default);
+
+        if($enforceIfNull) {
+            $this->afterStateHydrated(fn($component, $state) => $state == null ? $component->state($default) : null);
+        }
     }
 
     public function getStartDate()
