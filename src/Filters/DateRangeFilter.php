@@ -146,6 +146,8 @@ class DateRangeFilter extends BaseFilter
         return [
             DateRangePicker::make($this->column)
                 ->hiddenLabel($this->isLabelHidden)
+                ->displayFormat($this->displayFormat)
+                ->format($this->format)
                 ->placeholder($this->placeholder)
                 ->label($this->getLabel())
                 ->timezone($this->timezone)
@@ -165,8 +167,6 @@ class DateRangeFilter extends BaseFilter
                 ->disabledDates($this->disabledDates)
                 ->minDate($this->minDate)
                 ->maxDate($this->maxDate)
-                ->displayFormat($this->displayFormat)
-                ->format($this->format)
                 ->ranges($this->ranges)
                 ->useRangeLabels($this->useRangeLabels)
                 ->disableCustomRange($this->disableCustomRange)
