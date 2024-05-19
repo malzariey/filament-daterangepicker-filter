@@ -24,8 +24,21 @@ class DateRangePicker extends Field implements HasAffixActions
 
     protected string $view = 'filament-daterangepicker-filter::date-range-picker';
     protected bool|Closure $alwaysShowCalendar = true;
+    protected bool $displayFormatCalled = false;
     protected string|Closure|null $displayFormat = "DD/MM/YYYY";
+    protected string|Closure|null $displayFormatTime = "DD/MM/YYYY HH:mm A";
+    protected string|Closure|null $displayFormatTime24Hr = "DD/MM/YYYY HH:mm";
+    protected string|Closure|null $displayFormatTimeWithSeconds = "DD/MM/YYYY HH:mm:ss A";
+    protected string|Closure|null $displayFormatTime24hrWithSeconds = "DD/MM/YYYY HH:mm:ss";
+
+    // these are used for default value formatting ( on backend side ) for initial rendering.
+    // these are different from displayFormatXXX, which are used for frontend side formatting and in what format data should be sent to backend.
+    protected bool $formatCalled = false;
     protected string|Closure|null $format = 'd/m/Y';
+    protected string|Closure|null $formatTime = "d/m/Y h:i A";
+    protected string|Closure|null $formatTime24Hr = "d/m/Y H:i";
+    protected string|Closure|null $formatTimeWithSeconds = "d/m/Y h:i:s A";
+    protected string|Closure|null $formatTime24hrWithSeconds = "d/m/Y H:i:s";
 
     protected OpenDirection|Closure $opens = OpenDirection::LEFT;
     protected DropDirection|Closure $drops = DropDirection::AUTO;
@@ -122,6 +135,7 @@ class DateRangePicker extends Field implements HasAffixActions
     public function displayFormat(string|Closure|null $format) : static
     {
         $this->displayFormat = $format;
+        $this->displayFormatCalled = true;
 
         return $this;
     }
@@ -140,6 +154,7 @@ class DateRangePicker extends Field implements HasAffixActions
     public function format(string|Closure|null $format) : static
     {
         $this->format = $format;
+        $this->formatCalled = true;
 
         return $this;
     }
@@ -355,6 +370,8 @@ class DateRangePicker extends Field implements HasAffixActions
     public function timePicker(bool | Closure $condition = true) : static
     {
         $this->timePicker = $condition;
+        $this->setAppropriateDisplayFormatForTimePicker();
+        $this->setAppropriateFormatForTimePicker();
 
         return $this;
     }
@@ -362,6 +379,8 @@ class DateRangePicker extends Field implements HasAffixActions
     public function timePicker24(bool | Closure $condition = true) : static
     {
         $this->timePicker24 = $condition;
+        $this->setAppropriateDisplayFormatForTimePicker();
+        $this->setAppropriateFormatForTimePicker();
 
         return $this;
     }
@@ -369,8 +388,52 @@ class DateRangePicker extends Field implements HasAffixActions
     public function timePickerSecond(bool | Closure $condition = true) : static
     {
         $this->timePickerSecond = $condition;
+        $this->setAppropriateDisplayFormatForTimePicker();
+        $this->setAppropriateFormatForTimePicker();
 
         return $this;
+    }
+
+    protected function getAppropriateDisplayFormatForTimePicker(): string
+    {
+        if (!$this->timePicker) {
+            return $this->displayFormat;
+        }
+
+        if ($this->timePicker24) {
+            return $this->timePickerSecond ? $this->displayFormatTime24hrWithSeconds : $this->displayFormatTime24Hr;
+        } else {
+            return $this->timePickerSecond ? $this->displayFormatTimeWithSeconds : $this->displayFormatTime;
+        }
+    }
+
+    protected function setAppropriateDisplayFormatForTimePicker(): void
+    {
+        // If displayFormat() is called manually, prioritize it over the default time picker format
+        if (!$this->displayFormatCalled) {
+            $this->displayFormat = $this->getAppropriateDisplayFormatForTimePicker();
+        }
+    }
+
+    protected function getAppropriateFormatForTimePicker(): string
+    {
+        if (!$this->timePicker) {
+            return $this->format;
+        }
+
+        if ($this->timePicker24) {
+            return $this->timePickerSecond ? $this->formatTime24hrWithSeconds : $this->formatTime24Hr;
+        } else {
+            return $this->timePickerSecond ? $this->formatTimeWithSeconds : $this->formatTime;
+        }
+    }
+
+    protected function setAppropriateFormatForTimePicker(): void
+    {
+        // If format() is called manually, prioritize it over the default time picker format
+        if (!$this->formatCalled) {
+            $this->format = $this->getAppropriateFormatForTimePicker();
+        }
     }
 
     #[Deprecated(since: '2.5.1')]
