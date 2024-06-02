@@ -59,6 +59,8 @@ class DateRangeFilter extends BaseFilter
 
     protected bool | Closure $disableCustomRange = false;
 
+    protected bool | Closure $disableInputClearing = false;
+
     protected string $separator = ' - ';
     protected bool|Closure $isLabelHidden = false;
 
@@ -89,6 +91,13 @@ class DateRangeFilter extends BaseFilter
     public function disableRanges(bool|Closure $disableRanges = true) : static
     {
         $this->disableRange = $disableRanges;
+
+        return $this;
+    }
+
+    public function disableInputClearing(bool|Closure $disableInputClearing = true) : static
+    {
+        $this->disableInputClearing = $disableInputClearing;
 
         return $this;
     }
@@ -145,6 +154,7 @@ class DateRangeFilter extends BaseFilter
 
         return [
             DateRangePicker::make($this->column)
+                ->disableInputClearing($this->disableInputClearing)
                 ->hiddenLabel($this->isLabelHidden)
                 ->displayFormat($this->displayFormat)
                 ->format($this->format)
@@ -171,6 +181,7 @@ class DateRangeFilter extends BaseFilter
                 ->useRangeLabels($this->useRangeLabels)
                 ->disableCustomRange($this->disableCustomRange)
                 ->separator($this->separator)
+                ->withInputClearingAction()
         ];
     }
 

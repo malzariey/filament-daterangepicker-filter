@@ -49,17 +49,19 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool | Closure $useRangeLabels = false;
     protected bool|Closure $disableRange = false;
     protected bool | Closure $disableCustomRange = false;
+    protected bool | Closure $disableInputClearing = false;
     protected string $separator = ' - ';
 
-    public static function make(string $name) : static
+    public function withInputClearingAction() : static
     {
-        $static = parent::make($name);
-        $static->suffixAction(Action::make('clear')
-            ->label(__('filament-daterangepicker-filter::message.clear'))
-            ->icon('heroicon-m-calendar-days')
-            ->action(fn() => $static->clear()));
+        if (!$this->disableInputClearing) {
+            $this->suffixAction(Action::make('clear')
+                ->label(__('filament-daterangepicker-filter::message.clear'))
+                ->icon('heroicon-m-calendar-days')
+                ->action(fn() => $this->clear()));
+        }
 
-        return $static;
+        return $this;
     }
 
     public function useRangeLabels(bool $useRangeLabels = true) : static
@@ -91,6 +93,13 @@ class DateRangePicker extends Field implements HasAffixActions
     public function disableRanges(bool|Closure $disableRanges = true) : static
     {
         $this->disableRange = $disableRanges;
+
+        return $this;
+    }
+
+    public function disableInputClearing(bool|Closure $disableInputClearing = true) : static
+    {
+        $this->disableInputClearing = $disableInputClearing;
 
         return $this;
     }
