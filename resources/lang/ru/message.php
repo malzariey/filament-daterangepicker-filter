@@ -23,7 +23,7 @@ return [
     'july' =>"Июль",
     'august' =>"Август",
     'september' =>"Сентябрь",
-    'october' =>"Откябрь",
+    'october' =>"Октябрь",
     'november' =>"Ноябрь",
     'december' =>"Декабрь",
     'today' => "Сегодня",
