@@ -55,6 +55,8 @@ class DateRangeFilter extends BaseFilter
 
     protected null|array|Closure $ranges = null;
 
+    protected array | Closure | null $maxSpan = null;
+
     protected bool | Closure $useRangeLabels = false;
 
     protected bool | Closure $disableCustomRange = false;
@@ -168,6 +170,7 @@ class DateRangeFilter extends BaseFilter
                 ->minDate($this->minDate)
                 ->maxDate($this->maxDate)
                 ->ranges($this->ranges)
+                ->maxSpan($this->maxSpan)
                 ->useRangeLabels($this->useRangeLabels)
                 ->disableCustomRange($this->disableCustomRange)
                 ->separator($this->separator)
@@ -402,6 +405,13 @@ class DateRangeFilter extends BaseFilter
     public function ranges(array|Closure $ranges) : static
     {
         $this->ranges = $ranges;
+
+        return $this;
+    }
+
+    public function maxSpan(array | Closure | null $maxSpan): static
+    {
+        $this->maxSpan = $maxSpan;
 
         return $this;
     }

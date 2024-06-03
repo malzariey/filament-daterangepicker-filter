@@ -294,6 +294,16 @@ use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 DateRangeFilter::make('created_at')->disableRanges()
 ```
 
+####  Max Span
+
+The maximum span between the selected start and end dates. 
+
+```php
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
+
+DateRangeFilter::make('created_at')->maxSpan(['months' => 1]), // days, months or years
+````
+
 ### Screenshots
 
 #### Light mode

@@ -51,6 +51,7 @@ export default (Alpine) => {
             december,
             firstDay,
             ranges,
+            maxSpan,
             disableRange,
             separator,
             useRangeLabels,
@@ -144,6 +145,7 @@ export default (Alpine) => {
                                 firstDay: firstDay
                             },
                             ranges: disableRange ? undefined : momentRanges,
+                            maxSpan: maxSpan,
                             isInvalidDate: (date) => {
                                 if(momentDatesArray.length > 0 ) {
                                     return momentDatesArray.some(disabledDate => disabledDate.isSame(date, 'day'));
