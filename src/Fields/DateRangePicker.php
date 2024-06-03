@@ -11,8 +11,8 @@ use Filament\Forms\Components\Field;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
 use Illuminate\View\ComponentAttributeBag;
 use JetBrains\PhpStorm\Deprecated;
-use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
+use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
 
 
 class DateRangePicker extends Field implements HasAffixActions
@@ -46,6 +46,7 @@ class DateRangePicker extends Field implements HasAffixActions
     protected string|Closure|null $timezone = null;
     protected array|Closure $disabledDates = [];
     protected array|Closure $ranges = [];
+    protected array | Closure | null $maxSpan = null;
     protected bool | Closure $useRangeLabels = false;
     protected bool|Closure $disableRange = false;
     protected bool | Closure $disableCustomRange = false;
@@ -240,6 +241,13 @@ class DateRangePicker extends Field implements HasAffixActions
         if (! is_null($ranges)) {
             $this->ranges = $ranges;
         }
+
+        return $this;
+    }
+
+    public function maxSpan(array | Closure | null $maxSpan): static
+    {
+        $this->maxSpan = $maxSpan;
 
         return $this;
     }
@@ -513,6 +521,17 @@ class DateRangePicker extends Field implements HasAffixActions
         }
 
         return $ranges;
+    }
+
+    public function getMaxSpan(): ?array
+    {
+        $maxSpan = $this->evaluate($this->maxSpan);
+
+        if (empty($maxSpan)) {
+            return null;
+        }
+
+        return $maxSpan;
     }
 
     public function getUseRangeLabels() : bool
