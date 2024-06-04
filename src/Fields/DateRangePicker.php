@@ -52,15 +52,27 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool | Closure $disableCustomRange = false;
     protected string $separator = ' - ';
 
-    public static function make(string $name) : static
-    {
-        $static = parent::make($name);
-        $static->suffixAction(Action::make('clear')
-            ->label(__('filament-daterangepicker-filter::message.clear'))
-            ->icon('heroicon-m-calendar-days')
-            ->action(fn() => $static->clear()));
 
-        return $static;
+    public function disableClear(bool|Closure $disable = true) : static
+    {
+        $condition = $this->evaluate($disable);
+
+        if ($condition) {
+            $this->suffixAction(fn() => null);
+            $this->suffixIcon('heroicon-m-calendar-days');
+
+        }else{
+            $this->suffixAction(
+                Action::make('clear')
+                    ->label(__('filament-daterangepicker-filter::message.clear'))
+                    ->icon('heroicon-m-calendar-days')
+                    ->action(fn() => $this->clear())
+            );
+            $this->suffixIcon(null);
+
+        }
+
+        return $this;
     }
 
     public function useRangeLabels(bool $useRangeLabels = true) : static
@@ -74,7 +86,6 @@ class DateRangePicker extends Field implements HasAffixActions
     public function clear()
     {
         $this->state(null);
-
     }
 
     public function now() : CarbonInterface|string|Closure

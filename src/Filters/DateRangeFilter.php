@@ -69,6 +69,16 @@ class DateRangeFilter extends BaseFilter
     protected OpenDirection|Closure $opens = OpenDirection::LEFT;
 
     protected DropDirection|Closure $drops = DropDirection::AUTO;
+
+    protected bool | Closure $disableClear = false;
+
+    public function disableClear(bool|Closure $disable = true) : static
+    {
+        $this->disableClear = $disable;
+
+        return $this;
+    }
+
     public function resetFirstDayOfWeek() : static
     {
         $this->firstDayOfWeek($this->getDefaultFirstDayOfWeek());
@@ -174,6 +184,7 @@ class DateRangeFilter extends BaseFilter
                 ->useRangeLabels($this->useRangeLabels)
                 ->disableCustomRange($this->disableCustomRange)
                 ->separator($this->separator)
+                ->disableClear($this->disableClear)
         ];
     }
 
