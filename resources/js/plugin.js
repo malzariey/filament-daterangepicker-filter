@@ -67,8 +67,8 @@
             this.drops = 'up';
 
         this.buttonClasses = 'btn btn-sm';
-        this.applyButtonClasses = 'filament-link inline-flex items-center justify-center gap-0.5 font-medium outline-none hover:underline focus:underline text-sm text-primary-600 hover:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400';
-        this.cancelButtonClasses = 'filament-link inline-flex items-center justify-center gap-0.5 font-medium outline-none hover:underline focus:underline text-sm text-gray-600 hover:text-gray-500 dark:text-white dark:hover:text-white';
+        this.applyButtonClasses = 'filament-link inline-flex items-center justify-center gap-0.5 font-medium outline-none hover:underline focus:underline text-sm';
+        this.cancelButtonClasses = 'filament-link inline-flex items-center justify-center gap-0.5 font-medium outline-none hover:underline focus:underline text-sm text-gray-600 hover:text-gray-400 dark:text-white dark:hover:text-gray-400';
 
         this.locale = {
             direction: 'ltr',

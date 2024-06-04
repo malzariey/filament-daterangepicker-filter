@@ -22,6 +22,9 @@
     line-height: 1em;
 }
 
+.daterangepicker .applyBtn{
+    @apply text-primary-600 hover:text-primary-400 ;
+}
 .daterangepicker:before, .daterangepicker:after {
     position: absolute;
     display: inline-block;
@@ -229,7 +232,7 @@
 }
 
 .daterangepicker td.start-date.active {
-    @apply text-white bg-primary-500 dark:bg-primary-500 dark:text-white;
+    @apply text-white bg-primary-500;
 }
 .daterangepicker td.in-range {
     @apply bg-[#ebf4f8] dark:bg-white;
