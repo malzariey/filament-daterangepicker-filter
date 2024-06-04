@@ -26,7 +26,7 @@ return [
     'october' => 'Octobre',
     'november' => 'Novembre',
     'december' => 'Décembre',
-    'today' => "Aujourd\'hui",
+    'today' => "Aujourd'hui",
     'yesterday' => 'Hier',
     'last_7_days' => 'Derniers 7 jours',
     'last_30_days' => 'Derniers 30 jours',
