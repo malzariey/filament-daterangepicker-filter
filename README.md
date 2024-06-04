@@ -283,13 +283,15 @@ DateRangeFilter::make('created_at')->opens(OpenDirection::LEFT)
 #### Clearing the Date Range Picker
 
 If you have selected a date range and want to remove it, simply click on the calendar icon within the field.
-Easily enable this behavior like this:
+
+To disable this behavior, you can use the `disableClear()` method. This will prevent the user from clearing the selected date range.
+
 ```php
 use \Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 use \Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
-DateRangeFilter::make('created_at')->withInputClearingAction()
-DateRangePicker::make('created_at')->withInputClearingAction()
+DateRangeFilter::make('created_at')->disableClear()
+DateRangePicker::make('created_at')->disableClear()
 ```
 
 #### Disabling Predefined Ranges

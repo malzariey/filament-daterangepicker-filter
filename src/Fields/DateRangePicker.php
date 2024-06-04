@@ -51,13 +51,24 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool | Closure $disableCustomRange = false;
     protected string $separator = ' - ';
 
-    public function withInputClearingAction(bool|Closure $withInputClearingAction = true) : static
+
+    public function disableClear(bool|Closure $disable = true) : static
     {
-        if ($withInputClearingAction) {
-            $this->suffixAction(Action::make('clear')
-                ->label(__('filament-daterangepicker-filter::message.clear'))
-                ->icon('heroicon-m-calendar-days')
-                ->action(fn() => $this->clear()));
+        $condition = $this->evaluate($disable);
+
+        if ($condition) {
+            $this->suffixAction(fn() => null);
+            $this->suffixIcon('heroicon-m-calendar-days');
+
+        }else{
+            $this->suffixAction(
+                Action::make('clear')
+                    ->label(__('filament-daterangepicker-filter::message.clear'))
+                    ->icon('heroicon-m-calendar-days')
+                    ->action(fn() => $this->clear())
+            );
+            $this->suffixIcon(null);
+
         }
 
         return $this;
