@@ -183,6 +183,21 @@ export default (Alpine) => {
                         }
                         $(parent.$refs.daterange).val(parent.getRangeLabel(value));
                     })
+
+                    window.Livewire.hook('commit', ({ component, commit, respond, succeed, fail }) => {
+                        var parent = this;
+                        succeed(({ snapshot, effect }) => {
+                            commit.calls.forEach(function(el) {
+                                if(el.method == 'resetTableFiltersForm') {
+                                    if ( parent.dateRangePicker != null) {
+                                        parent.dateRangePicker.setStartDate(startDate != null ? startDate : moment());
+                                        parent.dateRangePicker.setEndDate(endDate != null ? endDate : moment());
+                                    }
+                                }
+                            });
+
+                        })
+                    })
                 },
 
             }
