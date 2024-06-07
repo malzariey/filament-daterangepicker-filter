@@ -200,7 +200,7 @@
     color: inherit;
 }
 
-.next.available span , .prev.available span{
+.next.available span, .prev.available span{
     @apply dark:border-white !important;
 }
 
@@ -242,8 +242,8 @@
     @apply bg-primary-500;
 }
 
-.daterangepicker td.off, .daterangepicker td.off.in-range ,
-.daterangepicker td.start-date.active.off  ,
+.daterangepicker td.off, .daterangepicker td.off.in-range,
+.daterangepicker td.start-date.active.off,
 .daterangepicker td.end-date.active.off{
     @apply bg-transparent dark:bg-gray-800 text-[#999];
 }
