@@ -32,13 +32,13 @@
     content: '';
 }
 
-.daterangepicker .hourselect , .daterangepicker .minuteselect , .daterangepicker .secondselect, .daterangepicker .ampmselect {
+.daterangepicker .hourselect, .daterangepicker .minuteselect, .daterangepicker .secondselect, .daterangepicker .ampmselect {
     @apply dark:bg-transparent;
     @apply dark:border-gray-700;
     @apply bg-white;
 }
 
-.daterangepicker .hourselect > option , .daterangepicker .minuteselect > option , .daterangepicker .secondselect > option, .daterangepicker .ampmselect > option {
+.daterangepicker .hourselect > option, .daterangepicker .minuteselect > option, .daterangepicker .secondselect > option, .daterangepicker .ampmselect > option {
     @apply dark:bg-gray-800;
     @apply dark:border-gray-700;
     @apply bg-white;
