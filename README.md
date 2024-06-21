@@ -156,7 +156,7 @@ Show only a single calendar to choose one date, instead of a range picker with t
 ```php
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
-DateRangePicker::make('created_at')->singlseCalendar()
+DateRangePicker::make('created_at')->singleCalendar()
 
 
 ```
