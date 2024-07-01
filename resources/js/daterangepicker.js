@@ -173,8 +173,12 @@ export default (Alpine) => {
                         }
                     }
 
-                    $(this.$refs.daterange).val(this.getRangeLabel(this.state));
                     let parent = this;
+
+                    setTimeout(function() {
+                        $(parent.$refs.daterange).val(parent.getRangeLabel(parent.state));
+                    }, 20);
+
                     this.$watch('state', function(value) {
                         if (value == null) {
                             value = '';
