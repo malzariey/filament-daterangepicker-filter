@@ -113,8 +113,12 @@ class DateRangeFilter extends BaseFilter
             if (empty($datesString)) {
                 return null;
             }
-
-            return __('filament-daterangepicker-filter::message.period') . ' ' . ($this->label ? "[$this->label] " : "$this->column ") . "[$datesString]";
+            
+            return __('filament-daterangepicker-filter::message.period', [
+                'label' => $this->getLabel(),
+                'column' => $this->column,
+                'period' => $datesString
+            ]);
         });
 
         return $this;

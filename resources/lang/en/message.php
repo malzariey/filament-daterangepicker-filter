@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'period' => 'Period',
+    'period' => ':label: Period :period',
     'su' =>"Su",
     'mo' =>"Mo",
     'tu' =>"Tu",

@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'period' => 'Giai đoạn',
+    'period' => ':label: Giai đoạn :period',
     'su' => 'CN',
     'mo' => 'T2',
     'tu' => 'T3',

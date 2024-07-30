@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'period' => 'Zeitraum',
+    'period' => ':label: Zeitraum :period',
     'su' =>"So",
     'mo' =>"Mo",
     'tu' =>"Di",
@@ -35,5 +35,4 @@ return [
     'this_year' =>"Dieses Jahr",
     'last_year' =>"Letztes Jahr",
     'clear' =>"Löschen",
-
 ];

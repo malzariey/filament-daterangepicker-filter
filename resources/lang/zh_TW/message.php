@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'period' => '週期',
+    'period' => ':label: 週期 :period',
     'su' => "日",
     'mo' => "一",
     'tu' => "二",
