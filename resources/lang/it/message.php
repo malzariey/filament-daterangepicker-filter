@@ -35,5 +35,5 @@ return [
     'this_year' => "Quest\'anno",
     'last_year' => "Ultimo anno",
     'clear' =>"Pulisci",
-
+    'weekLabel' => 'S',
 ];
