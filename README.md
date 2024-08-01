@@ -286,7 +286,7 @@ If you have selected a date range and want to remove it, simply click on the cal
 
 To disable this behavior, you can use the `disableClear()` method. This will prevent the user from clearing the selected date range.
 
-To customize the icon, you can use the `clearIcon()` method. It accepts a string or Closure.
+To customize the icon, you can use the `icon()` method. It accepts a string or Closure.
 
 ```php
 use \Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
@@ -295,8 +295,8 @@ use \Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 DateRangeFilter::make('created_at')->disableClear()
 DateRangePicker::make('created_at')->disableClear()
 
-DateRangeFilter::make('created_at')->clearIcon('heroicons-backspace')
-DateRangePicker::make('created_at')->clearIcon('heroicons-backspace')
+DateRangeFilter::make('created_at')->icon('heroicons-backspace')
+DateRangePicker::make('created_at')->icon('heroicons-backspace')
 ```
 
 #### Disabling Predefined Ranges

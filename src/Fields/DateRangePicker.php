@@ -51,12 +51,12 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool|Closure $disableRange = false;
     protected bool | Closure $disableCustomRange = false;
     protected string $separator = ' - ';
-    protected string|Closure|null $clearIcon = null;
+    protected string|Closure|null $icon = null;
 
     public function disableClear(bool|Closure $disable = true) : static
     {
         $condition = $this->evaluate($disable);
-        $icon = $this->getClearIcon();
+        $icon = $this->getIcon();
 
         if ($condition) {
             $this->suffixAction(fn() => null);
@@ -76,16 +76,16 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this;
     }
 
-    public function clearIcon(string|Closure|null $icon = null): static
+    public function icon(string|Closure|null $icon = null): static
     {
-        $this->clearIcon = $icon;
+        $this->icon = $icon;
 
         return $this;
     }
 
-    public function getClearIcon(): string
+    public function getIcon(): string
     {
-        return $this->evaluate($this->clearIcon) ?? 'heroicon-m-calendar-days';
+        return $this->evaluate($this->icon) ?? 'heroicon-m-calendar-days';
     }
 
     public function useRangeLabels(bool $useRangeLabels = true) : static

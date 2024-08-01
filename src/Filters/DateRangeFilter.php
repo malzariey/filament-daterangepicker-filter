@@ -72,7 +72,7 @@ class DateRangeFilter extends BaseFilter
 
     protected bool | Closure $disableClear = false;
 
-    protected string|Closure|null $clearIcon = null;
+    protected string|Closure|null $icon = null;
 
     public function disableClear(bool|Closure $disable = true) : static
     {
@@ -81,9 +81,9 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function clearIcon(string|Closure|null $icon = null): static
+    public function icon(string|Closure|null $icon = null): static
     {
-        $this->clearIcon = $icon;
+        $this->icon = $icon;
 
         return $this;
     }
@@ -193,7 +193,7 @@ class DateRangeFilter extends BaseFilter
                 ->useRangeLabels($this->useRangeLabels)
                 ->disableCustomRange($this->disableCustomRange)
                 ->separator($this->separator)
-                ->clearIcon($this->clearIcon)
+                ->icon($this->icon)
                 ->disableClear($this->disableClear)
         ];
     }
