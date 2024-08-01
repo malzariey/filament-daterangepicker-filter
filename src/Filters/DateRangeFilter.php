@@ -72,15 +72,28 @@ class DateRangeFilter extends BaseFilter
 
     protected bool | Closure $disableClear = false;
 
+    protected string|Closure|null $icon = null;
+
     protected bool|Closure $showWeekNumbers = false;
+
     protected bool|Closure $showISOWeekNumbers = false;
+
     protected bool|Closure $showDropdowns = false;
+
     protected int|Closure|null $minYear = null;
+
     protected int|Closure|null $maxYear = null;
 
     public function disableClear(bool|Closure $disable = true) : static
     {
         $this->disableClear = $disable;
+
+        return $this;
+    }
+
+    public function icon(string|Closure|null $icon = null): static
+    {
+        $this->icon = $icon;
 
         return $this;
     }
@@ -194,6 +207,7 @@ class DateRangeFilter extends BaseFilter
                 ->useRangeLabels($this->useRangeLabels)
                 ->disableCustomRange($this->disableCustomRange)
                 ->separator($this->separator)
+                ->icon($this->icon)
                 ->disableClear($this->disableClear)
                 ->showWeekNumbers($this->showWeekNumbers)
                 ->showISOWeekNumbers($this->showISOWeekNumbers)

@@ -56,20 +56,22 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool|Closure $showDropdowns = false;
     protected int|Closure|null $minYear = null;
     protected int|Closure|null $maxYear = null;
+    protected string|Closure|null $icon = null;
 
     public function disableClear(bool|Closure $disable = true) : static
     {
         $condition = $this->evaluate($disable);
+        $icon = $this->getIcon();
 
         if ($condition) {
             $this->suffixAction(fn() => null);
-            $this->suffixIcon('heroicon-m-calendar-days');
+            $this->suffixIcon($icon);
 
         }else{
             $this->suffixAction(
                 Action::make('clear')
                     ->label(__('filament-daterangepicker-filter::message.clear'))
-                    ->icon('heroicon-m-calendar-days')
+                    ->icon($icon)
                     ->action(fn() => $this->clear())
             );
             $this->suffixIcon(null);
@@ -77,6 +79,18 @@ class DateRangePicker extends Field implements HasAffixActions
         }
 
         return $this;
+    }
+
+    public function icon(string|Closure|null $icon = null): static
+    {
+        $this->icon = $icon;
+
+        return $this;
+    }
+
+    public function getIcon(): string
+    {
+        return $this->evaluate($this->icon) ?? 'heroicon-m-calendar-days';
     }
 
     public function useRangeLabels(bool $useRangeLabels = true) : static
