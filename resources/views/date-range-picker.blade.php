@@ -15,7 +15,7 @@
     :component="$getFieldWrapperView()"
     :field="$field"
 >
-    <div wire:ignore>
+    <div>
         <div
             x-ref="container"
             x-data="dateRangeComponent({
