@@ -35,5 +35,5 @@ return [
     'this_year' =>"Šie metai",
     'last_year' =>"Praėję metai",
     'clear' => "Išvalyti",
-
+    'weekLabel' => 'S',
 ];

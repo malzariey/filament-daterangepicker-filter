@@ -74,6 +74,12 @@
                         @this.set('{!! $statePath !!}', value);
                     }
                 },
+                showWeekNumbers: @js($getShowWeekNumbers()),
+                showISOWeekNumbers: @js($getShowISOWeekNumbers()),
+                weekLabel: '{!! __('filament-daterangepicker-filter::message.weekLabel') !!}',
+                showDropdowns: @js($getShowDropdowns()),
+                minYear: @js($getMinYear()),
+                maxYear: @js($getMaxYear()),
             })"
             id="date-range-picker-{{ $name }}"
             wire:key="date-range-picker-{{ $name }}"
