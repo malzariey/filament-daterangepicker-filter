@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'period' => 'الفترة',
+    'period' => ':label: الفترة :period',
     'su' =>"أح",
     'mo' =>"أث",
     'tu' =>"ثل",
