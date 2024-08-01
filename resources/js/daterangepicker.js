@@ -56,6 +56,12 @@ export default (Alpine) => {
             separator,
             useRangeLabels,
             handleValueChangeUsing,
+            showWeekNumbers,
+            showISOWeekNumbers,
+            weekLabel,
+            showDropdowns,
+            minYear,
+            maxYear,
         }) => {
             var momentRanges = {};
             for (var key in ranges) {
@@ -118,7 +124,7 @@ export default (Alpine) => {
                                 fromLabel: fromLabel,
                                 toLabel: toLabel,
                                 customRangeLabel: customRangeLabel,
-                                weekLabel: "W",
+                                weekLabel: weekLabel,
                                 daysOfWeek: [
                                     sunday,
                                     monday,
@@ -146,6 +152,11 @@ export default (Alpine) => {
                             },
                             ranges: disableRange ? undefined : momentRanges,
                             maxSpan: maxSpan,
+                            showWeekNumbers: showWeekNumbers,
+                            showISOWeekNumbers: showISOWeekNumbers,
+                            showDropdowns: showDropdowns,
+                            minYear: minYear,
+                            maxYear: maxYear,
                             isInvalidDate: (date) => {
                                 if(momentDatesArray.length > 0 ) {
                                     return momentDatesArray.some(disabledDate => disabledDate.isSame(date, 'day'));

@@ -51,6 +51,11 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool|Closure $disableRange = false;
     protected bool | Closure $disableCustomRange = false;
     protected string $separator = ' - ';
+    protected bool|Closure $showWeekNumbers = false;
+    protected bool|Closure $showISOWeekNumbers = false;
+    protected bool|Closure $showDropdowns = false;
+    protected int|Closure|null $minYear = null;
+    protected int|Closure|null $maxYear = null;
     protected string|Closure|null $icon = null;
 
     public function disableClear(bool|Closure $disable = true) : static
@@ -571,5 +576,65 @@ class DateRangePicker extends Field implements HasAffixActions
     public function getSeparator() : string
     {
         return $this->separator;
+    }
+
+    public function showWeekNumbers(bool|Closure $condition = true): static
+    {
+        $this->showWeekNumbers = $condition;
+
+        return $this;
+    }
+
+    public function getShowWeekNumbers(): bool
+    {
+        return $this->evaluate($this->showWeekNumbers);
+    }
+
+    public function showISOWeekNumbers(bool|Closure $condition = true): static
+    {
+        $this->showISOWeekNumbers = $condition;
+
+        return $this;
+    }
+
+    public function getShowISOWeekNumbers(): bool
+    {
+        return $this->evaluate($this->showISOWeekNumbers);
+    }
+
+    public function showDropdowns(bool|Closure $condition = true): static
+    {
+        $this->showDropdowns = $condition;
+
+        return $this;
+    }
+
+    public function getShowDropdowns(): bool
+    {
+        return $this->evaluate($this->showDropdowns);
+    }
+
+    public function minYear(int|Closure|null $condition = null): static
+    {
+        $this->minYear = $condition;
+
+        return $this;
+    }
+
+    public function getMinYear(): ?int
+    {
+        return $this->evaluate($this->minYear);
+    }
+
+    public function maxYear(int|Closure|null $condition = null): static
+    {
+        $this->maxYear = $condition;
+
+        return $this;
+    }
+
+    public function getMaxYear(): ?int
+    {
+        return $this->evaluate($this->maxYear);
     }
 }

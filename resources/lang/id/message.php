@@ -35,4 +35,5 @@ return [
     'this_year' =>"Tahun Ini",
     'last_year' =>"Tahun Lalu",
     'clear' =>"Hapus",
+    'weekLabel' => 'P',
 ];
