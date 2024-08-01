@@ -35,5 +35,5 @@ return [
     'this_year' => 'Cette année',
     'last_year' => 'Année dernière',
     'clear' =>"Effacer",
-
+    'weekLabel' => 'S',
 ];

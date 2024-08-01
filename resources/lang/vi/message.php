@@ -35,5 +35,5 @@ return [
     'this_year' => 'Năm nay',
     'last_year' => 'Năm trước',
     'clear' =>  "Xóa",
-
+    'weekLabel' => 'T',
 ];

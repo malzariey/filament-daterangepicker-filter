@@ -35,4 +35,5 @@ return [
     'this_year' =>"Tento rok",
     'last_year' =>"Loňský rok",
     'clear' => 'Odstranit filtr',
+    'weekLabel' => 'T',
 ];

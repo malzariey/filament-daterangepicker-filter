@@ -285,10 +285,11 @@
 
 .daterangepicker select.monthselect, .daterangepicker select.yearselect {
     font-size: 12px;
-    padding: 1px;
+    padding: 1px 6px;
     height: auto;
     margin: 0;
     cursor: default;
+    @apply rounded-lg shadow-sm ring-1 border-none bg-transparent text-gray-950 bg-white dark:text-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20;
 }
 
 .daterangepicker select.monthselect {

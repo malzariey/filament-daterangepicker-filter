@@ -35,5 +35,5 @@ return [
     'this_year' =>"Huidig Jaar",
     'last_year' =>"Vorig Jaar",
     'clear' =>"Verwijderen",
-
+    'weekLabel' => 'W',
 ];

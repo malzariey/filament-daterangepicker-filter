@@ -35,5 +35,5 @@ return [
      'this_year' =>"Цей рік",
      'last_year' =>"Минулий рік",
      'clear' =>"Очистити",
-
+     'weekLabel' => 'т',
 ];

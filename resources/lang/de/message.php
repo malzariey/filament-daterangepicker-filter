@@ -35,4 +35,5 @@ return [
     'this_year' =>"Dieses Jahr",
     'last_year' =>"Letztes Jahr",
     'clear' =>"Löschen",
+    'weekLabel' => 'W',
 ];

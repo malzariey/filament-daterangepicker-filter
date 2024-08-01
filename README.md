@@ -314,6 +314,30 @@ use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 DateRangeFilter::make('created_at')->maxSpan(['months' => 1]), // days, months or years
 ````
 
+#### Display week numbers
+
+Show localized or ISO week numbers at the start of each week on the calendars.
+
+```php
+use \Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
+use \Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
+
+DateRangeFilter::make('created_at')->showWeekNumbers() // Localized
+DateRangePicker::make('created_at')->showISOWeekNumbers()
+```
+
+#### Display month and year dropdowns
+
+Show month and year select boxes above calendars to jump to a specific month and year. You can also customize, minimum and maximum year shown in the dropdowns.
+
+```php
+use \Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
+use \Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
+
+DateRangeFilter::make('created_at')->showDropdowns()->minYear(2000)->maxYear(2030)
+DateRangePicker::make('created_at')->showDropdowns()->minYear(2000)->maxYear(2030)
+```
+
 ### Screenshots
 
 #### Light mode

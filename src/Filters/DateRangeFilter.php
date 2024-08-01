@@ -72,6 +72,12 @@ class DateRangeFilter extends BaseFilter
 
     protected bool | Closure $disableClear = false;
 
+    protected bool|Closure $showWeekNumbers = false;
+    protected bool|Closure $showISOWeekNumbers = false;
+    protected bool|Closure $showDropdowns = false;
+    protected int|Closure|null $minYear = null;
+    protected int|Closure|null $maxYear = null;
+
     public function disableClear(bool|Closure $disable = true) : static
     {
         $this->disableClear = $disable;
@@ -189,6 +195,11 @@ class DateRangeFilter extends BaseFilter
                 ->disableCustomRange($this->disableCustomRange)
                 ->separator($this->separator)
                 ->disableClear($this->disableClear)
+                ->showWeekNumbers($this->showWeekNumbers)
+                ->showISOWeekNumbers($this->showISOWeekNumbers)
+                ->showDropdowns($this->showDropdowns)
+                ->minYear($this->minYear)
+                ->maxYear($this->maxYear)
         ];
     }
 
@@ -479,6 +490,41 @@ class DateRangeFilter extends BaseFilter
     public function placeholder(string|Closure|null $placeholder) : static
     {
         $this->placeholder = $placeholder;
+
+        return $this;
+    }
+
+    public function showWeekNumbers(bool|Closure $condition = true): static
+    {
+        $this->showWeekNumbers = $condition;
+
+        return $this;
+    }
+
+    public function showISOWeekNumbers(bool|Closure $condition = true): static
+    {
+        $this->showISOWeekNumbers = $condition;
+
+        return $this;
+    }
+
+    public function showDropdowns(bool|Closure $condition = true): static
+    {
+        $this->showDropdowns = $condition;
+
+        return $this;
+    }
+
+    public function minYear(int|Closure|null $condition = null): static
+    {
+        $this->minYear = $condition;
+
+        return $this;
+    }
+
+    public function maxYear(int|Closure|null $condition = null): static
+    {
+        $this->maxYear = $condition;
 
         return $this;
     }
