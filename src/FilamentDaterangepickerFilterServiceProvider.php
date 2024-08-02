@@ -3,6 +3,7 @@
 namespace Malzariey\FilamentDaterangepickerFilter;
 
 use Composer\InstalledVersions;
+use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
@@ -21,24 +22,13 @@ class FilamentDaterangepickerFilterServiceProvider extends PackageServiceProvide
             ->hasTranslations();
     }
 
-    public function packageBooted(): void
+    public function packageRegistered(): void
     {
-        FilamentAsset::register($this->getAssets(), package: $this->getAssetPackageName());
-    }
-
-    protected function getAssetPackageName(): ?string
-    {
-        return 'filament-daterangepicker-filter';
-    }
-
-    protected function getAssets(): array
-    {
-        static::$version = InstalledVersions::getVersion('malzariey/filament-daterangepicker-filter');
-        $assetId = $this->getAssetPackageName() . static::$version;
-
-        return [
-            Js::make($assetId, __DIR__ . '/../dist/filament-daterangepicker.js'),
-            Css::make($assetId, __DIR__ . '/../dist/filament-daterangepicker.css'),
+        $assets = [
+            AlpineComponent::make('dateRangeComponent', __DIR__ . '/../dist/filament-daterangepicker.js'),
+            Css::make('date-range-picker', __DIR__ . '/../dist/filament-daterangepicker.css')->loadedOnRequest(),
         ];
+
+        FilamentAsset::register($assets, 'malzariey/filament-daterangepicker-filter');
     }
 }

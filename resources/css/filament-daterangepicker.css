@@ -297,6 +297,17 @@
     width: 56%;
 }
 
+
+html[dir="rtl"] .daterangepicker select.monthselect , html[dir="rtl"] .daterangepicker select.yearselect {
+    direction: rtl;
+    padding-right: 5%;
+
+
+
+}
+
+
+
 .daterangepicker select.yearselect {
     width: 40%;
 }

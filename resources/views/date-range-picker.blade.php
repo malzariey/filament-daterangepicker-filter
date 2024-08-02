@@ -15,8 +15,16 @@
     :component="$getFieldWrapperView()"
     :field="$field"
 >
-    <div>
+    <div
+        x-data="{}"
+        x-load-css="[@js(\Filament\Support\Facades\FilamentAsset::getStyleHref('date-range-picker', package: 'malzariey/filament-daterangepicker-filter'))]"
+
+    >
+
         <div
+            x-ignore
+            ax-load="visible"
+            ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
             x-ref="container"
             x-data="dateRangeComponent({
                 state: @entangle($statePath),
@@ -138,4 +146,6 @@
             </x-filament::input.wrapper>
         </div>
     </div>
+
+
 </x-dynamic-component>

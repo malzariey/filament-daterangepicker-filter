@@ -1,16 +1,26 @@
 {
     "private": true,
+    "type": "module",
     "scripts": {
-        "dev": "mix watch",
-        "build": "mix --production",
-        "purge": "filament-purge -i dist/filament-daterangepicker.css -o dist/filament-daterangepicker.css"
+        "dev:styles": "npx tailwindcss -i resources/css/filament-daterangepicker.css -o dist/filament-daterangepicker.css --postcss --watch",
+        "dev:scripts": "node bin/build.js --dev",
+        "build:styles": "npx tailwindcss -i resources/css/filament-daterangepicker.css -o dist/filament-daterangepicker.css --postcss --minify",
+        "build:scripts": "node bin/build.js",
+        "dev": "npm-run-all --parallel dev:*",
+        "build": "npm-run-all build:*",
+        "prettier": "npx prettier --write ."
     },
     "devDependencies": {
         "@awcodes/filament-plugin-purge": "^1.1.2",
         "autoprefixer": "^10.4.19",
+        "esbuild": "^0.19.4",
         "laravel-mix": "^6.0.49",
-        "postcss": "^8.4.38",
-        "tailwindcss": "^3.4.3"
+        "npm-run-all": "^4.1.5",
+        "postcss": "^8.4.40",
+        "postcss-import": "^15.1.0",
+        "prettier-plugin-blade": "^1.5.3",
+        "prettier-plugin-tailwindcss": "^0.1.13",
+        "tailwindcss": "^3.4.7"
     },
     "dependencies": {
         "jquery": "^3.7.1",

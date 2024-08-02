@@ -1,6 +1,7 @@
-const colors = require('tailwindcss/colors')
+/** @type {import('tailwindcss').Config} */
+import colors from 'tailwindcss/colors'
 
-module.exports = {
+export default {
     content: [
         './resources/views/**/*.blade.php',
     ],
