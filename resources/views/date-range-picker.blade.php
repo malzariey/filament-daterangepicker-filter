@@ -9,6 +9,7 @@
     $suffixIcon = $getSuffixIcon();
     $suffixLabel = $getSuffixLabel();
     $statePath = $getStatePath();
+    $parentId = uniqid();
 @endphp
 
 <x-dynamic-component
@@ -17,11 +18,13 @@
 >
     <div
         x-ignore
+        wire:ignore
         ax-load="visible"
         ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
         x-ref="container"
         x-data="dateRangeComponent({
                 state: @entangle($statePath),
+                parentId: @js($parentId),
                 name: @js($name),
                 alwaysShowCalendars: @js($isAlwaysShowCalendar()),
                 autoApply: @js($getAutoApply()),
@@ -138,6 +141,12 @@
                 </div>
             </button>
         </x-filament::input.wrapper>
+
+        @teleport('body')
+            <div id="{{$parentId}}">
+
+            </div>
+        @endteleport
     </div>
 
 </x-dynamic-component>
