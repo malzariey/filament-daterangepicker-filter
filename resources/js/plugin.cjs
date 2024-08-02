@@ -354,10 +354,10 @@
 
             var list = '<ul>';
             for (range in this.ranges) {
-                list += '<li data-range-key="' + range + '" class="hover:bg-primary-500 hover:text-white">' + range + '</li>';
+                list += '<li data-range-key="' + range + '" class="rangeItem">' + range + '</li>';
             }
             if (this.showCustomRangeLabel) {
-                list += '<li data-range-key="' + this.locale.customRangeLabel + '" class="hover:bg-primary-500 hover:text-white">' + this.locale.customRangeLabel + '</li>';
+                list += '<li data-range-key="' + this.locale.customRangeLabel + '" class="rangeItem">' + this.locale.customRangeLabel + '</li>';
             }
             list += '</ul>';
             this.container.find('.ranges').prepend(list);
@@ -660,7 +660,14 @@
             if (dayOfWeek == this.locale.firstDay)
                 startDay = daysInLastMonth - 6;
 
-            var curDate = moment([lastYear, lastMonth, startDay, 12, minute, second]);
+            let curDate = moment.utc();
+            curDate.set('year', lastYear);
+            curDate.set('month', lastMonth);
+            curDate.set('date', startDay);
+            curDate.set('hour', 12);
+            curDate.set('minute', minute);
+            curDate.set('second', second);
+
 
             var col, row;
             for (var i = 0, col = 0, row = 0; i < 42; i++, col++, curDate = moment(curDate).add(24, 'hour')) {

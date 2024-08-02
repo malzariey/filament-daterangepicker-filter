@@ -21,6 +21,9 @@
     font-size: 15px;
     line-height: 1em;
 }
+.ltr{
+    direction: ltr;
+}
 
 .daterangepicker .applyBtn{
     @apply text-primary-600 hover:text-primary-400 ;
@@ -30,6 +33,10 @@
     display: inline-block;
     border-bottom-color: rgba(0, 0, 0, 0.2);
     content: '';
+}
+
+.daterangepicker li:hover{
+    @apply bg-primary-500 text-white;
 }
 
 .daterangepicker .hourselect, .daterangepicker .minuteselect, .daterangepicker .secondselect, .daterangepicker .ampmselect {
@@ -232,7 +239,7 @@
 }
 
 .daterangepicker td.start-date.active {
-    @apply text-white bg-primary-500;
+    @apply text-white bg-primary-500 dark:bg-primary-500;
 }
 .daterangepicker td.in-range {
     @apply bg-[#ebf4f8] dark:bg-white;

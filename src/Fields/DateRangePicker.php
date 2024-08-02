@@ -28,7 +28,7 @@ class DateRangePicker extends Field implements HasAffixActions
     protected string|Closure|null $format = 'd/m/Y';
 
     protected OpenDirection|Closure $opens = OpenDirection::LEFT;
-    protected DropDirection|Closure $drops = DropDirection::AUTO;
+    protected DropDirection|Closure $drops = DropDirection::DOWN;
     protected array $extraTriggerAttributes = [];
     protected int|null $firstDayOfWeek = 1;
     protected bool | Closure $timePicker = false;

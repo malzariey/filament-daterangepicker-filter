@@ -18,7 +18,6 @@
 >
     <div
         x-ignore
-        wire:ignore
         ax-load="visible"
         ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
         x-ref="container"

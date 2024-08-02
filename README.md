@@ -243,11 +243,11 @@ DateRangeFilter::make('created_at')->separator(' - ')
 Specify the location the filter menu should drop at.
 
 ###### Options
-`DropDirection::AUTO` : Auto decide the location. (Default)
+`DropDirection::DOWN` : The picker will appear below field. (Default)
+
+`DropDirection::AUTO` : Auto decide the location. 
 
 `DropDirection::UP` : The picker will appear above field.
-
-`DropDirection::DOWN` : The picker will appear below field.
 
 
 ###### Example
