@@ -26,7 +26,7 @@ class FilamentDaterangepickerFilterServiceProvider extends PackageServiceProvide
     {
         $assets = [
             AlpineComponent::make('dateRangeComponent', __DIR__ . '/../dist/filament-daterangepicker.js'),
-            Css::make('date-range-picker', __DIR__ . '/../dist/filament-daterangepicker.css')->loadedOnRequest(),
+            Css::make('date-range-picker', __DIR__ . '/../dist/filament-daterangepicker.css'),
         ];
 
         FilamentAsset::register($assets, 'malzariey/filament-daterangepicker-filter');

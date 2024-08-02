@@ -16,17 +16,11 @@
     :field="$field"
 >
     <div
-        x-data="{}"
-        x-load-css="[@js(\Filament\Support\Facades\FilamentAsset::getStyleHref('date-range-picker', package: 'malzariey/filament-daterangepicker-filter'))]"
-
-    >
-
-        <div
-            x-ignore
-            ax-load="visible"
-            ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
-            x-ref="container"
-            x-data="dateRangeComponent({
+        x-ignore
+        ax-load="visible"
+        ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
+        x-ref="container"
+        x-data="dateRangeComponent({
                 state: @entangle($statePath),
                 name: @js($name),
                 alwaysShowCalendars: @js($isAlwaysShowCalendar()),
@@ -89,46 +83,46 @@
                 minYear: @js($getMinYear()),
                 maxYear: @js($getMaxYear()),
             })"
-            id="date-range-picker-{{ $name }}"
-            wire:key="date-range-picker-{{ $name }}"
-            x-on:keydown.esc="isOpen() && $event.stopPropagation()"
+        id="date-range-picker-{{ $name }}"
+        wire:key="date-range-picker-{{ $name }}"
+        x-on:keydown.esc="isOpen() && $event.stopPropagation()"
 
-            {{ $attributes->merge($getExtraAttributes())->class(['filament-forms-date-time-picker-component relative']) }}
-            {{ $getExtraAlpineAttributeBag() }}
-        >
-            <x-filament::input.wrapper
-                :disabled="$isDisabled"
-                :inline-prefix="$isPrefixInline"
-                :inline-suffix="$isSuffixInline"
-                :prefix="$prefixLabel"
-                :prefix-actions="$prefixActions"
-                :prefix-icon="$prefixIcon"
-                :suffix="$suffixLabel"
-                :suffix-actions="$suffixActions"
-                :suffix-icon="$suffixIcon"
-                :valid="!$errors->has($statePath)"
-                class="fi-fo-text-input"
-                :attributes="\Filament\Support\prepare_inherited_attributes($getExtraAttributeBag())->class([
+        {{ $attributes->merge($getExtraAttributes())->class(['filament-forms-date-time-picker-component relative']) }}
+        {{ $getExtraAlpineAttributeBag() }}
+    >
+        <x-filament::input.wrapper
+            :disabled="$isDisabled"
+            :inline-prefix="$isPrefixInline"
+            :inline-suffix="$isSuffixInline"
+            :prefix="$prefixLabel"
+            :prefix-actions="$prefixActions"
+            :prefix-icon="$prefixIcon"
+            :suffix="$suffixLabel"
+            :suffix-actions="$suffixActions"
+            :suffix-icon="$suffixIcon"
+            :valid="!$errors->has($statePath)"
+            class="fi-fo-text-input"
+            :attributes="\Filament\Support\prepare_inherited_attributes($getExtraAttributeBag())->class([
                     'overflow-hidden',
                 ])"
+        >
+            <button
+                x-ref="button"
+                aria-label="{{ $getPlaceholder() }}"
+                dusk="filament.forms.{{ $statePath }}.open"
+                type="button"
+                tabindex="-1"
+                class="w-full"
             >
-                <button
-                    x-ref="button"
-                    aria-label="{{ $getPlaceholder() }}"
-                    dusk="filament.forms.{{ $statePath }}.open"
-                    type="button"
-                    tabindex="-1"
-                    class="w-full"
+                <div
+                    class="relative inline-block w-full bg-white dark:bg-white/5"
+                    id="{{ $name }}.container"
+                    wire:key="{{ $name }}.container"
                 >
-                    <div
-                        class="relative inline-block w-full bg-white dark:bg-white/5"
-                        id="{{ $name }}.container"
-                        wire:key="{{ $name }}.container"
-                    >
-                        <x-filament::input
-                            x-ref="daterange"
-                            wire:key="{{ $this->id() }}.{{ $statePath }}.{{ $field::class }}.display-text"
-                            :attributes="\Filament\Support\prepare_inherited_attributes(
+                    <x-filament::input
+                        x-ref="daterange"
+                        wire:key="{{ $this->id() }}.{{ $statePath }}.{{ $field::class }}.display-text"
+                        :attributes="\Filament\Support\prepare_inherited_attributes(
                                 $getExtraInputAttributeBag(),
                             )->merge([
                                 'id' => $getId(),
@@ -140,12 +134,10 @@
                                 'type' => 'text',
                                 $applyStateBindingModifiers('wire:model') => $statePath,
                             ], escape: false)"
-                        />
-                    </div>
-                </button>
-            </x-filament::input.wrapper>
-        </div>
+                    />
+                </div>
+            </button>
+        </x-filament::input.wrapper>
     </div>
-
 
 </x-dynamic-component>
