@@ -4,7 +4,6 @@ import './plugin.cjs';
 
 export default function dateRangeComponent({
                        name,
-                       parentId,
                        state,
                        alwaysShowCalendars,
                        autoApply,
@@ -98,7 +97,6 @@ export default function dateRangeComponent({
 
             $(this.$refs.daterange).daterangepicker(
                 {
-                    parentEl: document.getElementById(parentId),
                     name: name,
                     alwaysShowCalendars: alwaysShowCalendars,
                     autoApply: autoApply,

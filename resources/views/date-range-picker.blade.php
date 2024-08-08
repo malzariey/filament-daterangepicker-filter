@@ -140,12 +140,6 @@
                 </div>
             </button>
         </x-filament::input.wrapper>
-
-        @teleport('body')
-            <div id="{{$parentId}}">
-
-            </div>
-        @endteleport
     </div>
 
 </x-dynamic-component>
