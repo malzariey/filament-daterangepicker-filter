@@ -9,7 +9,6 @@
     $suffixIcon = $getSuffixIcon();
     $suffixLabel = $getSuffixLabel();
     $statePath = $getStatePath();
-    $parentId = uniqid();
 @endphp
 
 <x-dynamic-component
@@ -18,12 +17,16 @@
 >
     <div
         x-ignore
-        ax-load="visible"
+        @if (\Filament\Support\Facades\FilamentView::hasSpaMode())
+            ax-load="visible || event (ax-modal-opened)"
+        @else
+            ax-load
+        @endif
+
         ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
         x-ref="container"
         x-data="dateRangeComponent({
                 state: @entangle($statePath),
-                parentId: @js($parentId),
                 name: @js($name),
                 alwaysShowCalendars: @js($isAlwaysShowCalendar()),
                 autoApply: @js($getAutoApply()),
@@ -89,7 +92,7 @@
         wire:key="date-range-picker-{{ $name }}"
         x-on:keydown.esc="isOpen() && $event.stopPropagation()"
 
-        {{ $attributes->merge($getExtraAttributes())->class(['filament-forms-date-time-picker-component relative']) }}
+        {{ $attributes->merge($getExtraAttributes() , escape: false)->class(['filament-forms-date-time-picker-component relative']) }}
         {{ $getExtraAlpineAttributeBag() }}
     >
         <x-filament::input.wrapper
