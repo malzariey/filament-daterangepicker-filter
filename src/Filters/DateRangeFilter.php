@@ -132,7 +132,7 @@ class DateRangeFilter extends BaseFilter
             if (empty($datesString)) {
                 return null;
             }
-            
+
             return __('filament-daterangepicker-filter::message.period', [
                 'label' => $this->getLabel(),
                 'column' => $this->column,
@@ -147,6 +147,70 @@ class DateRangeFilter extends BaseFilter
     {
         $this->startDate = $this->now()->startOfDay();
         $this->endDate = $this->now()->endOfDay();
+
+        return $this;
+    }
+
+    public function defaultYesterday(): static
+    {
+        $this->startDate = $this->now()->subDay();
+        $this->endDate = $this->now()->subDay();
+
+        return $this;
+    }
+
+    public function defaultLast7Days(): static
+    {
+        $this->startDate = $this->now()->subDays(6);
+        $this->endDate = $this->now();
+
+        return $this;
+    }
+
+    public function defaultLast30Days(): static
+    {
+        $this->startDate = $this->now()->subDays(29);
+        $this->endDate = $this->now();
+
+        return $this;
+    }
+
+    public function defaultThisMonth(): static
+    {
+        $this->startDate = $this->now()->startOfMonth();
+        $this->endDate = $this->now()->endOfMonth();
+
+        return $this;
+    }
+
+    public function defaultLastMonth(): static
+    {
+        $this->startDate = $this->now()->subMonth()->startOfMonth();
+        $this->endDate = $this->now()->subMonth()->endOfMonth();
+
+        return $this;
+    }
+
+    public function defaultThisYear(): static
+    {
+        $this->startDate = $this->now()->startOfYear();
+        $this->endDate = $this->now()->endOfYear();
+
+        return $this;
+    }
+
+    public function defaultLastYear(): static
+    {
+        $this->startDate = $this->now()->subYear()->startOfYear();
+        $this->endDate = $this->now()->subYear()->endOfYear();
+
+        return $this;
+    }
+
+    public function defaultCustom(CarbonInterface|string $start, CarbonInterface|string $end): static
+    {
+        $this->startDate = $start;
+        $this->endDate = $end;
 
         return $this;
     }
