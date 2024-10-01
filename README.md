@@ -57,13 +57,30 @@ use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 DateRangeFilter::make('created_at')->startDate(Carbon::now())->endDate(Carbon::now())
 ````
 
-#### Default Today
+#### Default
 You could also use a shortcut for above using the following
 
 ```php
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 DateRangeFilter::make('created_at')->defaultToday()
+
+DateRangeFilter::make('created_at')->defaultYesterday()
+
+DateRangeFilter::make('created_at')->defaultLast7Days()
+
+DateRangeFilter::make('created_at')->defaultLast30Days()
+
+DateRangeFilter::make('created_at')->defaultThisMonth()
+
+DateRangeFilter::make('created_at')->defaultLastMonth()
+
+DateRangeFilter::make('created_at')->defaultThisYear()
+
+DateRangeFilter::make('created_at')->defaultLastYear()
+
+use Carbon\Carbon;
+DateRangeFilter::make('created_at')->defaultCustom(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth())
 ````
 
 
