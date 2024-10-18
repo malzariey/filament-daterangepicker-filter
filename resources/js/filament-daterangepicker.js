@@ -161,17 +161,19 @@ export default function dateRangeComponent({
                         );
                     },
 
-                },
-                function(start, end) {
-                    if(singleCalendar){
-                        handleValueChangeUsing(start.format(displayFormat), name)
-                    }else{
-                        handleValueChangeUsing(start.format(displayFormat) + separator + end.format(displayFormat), name)
-                    }
                 }
             );
 
             this.dateRangePicker = $(this.$refs.daterange).data('daterangepicker');
+
+            $(this.$refs.daterange).on('apply.daterangepicker', function(ev, picker) {
+                if(singleCalendar){
+                    handleValueChangeUsing(picker.startDate.format(displayFormat), name)
+                }else{
+                    handleValueChangeUsing(picker.startDate.format(displayFormat) + separator + picker.endDate.format(displayFormat), name)
+                }
+            });
+
             if (this.state != null) {
                 const dates = this.state.split(separator);
                 if (dates.length === 2 && this.dateRangePicker != null) {

@@ -447,6 +447,10 @@
 
         this.updateElement();
 
+        //Clicking on the picker container will prevent closing previous dialogs/modals
+        this.container.on('click', function(e) {
+            e.stopPropagation();
+        });
     };
 
     DateRangePicker.prototype = {
