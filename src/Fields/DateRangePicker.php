@@ -216,6 +216,86 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this;
     }
 
+    public function defaultYesterday($enforceIfNull = false): static
+    {
+        $this->startDate = $this->now()->subDay();
+        $this->endDate = $this->now()->subDay();
+
+        $this->processDefault($enforceIfNull);
+
+        return $this;
+    }
+
+    public function defaultLast7Days($enforceIfNull = false): static
+    {
+        $this->startDate = $this->now()->subDays(6);
+        $this->endDate = $this->now();
+
+        $this->processDefault($enforceIfNull);
+
+        return $this;
+    }
+
+    public function defaultLast30Days($enforceIfNull = false): static
+    {
+        $this->startDate = $this->now()->subDays(29);
+        $this->endDate = $this->now();
+
+        $this->processDefault($enforceIfNull);
+
+        return $this;
+    }
+
+    public function defaultThisMonth($enforceIfNull = false): static
+    {
+        $this->startDate = $this->now()->startOfMonth();
+        $this->endDate = $this->now()->endOfMonth();
+
+        $this->processDefault($enforceIfNull);
+
+        return $this;
+    }
+
+    public function defaultLastMonth($enforceIfNull = false): static
+    {
+        $this->startDate = $this->now()->subMonth()->startOfMonth();
+        $this->endDate = $this->now()->subMonth()->endOfMonth();
+
+        $this->processDefault($enforceIfNull);
+
+        return $this;
+    }
+
+    public function defaultThisYear($enforceIfNull = false): static
+    {
+        $this->startDate = $this->now()->startOfYear();
+        $this->endDate = $this->now()->endOfYear();
+
+        $this->processDefault($enforceIfNull);
+
+        return $this;
+    }
+
+    public function defaultLastYear($enforceIfNull = false): static
+    {
+        $this->startDate = $this->now()->subYear()->startOfYear();
+        $this->endDate = $this->now()->subYear()->endOfYear();
+
+        $this->processDefault($enforceIfNull);
+
+        return $this;
+    }
+
+    public function defaultCustom(CarbonInterface|string $start, CarbonInterface|string $end, $enforceIfNull = false): static
+    {
+        $this->startDate = $start;
+        $this->endDate = $end;
+
+        $this->processDefault($enforceIfNull);
+
+        return $this;
+    }
+
     public function processDefault($enforceIfNull = false): void{
         $default = null;
 
