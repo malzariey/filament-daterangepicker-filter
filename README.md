@@ -15,7 +15,13 @@ You can install the package via composer:
 composer require malzariey/filament-daterangepicker-filter
 ```
 
-You can publish the config file with:
+You can publish the translation files with:
+
+```bash
+php artisan vendor:publish --tag="filament-daterangepicker-filter-translations"
+```
+
+
 
 Optionally, you can publish the views using
 
