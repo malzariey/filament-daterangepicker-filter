@@ -320,7 +320,7 @@ class DateRangePicker extends Field implements HasAffixActions
     public function getFirstDayOfWeek() : int
     {
         $day = $this->evaluate($this->firstDayOfWeek);
-        if($day == null){
+        if($day === null){
             return $this->getDefaultFirstDayOfWeek();
         }
         if ($day < 0 || $day > 7) {
