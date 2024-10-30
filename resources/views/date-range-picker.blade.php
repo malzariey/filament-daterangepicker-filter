@@ -134,10 +134,10 @@
                                 'name' => $name,
                                 'disabled' => $isDisabled(),
                                 'placeholder' => $getPlaceholder(),
+                                'autofocus' => $isAutofocused(),
                                 'required' => $isRequired(),
                                 'readonly' => true,
                                 'type' => 'text',
-                                $applyStateBindingModifiers('wire:model') => $statePath,
                             ], escape: false)"
                     />
                 </div>
