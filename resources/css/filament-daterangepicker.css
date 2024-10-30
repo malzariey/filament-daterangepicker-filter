@@ -1,6 +1,3 @@
-@tailwind utilities;
-@tailwind components;
-
 .daterangepicker {
     position: absolute;
     color: inherit;
