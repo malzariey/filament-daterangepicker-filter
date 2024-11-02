@@ -156,9 +156,14 @@ export default function dateRangeComponent({
                     minYear: minYear,
                     maxYear: maxYear,
                     isInvalidDate: (date) => {
-                        return momentDatesArray.some(disabledDate =>
-                            disabledDate.utc().startOf('day').isSame(date.utc().startOf('day'), 'day')
-                        );
+                        if(momentDatesArray != null && momentDatesArray.length > 0 ) {
+                            return momentDatesArray.some(disabledDate =>
+                                disabledDate.utc().startOf('day').isSame(date.utc().startOf('day'), 'day')
+                            );
+                        }else{
+                            return false;
+                        }
+
                     },
 
                 }
