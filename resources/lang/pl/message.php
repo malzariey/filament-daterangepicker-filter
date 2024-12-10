@@ -28,7 +28,7 @@ return [
     'december' =>"Grudzień",
     'today' => "Dzisiaj",
     'yesterday' =>"Wczoraj",
-    'last_7_days' =>"Ostanie 7 dni",
+    'last_7_days' =>"Ostatnie 7 dni",
     'last_30_days' =>"Ostatnie 30 dni",
     'this_month' =>"Ten miesiąc",
     'last_month' =>"Poprzedni miesiąc",
