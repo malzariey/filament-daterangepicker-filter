@@ -1,5 +1,7 @@
 import $ from 'jquery';
 import moment from 'moment';
+import 'moment-timezone';
+
 import './plugin.cjs';
 
 export default function dateRangeComponent({
