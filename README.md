@@ -29,6 +29,17 @@ Optionally, you can publish the views using
 php artisan vendor:publish --tag="filament-daterangepicker-filter-views"
 ```
 
+# Screenshots
+
+#### Light mode
+
+![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/main/art/light.png)
+
+#### Dark mode
+
+![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/main/art/dark.png)
+
+
 ## Usage
 
 ### As a Field
@@ -433,16 +444,6 @@ use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 DateRangeFilter::make('created_at')->showDropdowns()->minYear(2000)->maxYear(2030)
 DateRangePicker::make('created_at')->showDropdowns()->minYear(2000)->maxYear(2030)
 ```
-
-### Screenshots
-
-#### Light mode
-
-![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/main/art/light.png)
-
-#### Dark mode
-
-![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/main/art/dark.png)
 
 # Styling
 
