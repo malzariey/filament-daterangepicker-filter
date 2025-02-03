@@ -1,5 +1,7 @@
 import $ from 'jquery';
 import moment from 'moment';
+import 'moment-timezone';
+
 import './plugin.cjs';
 
 export default function dateRangeComponent({
@@ -59,6 +61,7 @@ export default function dateRangeComponent({
                        showDropdowns,
                        minYear,
                        maxYear,
+                       timezone
    }) {
 
     var momentRanges = {};
@@ -89,6 +92,9 @@ export default function dateRangeComponent({
             return state;
         },
         init: function () {
+
+            moment.tz.setDefault(timezone);
+
             let momentDatesArray = [];
 
             if(disabledDates !== undefined && disabledDates.length > 0 ) {

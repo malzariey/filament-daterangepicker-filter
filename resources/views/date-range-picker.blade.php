@@ -87,6 +87,7 @@
                 showDropdowns: @js($getShowDropdowns()),
                 minYear: @js($getMinYear()),
                 maxYear: @js($getMaxYear()),
+                timezone: @js($getTimezone())
             })"
         id="date-range-picker-{{ $name }}"
         wire:key="date-range-picker-{{ $name }}"
