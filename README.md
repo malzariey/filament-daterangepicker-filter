@@ -263,7 +263,7 @@ Show an indicator when the filter is active.
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 
-DateRangePicker::make('created_at')->withIndicator()
+DateRangeFilter::make('created_at')->withIndicator()
 ```
 
 #### Predefined Ranges
