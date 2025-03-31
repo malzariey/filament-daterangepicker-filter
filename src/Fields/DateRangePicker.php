@@ -229,7 +229,7 @@ class DateRangePicker extends Field implements HasAffixActions
                 __('filament-daterangepicker-filter::message.last_7_days') => [$this->now()->subDays(6), $this->now()],
                 __('filament-daterangepicker-filter::message.last_30_days') => [$this->now()->subDays(29), $this->now()],
                 __('filament-daterangepicker-filter::message.this_month') => [$this->now()->startOfMonth(), $this->now()->endOfMonth()],
-                __('filament-daterangepicker-filter::message.last_month') => [$this->now()->subMonth()->startOfMonth(), $this->now()->subMonth()->endOfMonth()],
+                __('filament-daterangepicker-filter::message.last_month') => [$this->now()->subMonthNoOverflow()->startOfMonth(), $this->now()->subMonthNoOverflow()->endOfMonth()],
                 __('filament-daterangepicker-filter::message.this_year') => [$this->now()->startOfYear(), $this->now()->endOfYear()],
                 __('filament-daterangepicker-filter::message.last_year') => [$this->now()->subYear()->startOfYear(), $this->now()->subYear()->endOfYear()],
             ];

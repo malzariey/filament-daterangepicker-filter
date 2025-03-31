@@ -421,8 +421,8 @@ trait HasRangePicker
 
     public function defaultLastMonth($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->subMonth()->startOfMonth();
-        $this->endDate = $this->now()->subMonth()->endOfMonth();
+        $this->startDate = $this->now()->subMonthNoOverflow()->startOfMonth();
+        $this->endDate = $this->now()->subMonthNoOverflow()->endOfMonth();
 
         $this->processDefault($enforceIfNull);
 
