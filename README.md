@@ -124,8 +124,8 @@ Specify the minimum and maximum dates for the calendar. The following example wi
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
-DateRangeFilter::make('created_at')->minDate(Carbon::now()->subMonth())->maxDate(Carbon::now()->addMonth())
-DateRangePicker::make('created_at')->minDate(Carbon::now()->subMonth())->maxDate(Carbon::now()->addMonth())
+DateRangeFilter::make('created_at')->minDate(Carbon::now()->subMonthNoOverflow())->maxDate(Carbon::now()->addMonth())
+DateRangePicker::make('created_at')->minDate(Carbon::now()->subMonthNoOverflow())->maxDate(Carbon::now()->addMonth())
 ````
 
 #### First Day of Week
