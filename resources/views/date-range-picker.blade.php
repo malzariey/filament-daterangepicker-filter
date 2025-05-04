@@ -16,10 +16,10 @@
     :field="$field"
 >
     <div
+        x-ignore
         @if (\Filament\Support\Facades\FilamentView::hasSpaMode())
             ax-load="visible || event (ax-modal-opened)"
         @else
-            x-ignore
             ax-load
         @endif
 
