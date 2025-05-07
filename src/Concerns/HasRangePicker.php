@@ -466,9 +466,9 @@ trait HasRangePicker
         if (!$this->getEnforceFormat() && $this->timePicker && (!str_contains($displayFormat,"h" ) && !str_contains($displayFormat,"H" ))) {
             if ($this->getTimePicker24()) {
                 if ($this->getTimePickerSecond()) {
-                    $displayFormat .= ' hh:mm:ss';
+                    $displayFormat .= ' HH:mm:ss';
                 } else {
-                    $displayFormat .= ' hh:mm';
+                    $displayFormat .= ' HH:mm';
                 }
             } else {
                 if ($this->getTimePickerSecond()) {
