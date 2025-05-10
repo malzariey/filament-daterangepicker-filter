@@ -332,8 +332,7 @@ trait HasRangePicker
     public function startDate(CarbonInterface|string|Closure|null $date, $enforceIfNull = false): static
     {
         $this->startDate = $date;
-
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -341,8 +340,7 @@ trait HasRangePicker
     public function endDate(CarbonInterface|string|Closure|null $date, $enforceIfNull = false): static
     {
         $this->endDate = $date;
-
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -352,7 +350,8 @@ trait HasRangePicker
         $this->startDate = $this->now()->startOfDay();
         $this->endDate = $this->now()->endOfDay();
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
+
 
         return $this;
     }
@@ -384,7 +383,7 @@ trait HasRangePicker
         $this->startDate = $this->now()->subDay();
         $this->endDate = $this->now()->subDay();
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -394,7 +393,7 @@ trait HasRangePicker
         $this->startDate = $this->now()->subDays(6);
         $this->endDate = $this->now();
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -404,7 +403,7 @@ trait HasRangePicker
         $this->startDate = $this->now()->subDays(29);
         $this->endDate = $this->now();
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -414,7 +413,7 @@ trait HasRangePicker
         $this->startDate = $this->now()->startOfMonth();
         $this->endDate = $this->now()->endOfMonth();
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -424,7 +423,7 @@ trait HasRangePicker
         $this->startDate = $this->now()->subMonthNoOverflow()->startOfMonth();
         $this->endDate = $this->now()->subMonthNoOverflow()->endOfMonth();
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -434,7 +433,7 @@ trait HasRangePicker
         $this->startDate = $this->now()->startOfYear();
         $this->endDate = $this->now()->endOfYear();
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -444,7 +443,7 @@ trait HasRangePicker
         $this->startDate = $this->now()->subYear()->startOfYear();
         $this->endDate = $this->now()->subYear()->endOfYear();
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
@@ -454,7 +453,7 @@ trait HasRangePicker
         $this->startDate = $start;
         $this->endDate = $end;
 
-        $this->processDefault($enforceIfNull);
+        $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
