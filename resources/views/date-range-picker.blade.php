@@ -139,7 +139,7 @@
                                 'name' => $name,
                                 'disabled' => $isDisabled(),
                                 'placeholder' => $getPlaceholder(),
-                                'autofocus' => $isAutofocused(),
+                                'tabindex' => $isAutofocused() ? 0 : -1,
                                 'required' => $isRequired(),
                                 'readonly' => true,
                                 'type' => 'text',
