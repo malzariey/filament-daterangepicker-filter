@@ -26,6 +26,13 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool|Closure $singleCalendar = false;
     protected array|Closure $ranges = [];
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->processDefault();
+
+    }
+
     public function disableClear(bool|Closure $disable = true): static
     {
         $condition = $this->evaluate($disable);
@@ -71,7 +78,7 @@ class DateRangePicker extends Field implements HasAffixActions
     }
 
 
-    public function processDefault($enforceIfNull = false): void
+    public function processDefault(): void
     {
         $default = null;
 
@@ -84,7 +91,7 @@ class DateRangePicker extends Field implements HasAffixActions
         }
         $this->default($default);
 
-        if ($enforceIfNull) {
+        if ($this->enforceIfNull) {
             $this->afterStateHydrated(fn($component, $state) => $state == null ? $component->state($default) : null);
         }
     }
