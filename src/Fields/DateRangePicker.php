@@ -5,6 +5,7 @@ namespace Malzariey\FilamentDaterangepickerFilter\Fields;
 use Carbon\Carbon;
 use Closure;
 use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Concerns\{HasAffixes, HasExtraInputAttributes, HasPlaceholder};
 use Filament\Forms\Components\Contracts\HasAffixActions;
 use Filament\Forms\Components\Field;
@@ -26,10 +27,14 @@ class DateRangePicker extends Field implements HasAffixActions
     protected bool|Closure $singleCalendar = false;
     protected array|Closure $ranges = [];
 
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->processDefault();
+
+        $this->afterStateHydrated(function($operation) {
+            $this->processDefault($operation);
+        } );
 
     }
 
@@ -78,21 +83,25 @@ class DateRangePicker extends Field implements HasAffixActions
     }
 
 
-    public function processDefault(): void
+    public function processDefault($operation): void
     {
         $default = null;
 
-        if ($this->getStartDate() != null && $this->getEndDate() != null) {
-            $default = $this->getStartDate()->format($this->getFormat()) . $this->separator . $this->getEndDate()->format($this->getFormat());
-        } else if ($this->getStartDate() != null && $this->getEndDate() == null) {
-            $default = $this->getStartDate()->format($this->getFormat()) . $this->separator . $this->getStartDate()->format($this->getFormat());
-        } else if ($this->getStartDate() == null && $this->getEndDate() != null) {
-            $default = $this->getEndDate()->format($this->getFormat()) . $this->separator . $this->getEndDate()->format($this->getFormat());
+        $startDate = $this->getStartDate();
+        $endDate = $this->getEndDate();
+
+        if ($startDate != null && $endDate != null) {
+            $default = $startDate->format($this->getFormat()) . $this->separator . $endDate->format($this->getFormat());
+        } else if ($startDate != null && $endDate == null) {
+            $default = $startDate->format($this->getFormat()) . $this->separator . $startDate->format($this->getFormat());
+        } else if ($startDate == null && $endDate != null) {
+            $default = $endDate->format($this->getFormat()) . $this->separator . $endDate->format($this->getFormat());
         }
+
         $this->default($default);
 
-        if ($this->enforceIfNull) {
-            $this->afterStateHydrated(fn($component, $state) => $state == null ? $component->state($default) : null);
+        if ($default != null && ($operation != "edit" || ($this->enforceIfNull && $this->getState() == null))) {
+            $this->state($default);
         }
     }
 
