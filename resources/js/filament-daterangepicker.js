@@ -185,13 +185,7 @@ export default function dateRangeComponent({
                 }
             });
 
-            if (this.state != null) {
-                const dates = this.state.split(separator);
-                if (dates.length === 2 && this.dateRangePicker != null) {
-                    this.dateRangePicker.setStartDate(dates[0]);
-                    this.dateRangePicker.setEndDate(dates[1]);
-                }
-            }
+            this.dateFromState(this.dateRangePicker, this.state);
 
             let parent = this;
 
@@ -202,11 +196,35 @@ export default function dateRangeComponent({
             this.$watch('state', function(value) {
                 if (value == null) {
                     value = '';
-                    parent.dateRangePicker.setStartDate(moment());
-                    parent.dateRangePicker.setEndDate(moment());
+                    parent.clear(parent.dateRangePicker);
+                }else{
+                    parent.dateFromState(parent.dateRangePicker, value);
                 }
+
                 $(parent.$refs.daterange).val(parent.getRangeLabel(value));
             })
         },
+        clear: function (dateRangePicker) {
+            if (dateRangePicker == null) {
+                return;
+            }
+            dateRangePicker.setStartDate(moment());
+            dateRangePicker.setEndDate(moment());
+        },
+
+        dateFromState: function (dateRangePicker,state) {
+            if (state == null) {
+                this.clear(dateRangePicker);
+                return;
+            }
+
+            const dates = state.split(separator);
+            if (dates.length === 2 && dateRangePicker != null) {
+                dateRangePicker.setStartDate(dates[0]);
+                dateRangePicker.setEndDate(dates[1]);
+            } else {
+                this.clear(dateRangePicker);
+            }
+        }
     }
 }
