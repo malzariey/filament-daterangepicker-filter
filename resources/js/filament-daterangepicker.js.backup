@@ -165,7 +165,7 @@ export default function dateRangeComponent({
                     isInvalidDate: (date) => {
                         if(momentDatesArray != null && momentDatesArray.length > 0 ) {
                             return momentDatesArray.some(disabledDate =>
-                                disabledDate.tz(timezone).startOf('day').isSame(date.tz(timezone).startOf('day'), 'day')
+                                disabledDate.utc().startOf('day').isSame(date.utc().startOf('day'), 'day')
                             );
                         }else{
                             return false;
