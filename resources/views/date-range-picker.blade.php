@@ -18,14 +18,13 @@
     :field="$field"
 >
     <div
-        x-ignore
         @if (\Filament\Support\Facades\FilamentView::hasSpaMode())
-            ax-load="visible || event (ax-modal-opened)"
+            x-load="visible || event (ax-modal-opened)"
         @else
-            ax-load
+            x-load
         @endif
 
-        ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
+        x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
         x-ref="container"
         x-data="dateRangeComponent({
                 state: @entangle($statePath),
