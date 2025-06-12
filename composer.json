@@ -16,14 +16,13 @@
         }
     ],
     "require": {
-        "filament/filament": "^3.0",
+        "filament/filament": "^3.0|^4.0",
         "spatie/laravel-package-tools": "^1.16.4",
         "illuminate/contracts": "^8.0|^9.0|^10.0|^11.0|^11.0|^12.0"
     },
     "autoload": {
         "psr-4": {
-            "Malzariey\\FilamentDaterangepickerFilter\\": "src",
-            "Malzariey\\FilamentDaterangepickerFilter\\Database\\Factories\\": "database/factories"
+            "Malzariey\\FilamentDaterangepickerFilter\\": "src"
         }
     },
     "config": {

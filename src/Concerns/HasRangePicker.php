@@ -33,7 +33,7 @@ trait HasRangePicker
     protected array|Closure|null $maxSpan = null;
     protected bool|Closure $useRangeLabels = false;
     protected bool|Closure $disableCustomRange = false;
-    protected string $separator = ' - ';
+    protected string $rangeSeparator = ' - ';
 
     protected bool|Closure $disableRange = false;
 
@@ -182,9 +182,9 @@ trait HasRangePicker
         return $this;
     }
 
-    public function separator(string $separator): static
+    public function rangeSeparator(string $separator): static
     {
-        $this->separator = $separator;
+        $this->rangeSeparator = $separator;
 
         return $this;
     }

@@ -74,7 +74,7 @@
                 ranges: @js($getRanges()),
                 maxSpan: @js($getMaxSpan()),
                 disableRange : @js($getDisableRanges()),
-                separator: @js($getSeparator()),
+                separator: @js($getRangeSeparator()),
                 useRangeLabels: @js($getUseRangeLabels()),
                 disabledDates: @js($getDisabledDates()),
                 handleValueChangeUsing: (value, name) => {

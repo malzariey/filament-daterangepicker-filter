@@ -323,8 +323,8 @@ use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
 
-DateRangeFilter::make('created_at')->separator(' - ')
-DateRangePicker::make('created_at')->separator(' - ')
+DateRangeFilter::make('created_at')->rangeSeparator(' - ')
+DateRangePicker::make('created_at')->rangeSeparator(' - ')
 ```
 
 #### Drops Position
@@ -447,12 +447,14 @@ DateRangePicker::make('created_at')->showDropdowns()->minYear(2000)->maxYear(203
 
 # Styling
 
-If you're [building a custom Filament theme](https://filamentphp.com/docs/2.x/admin/appearance#building-themes), you need one more step to make the calendar theme match your custom theme.
+If you're [building a custom Filament theme](https://filamentphp.com/docs/4.x/introduction/overview#building-themes), you need one more step to make the calendar theme match your custom theme.
 
-Add this line to your `resources/css/{panel_name}/theme.css` file.
+Add these lines to your `resources/css/{panel_name}/theme.css` file.
 
 ```css
-@import '/vendor/malzariey/filament-daterangepicker-filter/resources/css/filament-daterangepicker.css';
+@import '../../../../vendor/malzariey/filament-daterangepicker-filter/resources/css/filament-daterangepicker.css';
+@source '../../../../vendor/malzariey/filament-daterangepicker-filter/resources/*/**';
+
 ```
 
 <br>
