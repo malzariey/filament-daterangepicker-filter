@@ -172,7 +172,11 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function getDisabledDates(): array
     {
-        return $this->evaluate($this->disabledDates);
+        $disabledDates = $this->evaluate($this->disabledDates);
+        
+        return array_map(function ($date) {
+            return $date instanceof Carbon ? $date->toDateString() : $date;
+        }, $disabledDates);
     }
 
     public function isAlwaysShowCalendar(): bool
