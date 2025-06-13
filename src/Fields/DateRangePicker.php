@@ -87,20 +87,26 @@ class DateRangePicker extends Field implements HasAffixActions
     {
         $default = null;
 
-        $startDate = $this->getStartDate();
-        $endDate = $this->getEndDate();
+        $state = $this->getState();
 
-        if ($startDate != null && $endDate != null) {
-            $default = $startDate->format($this->getFormat()) . $this->separator . $endDate->format($this->getFormat());
-        } else if ($startDate != null && $endDate == null) {
-            $default = $startDate->format($this->getFormat()) . $this->separator . $startDate->format($this->getFormat());
-        } else if ($startDate == null && $endDate != null) {
-            $default = $endDate->format($this->getFormat()) . $this->separator . $endDate->format($this->getFormat());
+        if($state != null) {
+            $default = $state;
+        }else {
+            $startDate = $this->getStartDate();
+            $endDate = $this->getEndDate();
+
+            if ($startDate != null && $endDate != null) {
+                $default = $startDate->format($this->getFormat()) . $this->separator . $endDate->format($this->getFormat());
+            } else if ($startDate != null && $endDate == null) {
+                $default = $startDate->format($this->getFormat()) . $this->separator . $startDate->format($this->getFormat());
+            } else if ($startDate == null && $endDate != null) {
+                $default = $endDate->format($this->getFormat()) . $this->separator . $endDate->format($this->getFormat());
+            }
         }
 
         $this->default($default);
 
-        if ($default != null && ($operation != "edit" || ($this->enforceIfNull && $this->getState() == null))) {
+        if ($default != null && ($operation != "edit" || ($this->enforceIfNull && $state == null))) {
             $this->state($default);
         }
     }

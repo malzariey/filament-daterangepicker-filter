@@ -469,6 +469,4 @@ The MIT License (MIT). Please see [License File](https://github.com/malzariey/fi
 ## Acknowledgements
 
 - This project makes use of the fantastic [Date Range Picker for Bootstrap](https://github.com/dangrossman/daterangepicker) by [Dan Grossman](https://www.dangrossman.info/).
-- Special thanks to [JetBrains](https://www.jetbrains.com), whose support to open-source projects has been tremendously valuable for our project's progress and improvement. Through their [Open Source Support Program](https://www.jetbrains.com/community/opensource/#support), JetBrains has generously provided us with free licenses to their high-quality professional developer tools, including IntelliJ IDEA and PhpStorm. These tools have greatly improved our productivity and made it easier to maintain high quality code. JetBrains has demonstrated a strong commitment to assisting the open source community, making a significant contribution to promoting open-source software and collaboration. We wholeheartedly thank JetBrains for their support and for having us in their open-source project support program.
-
-[![JetBrains Logo](https://www.jetbrains.com/company/brand/img/jetbrains_logo.png)](https://www.jetbrains.com/)
+- Special thanks to [JetBrains](https://www.jetbrains.com), whose support to open-source projects has been tremendously valuable for our project's progress and improvement.
