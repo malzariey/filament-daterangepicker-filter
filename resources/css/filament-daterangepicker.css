@@ -205,7 +205,7 @@
 }
 
 .next.available span, .prev.available span{
-    @apply dark:border-white !important;
+    @apply dark:!border-white;
 }
 
 .daterangepicker td.week, .daterangepicker th.week {
