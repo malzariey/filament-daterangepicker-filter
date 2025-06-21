@@ -98,7 +98,7 @@ export default function dateRangeComponent({
             let momentDatesArray = [];
 
             if(disabledDates !== undefined && disabledDates.length > 0 ) {
-                momentDatesArray = disabledDates.map(dateString => moment(dateString));
+                momentDatesArray = disabledDates.map(dateString => moment.utc(dateString));
             }
 
             $(this.$refs.daterange).daterangepicker(
@@ -164,7 +164,7 @@ export default function dateRangeComponent({
                     isInvalidDate: (date) => {
                         if(momentDatesArray != null && momentDatesArray.length > 0 ) {
                             return momentDatesArray.some(disabledDate =>
-                                disabledDate.utc().startOf('day').isSame(date.utc().startOf('day'), 'day')
+                                disabledDate.clone().tz(timezone).startOf('day').isSame(date.clone().startOf('day'), 'day')
                             );
                         }else{
                             return false;
