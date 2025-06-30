@@ -153,9 +153,9 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function getFormSchema() : array
+    public function getSchemaComponents() : array
     {
-        $schema = $this->evaluate($this->formSchema);
+        $schema = $this->evaluate($this->schema);
 
         if ($schema !== null) {
             return $schema;
