@@ -54,7 +54,6 @@ export default function dateRangeComponent({
                        disableRange,
                        separator,
                        useRangeLabels,
-                       handleValueChangeUsing,
                        showWeekNumbers,
                        showISOWeekNumbers,
                        weekLabel,
@@ -179,9 +178,9 @@ export default function dateRangeComponent({
 
             $(this.$refs.daterange).on('apply.daterangepicker', function(ev, picker) {
                 if(singleCalendar){
-                    handleValueChangeUsing(picker.startDate.format(displayFormat), name)
+                    parent.state = picker.startDate.format(displayFormat);
                 }else{
-                    handleValueChangeUsing(picker.startDate.format(displayFormat) + separator + picker.endDate.format(displayFormat), name)
+                    parent.state = picker.startDate.format(displayFormat) + separator + picker.endDate.format(displayFormat);
                 }
             });
 

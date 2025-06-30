@@ -23,11 +23,11 @@
         @else
             x-load
         @endif
-
+        x-ignore
         x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
         x-ref="container"
         x-data="dateRangeComponent({
-                state: @entangle($statePath),
+                state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$getStatePath()}')") }},
                 name: @js($name),
                 alwaysShowCalendars: @js($isAlwaysShowCalendar()),
                 autoApply: @js($getAutoApply()),
@@ -77,11 +77,6 @@
                 separator: @js($getRangeSeparator()),
                 useRangeLabels: @js($getUseRangeLabels()),
                 disabledDates: @js($getDisabledDates()),
-                handleValueChangeUsing: (value, name) => {
-                    if (name == '{{ $name }}') {
-                        @this.set('{!! $statePath !!}', value);
-                    }
-                },
                 showWeekNumbers: @js($getShowWeekNumbers()),
                 showISOWeekNumbers: @js($getShowISOWeekNumbers()),
                 weekLabel: '{!! __('filament-daterangepicker-filter::message.weekLabel') !!}',
