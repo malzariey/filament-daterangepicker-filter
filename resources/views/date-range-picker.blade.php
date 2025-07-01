@@ -140,7 +140,7 @@
                                 'placeholder' => $getPlaceholder(),
                                 'tabindex' => $isAutofocused() ? 0 : -1,
                                 'required' => $isRequired(),
-                                'readonly' => true,
+                                'readonly' => $isReadOnly(),
                                 'type' => 'text',
                             ], escape: false)"
                     />

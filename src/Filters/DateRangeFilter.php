@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Concerns\HasRangePicker;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
+use Filament\Forms\Components\Concerns\CanBeReadOnly;
 
 class DateRangeFilter extends BaseFilter
 {
     use HasRangePicker;
+    use CanBeReadOnly;
 
     protected string $column;
 
