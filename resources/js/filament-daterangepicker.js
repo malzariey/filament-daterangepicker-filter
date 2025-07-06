@@ -1,9 +1,9 @@
-import $ from 'jquery';
 import moment from 'moment';
 import 'moment-timezone';
+import DateRangePicker  from './plugin.cjs';
 
-import './plugin.cjs';
 
+window.DateRangePicker = DateRangePicker;
 export default function dateRangeComponent({
                        name,
                        state,
@@ -101,7 +101,8 @@ export default function dateRangeComponent({
                 momentDatesArray = disabledDates.map(dateString => moment(dateString));
             }
 
-            $(this.$refs.daterange).daterangepicker(
+            this.dateRangePicker = new DateRangePicker(
+                this.$refs.daterange,
                 {
                     name: name,
                     alwaysShowCalendars: alwaysShowCalendars,
@@ -175,9 +176,10 @@ export default function dateRangeComponent({
                 }
             );
 
-            this.dateRangePicker = $(this.$refs.daterange).data('daterangepicker');
-
-            $(this.$refs.daterange).on('apply.daterangepicker', function(ev, picker) {
+            // this.dateRangePicker = $(this.$refs.daterange).data('daterangepicker');
+            // TODO: check if this works with the new DateRangePicker
+            window.addEventListener('apply.daterangepicker', function(ev) {
+                const picker = ev.detail.picker;
                 if(singleCalendar){
                     handleValueChangeUsing(picker.startDate.format(displayFormat), name)
                 }else{
@@ -190,7 +192,7 @@ export default function dateRangeComponent({
             let parent = this;
 
             setTimeout(function() {
-                $(parent.$refs.daterange).val(parent.getRangeLabel(parent.state));
+                parent.$refs.daterange.value = parent.getRangeLabel(parent.state);
             }, 20);
 
             this.$watch('state', function(value) {
@@ -201,7 +203,7 @@ export default function dateRangeComponent({
                     parent.dateFromState(parent.dateRangePicker, value);
                 }
 
-                $(parent.$refs.daterange).val(parent.getRangeLabel(value));
+                parent.$refs.daterange.value = parent.getRangeLabel(value);
             })
         },
         clear: function (dateRangePicker) {
