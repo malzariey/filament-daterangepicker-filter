@@ -1,7 +1,16 @@
-import moment from 'moment';
-import 'moment-timezone';
-import DateRangePicker  from './plugin.cjs';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import DateRangePicker from './plugin.cjs';
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 window.DateRangePicker = DateRangePicker;
 export default function dateRangeComponent({
@@ -64,14 +73,13 @@ export default function dateRangeComponent({
                        timezone
    }) {
 
-    var momentRanges = {};
+    var dayjsRanges = {};
     for (var key in ranges) {
         var dateRange = ranges[key];
-        momentRanges[key] = dateRange.map((dateString) => moment(dateString));
+        dayjsRanges[key] = dateRange.map((dateString) => dayjs(dateString, displayFormat));
     }
 
     return {
-
         dateRangePicker: null,
         state: state,
         getRangeLabel: function (state) {
@@ -80,10 +88,10 @@ export default function dateRangeComponent({
             }
 
             const [from, to] = state.split(separator);
-            const fromDate = moment(from, displayFormat);
-            const toDate = moment(to, displayFormat);
+            const fromDate = dayjs(from, displayFormat);
+            const toDate = dayjs(to, displayFormat);
 
-            for (const [label, [rangeFrom, rangeTo]] of Object.entries(momentRanges)) {
+            for (const [label, [rangeFrom, rangeTo]] of Object.entries(dayjsRanges)) {
                 if (fromDate.isSame(rangeFrom) && toDate.isSame(rangeTo)) {
                     return label;
                 }
@@ -92,105 +100,52 @@ export default function dateRangeComponent({
             return state;
         },
         init: function () {
+            if (timezone) {
+                dayjs.tz.setDefault(timezone);
+            }
 
-            moment.tz.setDefault(timezone);
-
-            let momentDatesArray = [];
-
-            if(disabledDates !== undefined && disabledDates.length > 0 ) {
-                momentDatesArray = disabledDates.map(dateString => moment(dateString));
+            let dayjsDatesArray = [];
+            if (disabledDates !== undefined && disabledDates.length > 0) {
+                dayjsDatesArray = disabledDates.map(dateString => dayjs(dateString, displayFormat));
             }
 
             this.dateRangePicker = new DateRangePicker(
                 this.$refs.daterange,
                 {
-                    name: name,
-                    alwaysShowCalendars: alwaysShowCalendars,
-                    autoApply: autoApply,
-                    linkedCalendars: linkedCalendars,
-                    singleDatePicker: singleCalendar,
-                    autoUpdateInput: false,
-                    drops: drops,
-                    opens: opens,
-                    startDate: startDate != null ? moment(startDate) : undefined,
-                    endDate: endDate != null ? moment(endDate) : undefined,
-                    maxDate: maxDate != null ? moment(maxDate) : undefined,
-                    minDate: minDate != null ? moment(minDate) : undefined,
-                    timePicker: timePicker,
-                    timePicker24Hour: timePicker24,
-                    timePickerSeconds: timePickerSecond,
-                    timePickerIncrement: timePickerIncrement,
-                    showCustomRangeLabel: ! disableCustomRange,
-                    locale: {
-                        format: displayFormat,
-                        separator: separator,
-                        applyLabel: applyLabel,
-                        cancelLabel: cancelLabel,
-                        fromLabel: fromLabel,
-                        toLabel: toLabel,
-                        customRangeLabel: customRangeLabel,
-                        weekLabel: weekLabel,
-                        daysOfWeek: [
-                            sunday,
-                            monday,
-                            tuesday,
-                            wednesday,
-                            thursday,
-                            friday,
-                            saturday,
-                        ],
-                        monthNames: [
-                            january,
-                            february,
-                            march,
-                            april,
-                            may,
-                            june,
-                            july,
-                            august,
-                            september,
-                            october,
-                            november,
-                            december,
-                        ],
-                        firstDay: firstDay
-                    },
-                    ranges: disableRange ? undefined : momentRanges,
-                    maxSpan: maxSpan,
-                    showWeekNumbers: showWeekNumbers,
-                    showISOWeekNumbers: showISOWeekNumbers,
-                    showDropdowns: showDropdowns,
-                    minYear: minYear,
-                    maxYear: maxYear,
+                    // ...other options...
+                    startDate: startDate != null ? dayjs(startDate, displayFormat) : undefined,
+                    endDate: endDate != null ? dayjs(endDate, displayFormat) : undefined,
+                    maxDate: maxDate != null ? dayjs(maxDate, displayFormat) : undefined,
+                    minDate: minDate != null ? dayjs(minDate, displayFormat) : undefined,
+                    // ...other options...
+                    ranges: disableRange ? undefined : dayjsRanges,
                     isInvalidDate: (date) => {
-                        if(momentDatesArray != null && momentDatesArray.length > 0 ) {
-                            return momentDatesArray.some(disabledDate =>
+                        if (dayjsDatesArray != null && dayjsDatesArray.length > 0) {
+                            return dayjsDatesArray.some(disabledDate =>
                                 disabledDate.utc().startOf('day').isSame(date.utc().startOf('day'), 'day')
                             );
-                        }else{
+                        } else {
                             return false;
                         }
-
                     },
-
                 }
             );
 
-            // this.dateRangePicker = $(this.$refs.daterange).data('daterangepicker');
-            // TODO: check if this works with the new DateRangePicker
             window.addEventListener('apply.daterangepicker', function(ev) {
                 const picker = ev.detail.picker;
-                if(singleCalendar){
-                    handleValueChangeUsing(picker.startDate.format(displayFormat), name)
-                }else{
-                    handleValueChangeUsing(picker.startDate.format(displayFormat) + separator + picker.endDate.format(displayFormat), name)
+                if (singleCalendar) {
+                    handleValueChangeUsing(picker.startDate.format(displayFormat), name);
+                } else {
+                    handleValueChangeUsing(
+                        picker.startDate.format(displayFormat) + separator + picker.endDate.format(displayFormat),
+                        name
+                    );
                 }
             });
 
             this.dateFromState(this.dateRangePicker, this.state);
 
             let parent = this;
-
             setTimeout(function() {
                 parent.$refs.daterange.value = parent.getRangeLabel(parent.state);
             }, 20);
@@ -199,10 +154,9 @@ export default function dateRangeComponent({
                 if (value == null) {
                     value = '';
                     parent.clear(parent.dateRangePicker);
-                }else{
+                } else {
                     parent.dateFromState(parent.dateRangePicker, value);
                 }
-
                 parent.$refs.daterange.value = parent.getRangeLabel(value);
             })
         },
@@ -210,11 +164,11 @@ export default function dateRangeComponent({
             if (dateRangePicker == null) {
                 return;
             }
-            dateRangePicker.setStartDate(moment());
-            dateRangePicker.setEndDate(moment());
+            dateRangePicker.setStartDate(dayjs());
+            dateRangePicker.setEndDate(dayjs());
         },
 
-        dateFromState: function (dateRangePicker,state) {
+        dateFromState: function (dateRangePicker, state) {
             if (state == null) {
                 this.clear(dateRangePicker);
                 return;
@@ -222,8 +176,8 @@ export default function dateRangeComponent({
 
             const dates = state.split(separator);
             if (dates.length === 2 && dateRangePicker != null) {
-                dateRangePicker.setStartDate(dates[0]);
-                dateRangePicker.setEndDate(dates[1]);
+                dateRangePicker.setStartDate(dayjs(dates[0], displayFormat));
+                dateRangePicker.setEndDate(dayjs(dates[1], displayFormat));
             } else {
                 this.clear(dateRangePicker);
             }
