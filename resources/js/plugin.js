@@ -361,65 +361,6 @@ export default class DateRangePicker {
         this.parentEl.appendChild(this.container);
     }
 
-    renderRanges(options) {
-        if (typeof options.ranges !== 'object' || !this.container) return;
-
-        this.ranges = {}; // Reset
-
-        let start, end;
-        for (let range in options.ranges) {
-            if (!options.ranges.hasOwnProperty(range)) continue;
-
-            if (typeof options.ranges[range][0] === 'string')
-                start = moment(options.ranges[range][0], this.locale.format);
-            else
-                start = moment(options.ranges[range][0]);
-
-            if (typeof options.ranges[range][1] === 'string')
-                end = moment(options.ranges[range][1], this.locale.format);
-            else
-                end = moment(options.ranges[range][1]);
-
-            // If the start or end date exceed those allowed by the minDate or maxSpan
-            if (this.minDate && start.isBefore(this.minDate))
-                start = this.minDate.clone();
-
-            let maxDate = this.maxDate;
-            if (this.maxSpan && maxDate && start.clone().add(this.maxSpan).isAfter(maxDate))
-                maxDate = start.clone().add(this.maxSpan);
-            if (maxDate && end.isAfter(maxDate))
-                end = maxDate.clone();
-
-            // If the end of the range is before the minimum or the start of the range is after the maximum, skip
-            if ((this.minDate && end.isBefore(this.minDate, this.timePicker ? 'minute' : 'day'))
-                || (maxDate && start.isAfter(maxDate, this.timePicker ? 'minute' : 'day')))
-                continue;
-
-            // Support unicode chars in the range names
-            const elem = document.createElement('textarea');
-            elem.innerHTML = range;
-            const rangeHtml = elem.value;
-
-            this.ranges[rangeHtml] = [start, end];
-        }
-
-        // Build the list HTML
-        let list = '<ul>';
-        for (let range in this.ranges) {
-            list += `<li data-range-key="${range}">${range}</li>`;
-        }
-        if (this.showCustomRangeLabel) {
-            list += `<li data-range-key="${this.locale.customRangeLabel}">${this.locale.customRangeLabel}</li>`;
-        }
-        list += '</ul>';
-
-        // Insert into the .ranges container
-        const rangesDiv = this.container.querySelector('.ranges');
-        if (rangesDiv) {
-            rangesDiv.innerHTML = list;
-        }
-    }
-
     parseInputValueForDates() {
         if (
             this.element.tagName === 'INPUT' &&
@@ -1771,6 +1712,65 @@ export default class DateRangePicker {
         const calendarTime = this.container.querySelector(`.drp-calendar.${side} .calendar-time`);
         if (calendarTime) {
             calendarTime.innerHTML = html;
+        }
+    }
+
+    renderRanges(options) {
+        if (typeof options.ranges !== 'object' || !this.container) return;
+
+        this.ranges = {}; // Reset
+
+        let start, end;
+        for (let range in options.ranges) {
+            if (!options.ranges.hasOwnProperty(range)) continue;
+
+            if (typeof options.ranges[range][0] === 'string')
+                start = moment(options.ranges[range][0], this.locale.format);
+            else
+                start = moment(options.ranges[range][0]);
+
+            if (typeof options.ranges[range][1] === 'string')
+                end = moment(options.ranges[range][1], this.locale.format);
+            else
+                end = moment(options.ranges[range][1]);
+
+            // If the start or end date exceed those allowed by the minDate or maxSpan
+            if (this.minDate && start.isBefore(this.minDate))
+                start = this.minDate.clone();
+
+            let maxDate = this.maxDate;
+            if (this.maxSpan && maxDate && start.clone().add(this.maxSpan).isAfter(maxDate))
+                maxDate = start.clone().add(this.maxSpan);
+            if (maxDate && end.isAfter(maxDate))
+                end = maxDate.clone();
+
+            // If the end of the range is before the minimum or the start of the range is after the maximum, skip
+            if ((this.minDate && end.isBefore(this.minDate, this.timePicker ? 'minute' : 'day'))
+                || (maxDate && start.isAfter(maxDate, this.timePicker ? 'minute' : 'day')))
+                continue;
+
+            // Support unicode chars in the range names
+            const elem = document.createElement('textarea');
+            elem.innerHTML = range;
+            const rangeHtml = elem.value;
+
+            this.ranges[rangeHtml] = [start, end];
+        }
+
+        // Build the list HTML
+        let list = '<ul>';
+        for (let range in this.ranges) {
+            list += `<li data-range-key="${range}">${range}</li>`;
+        }
+        if (this.showCustomRangeLabel) {
+            list += `<li data-range-key="${this.locale.customRangeLabel}">${this.locale.customRangeLabel}</li>`;
+        }
+        list += '</ul>';
+
+        // Insert into the .ranges container
+        const rangesDiv = this.container.querySelector('.ranges');
+        if (rangesDiv) {
+            rangesDiv.innerHTML = list;
         }
     }
 

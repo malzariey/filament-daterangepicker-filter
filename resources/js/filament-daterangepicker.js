@@ -1,6 +1,6 @@
 import moment from 'moment';
 import 'moment-timezone';
-import DateRangePicker  from './plugin.cjs';
+import DateRangePicker  from './plugin.js';
 
 export default function dateRangeComponent({
        name,

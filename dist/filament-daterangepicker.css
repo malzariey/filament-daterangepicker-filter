@@ -16,6 +16,9 @@
   padding: 0px;
   font-size: 0.75rem;
   line-height: 1rem;
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
 .daterangepicker:is(.dark *) {
@@ -313,13 +316,6 @@
 .start-date.active.off:is(.daterangepicker td):is(.dark *) {
   --tw-bg-opacity: 1;
   background-color: rgb(31 41 55 / var(--tw-bg-opacity, 1));
-}
-
-.start-date.active:is(.daterangepicker td):hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(191 219 254 / var(--tw-bg-opacity, 1));
-  --tw-text-opacity: 1;
-  color: rgb(23 37 84 / var(--tw-text-opacity, 1));
 }
 
 .start-date.end-date:is(.daterangepicker td) {

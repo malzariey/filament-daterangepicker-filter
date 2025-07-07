@@ -1,5 +1,5 @@
 .daterangepicker {
-    @apply absolute dark:bg-gray-800 dark:border-gray-700 bg-white rounded border border-gray-200 max-w-none p-0 mt-2 top-24 left-5 hidden text-xs leading-4 w-auto min-w-[500px];
+    @apply absolute dark:bg-gray-800 dark:border-gray-700 bg-white rounded border border-gray-200 max-w-none p-0 mt-2 top-24 left-5 hidden text-xs leading-4 w-auto min-w-[500px] shadow-lg;
     color: inherit;
     z-index: 19; /* changed this to 19 to not overlap the navigation but still high enough compared to other elements */
     font-family: inherit;
@@ -216,9 +216,6 @@
                 @apply text-white bg-primary-600 dark:bg-primary-500;
                 &.off {
                     @apply bg-transparent dark:bg-gray-800 text-primary-950;
-                }
-                &:hover {
-                    @apply bg-primary-200 text-primary-950;
                 }
             }
             &.end-date {
