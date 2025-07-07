@@ -1,6 +1,14 @@
-import moment from 'moment';
-import 'moment-timezone';
 import DateRangePicker  from './plugin.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import isSame from 'dayjs/plugin/isSameOrAfter';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
+dayjs.extend(isSame);
 
 export default function dateRangeComponent({
        name,
@@ -62,10 +70,10 @@ export default function dateRangeComponent({
        timezone
     }) {
 
-    var momentRanges = {};
-    for (var key in ranges) {
-        var dateRange = ranges[key];
-        momentRanges[key] = dateRange.map((dateString) => moment(dateString));
+    let dayjsRanges = {};
+    for (let key in ranges) {
+        let dateRange = ranges[key];
+        dayjsRanges[key] = dateRange.map((dateString) => dayjs(dateString));
     }
 
     return {
@@ -78,10 +86,10 @@ export default function dateRangeComponent({
             }
 
             const [from, to] = state.split(separator);
-            const fromDate = moment(from, displayFormat);
-            const toDate = moment(to, displayFormat);
+            const fromDate = dayjs(from, displayFormat);
+            const toDate = dayjs(to, displayFormat);
 
-            for (const [label, [rangeFrom, rangeTo]] of Object.entries(momentRanges)) {
+            for (const [label, [rangeFrom, rangeTo]] of Object.entries(dayjsRanges)) {
                 if (fromDate.isSame(rangeFrom) && toDate.isSame(rangeTo)) {
                     return label;
                 }
@@ -91,12 +99,12 @@ export default function dateRangeComponent({
         },
         init: function () {
 
-            moment.tz.setDefault(timezone);
+            dayjs.tz.setDefault(timezone);
 
-            let momentDatesArray = [];
+            let dayjsDatesArray = [];
 
             if(disabledDates !== undefined && disabledDates.length > 0 ) {
-                momentDatesArray = disabledDates.map(dateString => moment(dateString));
+                dayjsDatesArray = disabledDates.map(dateString => dayjs(dateString));
             }
 
             this.dateRangePicker = new DateRangePicker(
@@ -110,10 +118,10 @@ export default function dateRangeComponent({
                     autoUpdateInput: false,
                     drops: drops,
                     opens: opens,
-                    startDate: startDate != null ? moment(startDate) : undefined,
-                    endDate: endDate != null ? moment(endDate) : undefined,
-                    maxDate: maxDate != null ? moment(maxDate) : undefined,
-                    minDate: minDate != null ? moment(minDate) : undefined,
+                    startDate: startDate !== null ? dayjs(startDate) : undefined,
+                    endDate: endDate !== null ? dayjs(endDate) : undefined,
+                    maxDate: maxDate !== null ? dayjs(maxDate) : undefined,
+                    minDate: minDate !== null ? dayjs(minDate) : undefined,
                     timePicker: timePicker,
                     timePicker24Hour: timePicker24,
                     timePickerSeconds: timePickerSecond,
@@ -153,7 +161,7 @@ export default function dateRangeComponent({
                         ],
                         firstDay: firstDay
                     },
-                    ranges: disableRange ? undefined : momentRanges,
+                    ranges: disableRange ? undefined : dayjsRanges,
                     maxSpan: maxSpan,
                     showWeekNumbers: showWeekNumbers,
                     showISOWeekNumbers: showISOWeekNumbers,
@@ -161,8 +169,8 @@ export default function dateRangeComponent({
                     minYear: minYear,
                     maxYear: maxYear,
                     isInvalidDate: (date) => {
-                        if(momentDatesArray != null && momentDatesArray.length > 0 ) {
-                            return momentDatesArray.some(disabledDate =>
+                        if(dayjsDatesArray !== null && dayjsDatesArray.length > 0 ) {
+                            return dayjsDatesArray.some(disabledDate =>
                                 disabledDate.utc().startOf('day').isSame(date.utc().startOf('day'), 'day')
                             );
                         }else{
@@ -194,7 +202,7 @@ export default function dateRangeComponent({
             }, 20);
 
             this.$watch('state', function(value) {
-                if (value == null) {
+                if (value === null) {
                     value = '';
                     parent.clear(parent.dateRangePicker);
                 }else{
@@ -206,23 +214,23 @@ export default function dateRangeComponent({
         },
 
         clear: function (dateRangePicker) {
-            if (dateRangePicker == null) {
+            if (dateRangePicker === null) {
                 return;
             }
-            dateRangePicker.setStartDate(moment());
-            dateRangePicker.setEndDate(moment());
+            dateRangePicker.setStartDate(dayjs());
+            dateRangePicker.setEndDate(dayjs());
         },
 
         dateFromState: function (dateRangePicker,state) {
-            if (state == null) {
+            if (state === null) {
                 this.clear(dateRangePicker);
                 return;
             }
 
             const dates = state.split(separator);
-            if (dates.length === 2 && dateRangePicker != null) {
-                dateRangePicker.setStartDate(dates[0]);
-                dateRangePicker.setEndDate(dates[1]);
+            if (dates.length === 2 && dateRangePicker !== null) {
+                dateRangePicker.setStartDate(dayjs(dates[0], displayFormat));
+                dateRangePicker.setEndDate(dayjs(dates[1], displayFormat));
             } else {
                 this.clear(dateRangePicker);
             }

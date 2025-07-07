@@ -1,4 +1,15 @@
-import moment from 'moment';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+import localeData from 'dayjs/plugin/localeData';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+import isoWeek from 'dayjs/plugin/isoWeek';
+
+dayjs.extend(customParseFormat);
+dayjs.extend(localizedFormat);
+dayjs.extend(localeData);
+dayjs.extend(weekOfYear);
+dayjs.extend(isoWeek);
 
 export default class DateRangePicker {
     constructor(element, options = {}, cb = () => {}) {
@@ -10,16 +21,16 @@ export default class DateRangePicker {
             : document.body;
 
         this.element = (typeof element === 'string') ? document.querySelector(element) : element;
-        this.startDate = moment().startOf('day');
-        this.endDate = moment().endOf('day');
+        this.startDate = dayjs().startOf('day');
+        this.endDate = dayjs().endOf('day');
         this.minDate = null;
         this.maxDate = null;
         this.maxSpan = null;
         this.autoApply = false;
         this.singleDatePicker = false;
         this.showDropdowns = false;
-        this.minYear = moment().subtract(100, 'year').format('YYYY');
-        this.maxYear = moment().add(100, 'year').format('YYYY');
+        this.minYear = dayjs().subtract(100, 'year').format('YYYY');
+        this.maxYear = dayjs().add(100, 'year').format('YYYY');
         this.showWeekNumbers = false;
         this.showISOWeekNumbers = false;
         this.showCustomRangeLabel = true;
@@ -54,15 +65,15 @@ export default class DateRangePicker {
 
         this.locale = {
             direction: 'ltr',
-            format: moment.localeData().longDateFormat('L'),
+            format: dayjs.localeData().longDateFormat('L'),
             separator: ' - ',
             applyLabel: 'Apply',
             cancelLabel: 'Cancel',
             weekLabel: 'W',
             customRangeLabel: 'Custom Range',
-            daysOfWeek: moment.weekdaysMin(),
-            monthNames: moment.monthsShort(),
-            firstDay: moment.localeData().firstDayOfWeek()
+            daysOfWeek: dayjs.weekdaysMin(),
+            monthNames: dayjs.monthsShort(),
+            firstDay: dayjs.localeData().firstDayOfWeek()
         };
 
         if (typeof cb === 'function') {
@@ -73,8 +84,10 @@ export default class DateRangePicker {
         this.applyOptions(options);
 
         // Create container (with custom template support)
-        this.container = this._createContainer(options);
-        this.parentEl.appendChild(this.container);
+        if (this.element._daterangepicker) {
+            this.element._daterangepicker.destroy();
+        }
+        this.element._daterangepicker = this;
 
         this.renderRanges(options);
 
@@ -220,28 +233,28 @@ export default class DateRangePicker {
 
         // Dates
         if (typeof options.startDate === 'string')
-            this.startDate = moment(options.startDate, this.locale.format);
+            this.startDate = dayjs(options.startDate, this.locale.format);
         if (typeof options.endDate === 'string')
-            this.endDate = moment(options.endDate, this.locale.format);
+            this.endDate = dayjs(options.endDate, this.locale.format);
         if (typeof options.minDate === 'string')
-            this.minDate = moment(options.minDate, this.locale.format);
+            this.minDate = dayjs(options.minDate, this.locale.format);
         if (typeof options.maxDate === 'string')
-            this.maxDate = moment(options.maxDate, this.locale.format);
+            this.maxDate = dayjs(options.maxDate, this.locale.format);
 
         if (typeof options.startDate === 'object')
-            this.startDate = moment(options.startDate);
+            this.startDate = dayjs(options.startDate);
         if (typeof options.endDate === 'object')
-            this.endDate = moment(options.endDate);
+            this.endDate = dayjs(options.endDate);
         if (typeof options.minDate === 'object')
-            this.minDate = moment(options.minDate);
+            this.minDate = dayjs(options.minDate);
         if (typeof options.maxDate === 'object')
-            this.maxDate = moment(options.maxDate);
+            this.maxDate = dayjs(options.maxDate);
 
         // Sanity checks
         if (this.minDate && this.startDate.isBefore(this.minDate))
-            this.startDate = this.minDate.clone();
+            this.startDate = this.minDate;
         if (this.maxDate && this.endDate.isAfter(this.maxDate))
-            this.endDate = this.maxDate.clone();
+            this.endDate = this.maxDate;
 
         // Other options
         if (typeof options.applyButtonClasses === 'string')
@@ -279,7 +292,7 @@ export default class DateRangePicker {
         if (typeof options.singleDatePicker === 'boolean') {
             this.singleDatePicker = options.singleDatePicker;
             if (this.singleDatePicker)
-                this.endDate = this.startDate.clone();
+                this.endDate = this.startDate;
         }
         if (typeof options.timePicker === 'boolean')
             this.timePicker = options.timePicker;
@@ -372,11 +385,11 @@ export default class DateRangePicker {
             let start = null, end = null;
 
             if (split.length === 2) {
-                start = moment(split[0], this.locale.format);
-                end = moment(split[1], this.locale.format);
+                start = dayjs(split[0], this.locale.format);
+                end = dayjs(split[1], this.locale.format);
             } else if (this.singleDatePicker && val !== "") {
-                start = moment(val, this.locale.format);
-                end = moment(val, this.locale.format);
+                start = dayjs(val, this.locale.format);
+                end = dayjs(val, this.locale.format);
             }
             if (start !== null && end !== null) {
                 this.setStartDate(start);
@@ -485,9 +498,9 @@ export default class DateRangePicker {
         // Reposition the picker if the window is resized while it's open
         window.addEventListener('resize', this._resizeProxy);
 
-        this.oldStartDate = this.startDate.clone();
-        this.oldEndDate = this.endDate.clone();
-        this.previousRightTime = this.endDate.clone();
+        this.oldStartDate = this.startDate;
+        this.oldEndDate = this.endDate;
+        this.previousRightTime = this.endDate;
 
         this.updateView();
         this.container.style.display = 'block';
@@ -506,13 +519,13 @@ export default class DateRangePicker {
 
         //incomplete date selection, revert to last values
         if (!this.endDate) {
-            this.startDate = this.oldStartDate.clone();
-            this.endDate = this.oldEndDate.clone();
+            this.startDate = this.oldStartDate;
+            this.endDate = this.oldEndDate;
         }
 
         //if a new date range was selected, invoke the user callback function
         if (!this.startDate.isSame(this.oldStartDate) || !this.endDate.isSame(this.oldEndDate))
-            this.callback(this.startDate.clone(), this.endDate.clone(), this.chosenLabel);
+            this.callback(this.startDate, this.endDate, this.chosenLabel);
 
         //if picker is attached to a text input, update it
         this.updateElement();
@@ -541,6 +554,7 @@ export default class DateRangePicker {
     }
 
     updateElement() {
+        if (!this.element) return;
         if (this.element.tagName === 'INPUT' && this.autoUpdateInput) {
             let newValue = this.startDate.format(this.locale.format);
             if (!this.singleDatePicker) {
@@ -761,21 +775,21 @@ export default class DateRangePicker {
                 return;
             }
 
-            this.leftCalendar.month = this.startDate.clone().date(2);
+            this.leftCalendar.month = this.startDate.date(2);
             if (!this.linkedCalendars && (this.endDate.month() !== this.startDate.month() || this.endDate.year() !== this.startDate.year())) {
-                this.rightCalendar.month = this.endDate.clone().date(2);
+                this.rightCalendar.month = this.endDate.date(2);
             } else {
-                this.rightCalendar.month = this.startDate.clone().date(2).add(1, 'month');
+                this.rightCalendar.month = this.startDate.date(2).add(1, 'month');
             }
 
         } else if (this.leftCalendar.month.format('YYYY-MM') !== this.startDate.format('YYYY-MM') && this.rightCalendar.month.format('YYYY-MM') !== this.startDate.format('YYYY-MM')) {
-            this.leftCalendar.month = this.startDate.clone().date(2);
-            this.rightCalendar.month = this.startDate.clone().date(2).add(1, 'month');
+            this.leftCalendar.month = this.startDate.date(2);
+            this.rightCalendar.month = this.startDate.date(2).add(1, 'month');
         }
 
         if (this.maxDate && this.linkedCalendars && !this.singleDatePicker && this.rightCalendar.month > this.maxDate) {
-            this.rightCalendar.month = this.maxDate.clone().date(2);
-            this.leftCalendar.month = this.maxDate.clone().date(2).subtract(1, 'month');
+            this.rightCalendar.month = this.maxDate.date(2);
+            this.leftCalendar.month = this.maxDate.date(2).subtract(1, 'month');
         }
     }
 
@@ -907,12 +921,12 @@ export default class DateRangePicker {
             this.showCalendars();
         } else {
             const dates = this.ranges[label];
-            this.startDate = dates[0].clone ? dates[0].clone() : moment(dates[0]);
-            this.endDate = dates[1].clone ? dates[1].clone() : moment(dates[1]);
+            this.startDate = dayjs(dates[0]);
+            this.endDate = dayjs(dates[1]);
 
             if (!this.timePicker) {
-                this.startDate.startOf('day');
-                this.endDate.endOf('day');
+                this.startDate = this.startDate.startOf('day');
+                this.endDate = this.endDate.endOf('day');
             }
 
             if (!this.alwaysShowCalendars) {
@@ -926,12 +940,12 @@ export default class DateRangePicker {
         // Find the closest parent with class 'drp-calendar'
         const cal = e.target.closest('.drp-calendar');
         if (cal && cal.classList.contains('left')) {
-            this.leftCalendar.month.subtract(1, 'month');
+            this.leftCalendar.month = this.leftCalendar.month.subtract(1, 'month');
             if (this.linkedCalendars) {
-                this.rightCalendar.month.subtract(1, 'month');
+                this.rightCalendar.month = this.rightCalendar.month.subtract(1, 'month');
             }
         } else {
-            this.rightCalendar.month.subtract(1, 'month');
+            this.rightCalendar.month = this.rightCalendar.month.subtract(1, 'month');
         }
         this.updateCalendars();
     }
@@ -940,11 +954,11 @@ export default class DateRangePicker {
         // Find the closest parent with class 'drp-calendar'
         const cal = e.target.closest('.drp-calendar');
         if (cal && cal.classList.contains('left')) {
-            this.leftCalendar.month.add(1, 'month');
+            this.leftCalendar.month = this.leftCalendar.month.add(1, 'month');
         } else {
-            this.rightCalendar.month.add(1, 'month');
+            this.rightCalendar.month = this.rightCalendar.month.add(1, 'month');
             if (this.linkedCalendars) {
-                this.leftCalendar.month.add(1, 'month');
+                this.leftCalendar.month = this.leftCalendar.month.add(1, 'month');
             }
         }
         this.updateCalendars();
@@ -1027,14 +1041,14 @@ export default class DateRangePicker {
                 let second = this.timePickerSeconds
                     ? parseInt(this.container.querySelector('.left .secondselect').value, 10)
                     : 0;
-                date = date.clone().hour(hour).minute(minute).second(second);
+                date = date.hour(hour).minute(minute).second(second);
             }
             this.endDate = null;
-            this.setStartDate(date.clone());
+            this.setStartDate(date);
         } else if (!this.endDate && date.isBefore(this.startDate)) {
             // Special case: clicking the same date for start/end,
             // but the time of the end date is before the start date
-            this.setEndDate(this.startDate.clone());
+            this.setEndDate(this.startDate);
         } else {
             // Picking end
             if (this.timePicker) {
@@ -1058,9 +1072,9 @@ export default class DateRangePicker {
                 let second = this.timePickerSeconds
                     ? parseInt(this.container.querySelector('.right .secondselect').value, 10)
                     : 0;
-                date = date.clone().hour(hour).minute(minute).second(second);
+                date = date.hour(hour).minute(minute).second(second);
             }
-            this.setEndDate(date.clone());
+            this.setEndDate(date);
             if (this.autoApply) {
                 this.calculateChosenLabel();
                 this.clickApply();
@@ -1089,12 +1103,12 @@ export default class DateRangePicker {
         let start = null, end = null;
 
         if (dateString.length === 2) {
-            start = moment(dateString[0], this.locale.format);
-            end = moment(dateString[1], this.locale.format);
+            start = dayjs(dateString[0], this.locale.format);
+            end = dayjs(dateString[1], this.locale.format);
         }
 
         if (this.singleDatePicker || start === null || end === null) {
-            start = moment(this.element.value, this.locale.format);
+            start = dayjs(this.element.value, this.locale.format);
             end = start;
         }
 
@@ -1165,12 +1179,12 @@ export default class DateRangePicker {
         if (isLeft) {
             this.leftCalendar.month.month(newMonth).year(newYear);
             if (this.linkedCalendars) {
-                this.rightCalendar.month = this.leftCalendar.month.clone().add(1, 'month');
+                this.rightCalendar.month = this.leftCalendar.month.add(1, 'month');
             }
         } else {
             this.rightCalendar.month.month(newMonth).year(newYear);
             if (this.linkedCalendars) {
-                this.leftCalendar.month = this.rightCalendar.month.clone().subtract(1, 'month');
+                this.leftCalendar.month = this.rightCalendar.month.subtract(1, 'month');
             }
         }
         this.updateCalendars();
@@ -1197,22 +1211,22 @@ export default class DateRangePicker {
         }
 
         if (isLeft) {
-            let start = this.startDate.clone();
+            let start = this.startDate;
             start.hour(hour);
             start.minute(minute);
             start.second(second);
             this.setStartDate(start);
             if (this.singleDatePicker) {
-                this.endDate = this.startDate.clone();
+                this.endDate = this.startDate;
             } else if (
                 this.endDate &&
                 this.endDate.format('YYYY-MM-DD') === start.format('YYYY-MM-DD') &&
                 this.endDate.isBefore(start)
             ) {
-                this.setEndDate(start.clone());
+                this.setEndDate(start);
             }
         } else if (this.endDate) {
-            let end = this.endDate.clone();
+            let end = this.endDate;
             end.hour(hour);
             end.minute(minute);
             end.second(second);
@@ -1256,9 +1270,9 @@ export default class DateRangePicker {
 
     setStartDate(startDate) {
         if (typeof startDate === 'string') {
-            this.startDate = moment(startDate, this.locale.format);
+            this.startDate = dayjs(startDate, this.locale.format);
         } else if (typeof startDate === 'object') {
-            this.startDate = moment(startDate);
+            this.startDate = dayjs(startDate);
         }
 
         if (!this.timePicker) {
@@ -1272,7 +1286,7 @@ export default class DateRangePicker {
         }
 
         if (this.minDate && this.startDate.isBefore(this.minDate)) {
-            this.startDate = this.minDate.clone();
+            this.startDate = this.minDate;
             if (this.timePicker && this.timePickerIncrement) {
                 this.startDate.minute(
                     Math.round(this.startDate.minute() / this.timePickerIncrement) * this.timePickerIncrement
@@ -1281,7 +1295,7 @@ export default class DateRangePicker {
         }
 
         if (this.maxDate && this.startDate.isAfter(this.maxDate)) {
-            this.startDate = this.maxDate.clone();
+            this.startDate = this.maxDate;
             if (this.timePicker && this.timePickerIncrement) {
                 this.startDate.minute(
                     Math.floor(this.startDate.minute() / this.timePickerIncrement) * this.timePickerIncrement
@@ -1298,9 +1312,9 @@ export default class DateRangePicker {
 
     setEndDate(endDate) {
         if (typeof endDate === 'string') {
-            this.endDate = moment(endDate, this.locale.format);
+            this.endDate = dayjs(endDate, this.locale.format);
         } else if (typeof endDate === 'object') {
-            this.endDate = moment(endDate);
+            this.endDate = dayjs(endDate);
         }
 
         if (!this.timePicker) {
@@ -1314,26 +1328,28 @@ export default class DateRangePicker {
         }
 
         if (this.endDate.isBefore(this.startDate)) {
-            this.endDate = this.startDate.clone();
+            this.endDate = this.startDate;
         }
 
         if (this.maxDate && this.endDate.isAfter(this.maxDate)) {
-            this.endDate = this.maxDate.clone();
+            this.endDate = this.maxDate;
         }
 
-        if (this.maxSpan && this.startDate.clone().add(this.maxSpan).isBefore(this.endDate)) {
-            this.endDate = this.startDate.clone().add(this.maxSpan);
+        if (this.maxSpan && this.startDate.add(this.maxSpan).isBefore(this.endDate)) {
+            this.endDate = this.startDate.add(this.maxSpan);
         }
 
-        this.previousRightTime = this.endDate.clone();
+        this.previousRightTime = this.endDate;
 
         // Update the selected range display
-        const drpSelected = this.container.querySelector('.drp-selected');
-        if (drpSelected) {
-            drpSelected.innerHTML =
-                this.startDate.format(this.locale.format) +
-                this.locale.separator +
-                this.endDate.format(this.locale.format);
+        if (this.container) { // <-- Add this check!
+            const drpSelected = this.container.querySelector('.drp-selected');
+            if (drpSelected) {
+                drpSelected.innerHTML =
+                    this.startDate.format(this.locale.format) +
+                    this.locale.separator +
+                    this.endDate.format(this.locale.format);
+            }
         }
 
         if (!this.isShowing) {
@@ -1351,12 +1367,12 @@ export default class DateRangePicker {
         const hour = calendarState.month.hour();
         const minute = calendarState.month.minute();
         const second = calendarState.month.second();
-        const daysInMonth = moment([year, month]).daysInMonth();
-        const firstDay = moment([year, month, 1]);
-        const lastDay = moment([year, month, daysInMonth]);
-        const lastMonth = moment(firstDay).subtract(1, 'month').month();
-        const lastYear = moment(firstDay).subtract(1, 'month').year();
-        const daysInLastMonth = moment([lastYear, lastMonth]).daysInMonth();
+        const daysInMonth = dayjs(new Date(year, month)).daysInMonth();
+        const firstDay = dayjs(new Date(year, month, 1));
+        const lastDay = dayjs(new Date(year, month, daysInMonth));
+        const lastMonth = firstDay.subtract(1, 'month').month();
+        const lastYear = firstDay.subtract(1, 'month').year();
+        const daysInLastMonth = dayjs(new Date(lastYear, lastMonth)).daysInMonth();
         const dayOfWeek = firstDay.day();
 
         // 2. Build the 6x7 matrix of dates
@@ -1372,15 +1388,15 @@ export default class DateRangePicker {
         if (startDay > daysInLastMonth) startDay -= 7;
         if (dayOfWeek === this.locale.firstDay) startDay = daysInLastMonth - 6;
 
-        let curDate = moment([lastYear, lastMonth, startDay, 12, minute, second]);
+        let curDate = dayjs(new Date(lastYear, lastMonth, startDay, 12, minute, second));
 
-        for (let i = 0, col = 0, row = 0; i < 42; i++, col++, curDate = moment(curDate).add(24, 'hour')) {
+        for (let i = 0, col = 0, row = 0; i < 42; i++, col++, curDate = curDate.add(1, 'day')) {
             if (i > 0 && col % 7 === 0) {
                 col = 0;
                 row++;
             }
-            calendarMatrix[row][col] = curDate.clone().hour(hour).minute(minute).second(second);
-            curDate.hour(12);
+            calendarMatrix[row][col] = curDate.hour(hour).minute(minute).second(second);
+            curDate = curDate.hour(12);
 
             if (
                 this.minDate &&
@@ -1388,7 +1404,7 @@ export default class DateRangePicker {
                 calendarMatrix[row][col].isBefore(this.minDate) &&
                 side === 'left'
             ) {
-                calendarMatrix[row][col] = this.minDate.clone();
+                calendarMatrix[row][col] = this.minDate;
             }
 
             if (
@@ -1397,7 +1413,7 @@ export default class DateRangePicker {
                 calendarMatrix[row][col].isAfter(this.maxDate) &&
                 side === 'right'
             ) {
-                calendarMatrix[row][col] = this.maxDate.clone();
+                calendarMatrix[row][col] = this.maxDate;
             }
         }
 
@@ -1481,7 +1497,7 @@ export default class DateRangePicker {
 
         // Adjust maxDate for maxSpan
         if (this.endDate === null && this.maxSpan) {
-            const maxLimit = this.startDate.clone().add(this.maxSpan).endOf('day');
+            const maxLimit = this.startDate.add(this.maxSpan).endOf('day');
             if (!maxDate || maxLimit.isBefore(maxDate)) {
                 maxDate = maxLimit;
             }
@@ -1575,16 +1591,16 @@ export default class DateRangePicker {
 
         if (
             this.maxSpan &&
-            (!this.maxDate || this.startDate.clone().add(this.maxSpan).isBefore(this.maxDate))
+            (!this.maxDate || this.startDate.add(this.maxSpan).isBefore(this.maxDate))
         ) {
-            maxDate = this.startDate.clone().add(this.maxSpan);
+            maxDate = this.startDate.add(this.maxSpan);
         }
 
         if (side === 'left') {
-            selected = this.startDate.clone();
+            selected = this.startDate;
             minDate = this.minDate;
         } else if (side === 'right') {
-            selected = this.endDate.clone();
+            selected = this.endDate;
             minDate = this.startDate;
 
             // Preserve the time already selected
@@ -1617,8 +1633,8 @@ export default class DateRangePicker {
                 }
             }
 
-            if (selected.isBefore(this.startDate)) selected = this.startDate.clone();
-            if (maxDate && selected.isAfter(maxDate)) selected = maxDate.clone();
+            if (selected.isBefore(this.startDate)) selected = this.startDate;
+            if (maxDate && selected.isAfter(maxDate)) selected = maxDate;
         }
 
         // Hours
@@ -1631,7 +1647,7 @@ export default class DateRangePicker {
             if (!this.timePicker24Hour)
                 i_in_24 = selected.hour() >= 12 ? (i === 12 ? 12 : i + 12) : (i === 12 ? 0 : i);
 
-            let time = selected.clone().hour(i_in_24);
+            let time = selected.hour(i_in_24);
             let disabled = false;
             if (minDate && time.minute(59).isBefore(minDate)) disabled = true;
             if (maxDate && time.minute(0).isAfter(maxDate)) disabled = true;
@@ -1650,7 +1666,7 @@ export default class DateRangePicker {
         html += ': <select class="minuteselect">';
         for (let i = 0; i < 60; i += this.timePickerIncrement) {
             let padded = i < 10 ? '0' + i : i;
-            let time = selected.clone().minute(i);
+            let time = selected.minute(i);
 
             let disabled = false;
             if (minDate && time.second(59).isBefore(minDate)) disabled = true;
@@ -1671,7 +1687,7 @@ export default class DateRangePicker {
             html += ': <select class="secondselect">';
             for (let i = 0; i < 60; i++) {
                 let padded = i < 10 ? '0' + i : i;
-                let time = selected.clone().second(i);
+                let time = selected.second(i);
 
                 let disabled = false;
                 if (minDate && time.isBefore(minDate)) disabled = true;
@@ -1694,10 +1710,10 @@ export default class DateRangePicker {
             let am_html = '';
             let pm_html = '';
 
-            if (minDate && selected.clone().hour(12).minute(0).second(0).isBefore(minDate))
+            if (minDate && selected.hour(12).minute(0).second(0).isBefore(minDate))
                 am_html = ' disabled="disabled" class="disabled"';
 
-            if (maxDate && selected.clone().hour(0).minute(0).second(0).isAfter(maxDate))
+            if (maxDate && selected.hour(0).minute(0).second(0).isAfter(maxDate))
                 pm_html = ' disabled="disabled" class="disabled"';
 
             if (selected.hour() >= 12) {
@@ -1725,24 +1741,24 @@ export default class DateRangePicker {
             if (!options.ranges.hasOwnProperty(range)) continue;
 
             if (typeof options.ranges[range][0] === 'string')
-                start = moment(options.ranges[range][0], this.locale.format);
+                start = dayjs(options.ranges[range][0], this.locale.format);
             else
-                start = moment(options.ranges[range][0]);
+                start = dayjs(options.ranges[range][0]);
 
             if (typeof options.ranges[range][1] === 'string')
-                end = moment(options.ranges[range][1], this.locale.format);
+                end = dayjs(options.ranges[range][1], this.locale.format);
             else
-                end = moment(options.ranges[range][1]);
+                end = dayjs(options.ranges[range][1]);
 
             // If the start or end date exceed those allowed by the minDate or maxSpan
             if (this.minDate && start.isBefore(this.minDate))
-                start = this.minDate.clone();
+                start = this.minDate;
 
             let maxDate = this.maxDate;
-            if (this.maxSpan && maxDate && start.clone().add(this.maxSpan).isAfter(maxDate))
-                maxDate = start.clone().add(this.maxSpan);
+            if (this.maxSpan && maxDate && start.add(this.maxSpan).isAfter(maxDate))
+                maxDate = start.add(this.maxSpan);
             if (maxDate && end.isAfter(maxDate))
-                end = maxDate.clone();
+                end = maxDate;
 
             // If the end of the range is before the minimum or the start of the range is after the maximum, skip
             if ((this.minDate && end.isBefore(this.minDate, this.timePicker ? 'minute' : 'day'))
