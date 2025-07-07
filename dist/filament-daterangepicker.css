@@ -1,8 +1,21 @@
 .daterangepicker {
   position: absolute;
+  top: 6rem;
+  left: 1.25rem;
+  margin-top: 0.5rem;
+  display: none;
+  width: auto;
+  min-width: 500px;
+  max-width: none;
   border-radius: 0.25rem;
+  border-width: 1px;
+  --tw-border-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+  padding: 0px;
+  font-size: 0.75rem;
+  line-height: 1rem;
 }
 
 .daterangepicker:is(.dark *) {
@@ -14,21 +27,9 @@
 
 .daterangepicker {
   color: inherit;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  max-width: none;
-  padding: 0;
-  margin-top: 7px;
-  top: 100px;
-  left: 20px;
   z-index: 19;
   /* changed this to 19 to not overlap the navigation but still high enough compared to other elements */
-  display: none;
   font-family: inherit;
-  font-size: 15px;
-  line-height: 1em;
-  width: auto !important;
-  min-width: 500px;
 }
 
 .daterangepicker.ltr {
@@ -259,7 +260,7 @@
 :is(.daterangepicker td.off),.in-range:is(.daterangepicker td.off) {
   background-color: transparent;
   --tw-text-opacity: 1;
-  color: rgb(153 153 153 / var(--tw-text-opacity, 1));
+  color: rgb(23 37 84 / var(--tw-text-opacity, 1));
 }
 
 :is(.daterangepicker td.off):is(.dark *),.in-range:is(.daterangepicker td.off):is(.dark *) {
@@ -272,7 +273,7 @@
   color: #000;
   border-radius: 0;
   --tw-bg-opacity: 1;
-  background-color: rgb(235 244 248 / var(--tw-bg-opacity, 1));
+  background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1));
 }
 
 .in-range:is(.daterangepicker td):is(.dark *) {
@@ -281,7 +282,10 @@
 }
 
 .in-range:is(.daterangepicker td):hover {
-  color: #FFF;
+  --tw-bg-opacity: 1;
+  background-color: rgb(191 219 254 / var(--tw-bg-opacity, 1));
+  --tw-text-opacity: 1;
+  color: rgb(23 37 84 / var(--tw-text-opacity, 1));
 }
 
 .start-date:is(.daterangepicker td) {
@@ -290,7 +294,7 @@
 
 .start-date.active:is(.daterangepicker td) {
   --tw-bg-opacity: 1;
-  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));
+  background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
@@ -303,12 +307,19 @@
 .start-date.active.off:is(.daterangepicker td) {
   background-color: transparent;
   --tw-text-opacity: 1;
-  color: rgb(153 153 153 / var(--tw-text-opacity, 1));
+  color: rgb(23 37 84 / var(--tw-text-opacity, 1));
 }
 
 .start-date.active.off:is(.daterangepicker td):is(.dark *) {
   --tw-bg-opacity: 1;
   background-color: rgb(31 41 55 / var(--tw-bg-opacity, 1));
+}
+
+.start-date.active:is(.daterangepicker td):hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(191 219 254 / var(--tw-bg-opacity, 1));
+  --tw-text-opacity: 1;
+  color: rgb(23 37 84 / var(--tw-text-opacity, 1));
 }
 
 .start-date.end-date:is(.daterangepicker td) {
@@ -322,18 +333,23 @@
 
 .end-date.active:is(.daterangepicker td) {
   --tw-bg-opacity: 1;
-  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));
+  background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));
 }
 
 .end-date.active.off:is(.daterangepicker td) {
   background-color: transparent;
   --tw-text-opacity: 1;
-  color: rgb(153 153 153 / var(--tw-text-opacity, 1));
+  color: rgb(23 37 84 / var(--tw-text-opacity, 1));
 }
 
 .end-date.active.off:is(.daterangepicker td):is(.dark *) {
   --tw-bg-opacity: 1;
   background-color: rgb(31 41 55 / var(--tw-bg-opacity, 1));
+}
+
+.end-date.active:is(.daterangepicker td):hover {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
 
 .active:is(.daterangepicker td),.active:is(.daterangepicker td):hover {
