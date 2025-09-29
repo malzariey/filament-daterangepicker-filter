@@ -486,6 +486,31 @@ trait HasRangePicker
         return $this->evaluate($this->timePicker);
     }
 
+    function jsDateFormatToPhp($jsFormat) {
+        $patterns = [
+            '/\bYYYY\b/' => 'Y',
+            '/\bYY\b/' => 'y',
+            '/\bMMMM\b/' => 'F',
+            '/\bMMM\b/' => 'M',
+            '/\bMM\b/' => 'm',
+            '/\bM\b/' => 'n',
+            '/\bDD\b/' => 'd',
+            '/\bD\b/' => 'j',
+            '/\bHH\b/' => 'H',
+            '/\bH\b/' => 'G',
+            '/\bhh\b/' => 'h',
+            '/\bh\b/' => 'g',
+            '/\bmm\b/' => 'i',
+            '/\bss\b/' => 's',
+        ];
+
+        return preg_replace(
+            array_keys($patterns),
+            array_values($patterns),
+            $jsFormat
+        );
+    }
+
     #[Deprecated(since: '2.5.1')]
     public function getTimePickerOption(): bool
     {

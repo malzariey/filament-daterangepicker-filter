@@ -79,13 +79,13 @@ class DateRangeFilter extends BaseFilter
 
             if ($this->timePicker) {
                 $dates = [
-                    Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->timezone($this->getSystemTimezone()),
-                    Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->timezone($this->getSystemTimezone())
+                    Carbon::createFromFormat($this->jsDateFormatToPhp($this->getDisplayFormat()), $from, $this->getTimezone())->timezone($this->getSystemTimezone()),
+                    Carbon::createFromFormat($this->jsDateFormatToPhp($this->getDisplayFormat()), $to, $this->getTimezone())->timezone($this->getSystemTimezone())
                 ];
             } else {
                 $dates = [
-                    Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->startOfDay()->timezone($this->getSystemTimezone()),
-                    Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->endOfDay()->timezone($this->getSystemTimezone()),
+                    Carbon::createFromFormat($this->jsDateFormatToPhp($this->getDisplayFormat()), $from, $this->getTimezone())->startOfDay()->timezone($this->getSystemTimezone()),
+                    Carbon::createFromFormat($this->jsDateFormatToPhp($this->getDisplayFormat()), $to, $this->getTimezone())->endOfDay()->timezone($this->getSystemTimezone()),
                 ];
             }
 
