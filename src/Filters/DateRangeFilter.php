@@ -197,6 +197,7 @@ class DateRangeFilter extends BaseFilter
                 ->showDropdowns($this->showDropdowns)
                 ->minYear($this->minYear)
                 ->maxYear($this->maxYear)
+                ->default($this->getDefaultState())
         ];
     }
 
