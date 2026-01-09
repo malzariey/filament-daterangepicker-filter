@@ -14,7 +14,6 @@ A native Alpine.js date range picker for [Filament](https://filamentphp.com/). S
 - 🌍 **Localization** - Full i18n support via Day.js locales
 - ♿ **Accessible** - Keyboard navigation and ARIA attributes
 - 🎨 **Native Filament UI** - Seamlessly matches Filament v4 styling
-- ⚡ **Lightweight** - No jQuery or Moment.js dependencies
 
 ## Installation
 
@@ -31,10 +30,10 @@ php artisan vendor:publish --tag="filament-daterangepicker-filter-translations"
 ## Screenshots
 
 #### Light mode
-![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/x4/art/light.png)
+![DateRangePicker Widget](art/light.png)
 
 #### Dark mode
-![DateRangePicker Widget](https://github.com/malzariey/filament-daterangepicker-filter/raw/x4/art/dark.png)
+![DateRangePicker Widget](art/dark.png)
 
 ## Basic Usage
 
@@ -88,7 +87,7 @@ DateRangePicker::make('fiscal_years')
 
 ---
 
-## New Features (v4.0)
+## New Features (v4.1)
 
 ### Keyboard Input
 Allow users to type dates directly:
@@ -213,7 +212,6 @@ Use [Day.js format tokens](https://day.js.org/docs/en/display/format):
 
 ```php
 DateRangePicker::make('created_at')
-    ->displayFormat('DD MMM YYYY')  // JavaScript display format
     ->format('d M Y')               // PHP Carbon format
 ```
 
@@ -292,23 +290,12 @@ DateRangeFilter::make('created_at')->withIndicator()
 
 ---
 
-## Styling
-
-For [custom Filament themes](https://filamentphp.com/docs/4.x/introduction/overview#building-themes), add these imports to your `resources/css/{panel_name}/theme.css`:
-
-```css
-@import '../../../../vendor/malzariey/filament-daterangepicker-filter/resources/css/filament-daterangepicker.css';
-@source '../../../../vendor/malzariey/filament-daterangepicker-filter/resources/*/**';
-```
-
----
-
-## Migration from v3.x
+## Migration from v3.x and x4.0
 
 ### Breaking Changes
 
 1. **jQuery/Moment.js removed** - The component now uses Alpine.js and Day.js
-2. **Format tokens** - Display format now uses [Day.js tokens](https://day.js.org/docs/en/display/format) (mostly compatible with Moment.js)
+2. **Format tokens** - No need to use javascript format tokens as it is now using Carbon format tokens and auto converts the javascript format tokens
 
 ### New Methods
 

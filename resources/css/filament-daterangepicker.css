@@ -59,7 +59,6 @@
     @apply pe-4 me-0 -my-4 py-4;
     /* Stretch full height */
     @apply min-w-[160px];
-    @apply bg-gray-50/30 dark:bg-white/5;
 }
 
 .fi-daterangepicker-ranges ul {
@@ -230,7 +229,12 @@
 .fi-daterangepicker-day.fi-today {
     @apply font-bold;
     @apply text-primary-600;
-    @apply !ring-0 !shadow-none !border-none;
+    @apply !shadow-none !ring-0 !border-none !outline-none;
+}
+
+/* Force removal of focus ring on today even when focused */
+.fi-daterangepicker-day.fi-today.fi-focused {
+    @apply !ring-0 !ring-offset-0 !shadow-none !outline-none;
 }
 
 .dark .fi-daterangepicker-day.fi-today {

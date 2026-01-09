@@ -19,7 +19,7 @@ trait HasRangePicker
 
     protected CarbonInterface|string|Closure|null $endDate = null;
 
-    protected string|Closure|null $displayFormat = "DD/MM/YYYY";
+    protected string|Closure|null $displayFormat = null;
     protected string|Closure|null $format = 'd/m/Y';
     protected int|null $firstDayOfWeek = 1;
     protected bool|Closure $timePicker = false;
@@ -229,6 +229,7 @@ trait HasRangePicker
 
     }
 
+    #[Deprecated(since: '2.5.1')]
     public function displayFormat(string|Closure|null $format , bool $enforceFormat = false): static
     {
         $this->displayFormat = $format;
@@ -470,6 +471,15 @@ trait HasRangePicker
     {
         $displayFormat = $this->evaluate($this->displayFormat);
 
+        if ($displayFormat) {
+            return $displayFormat;
+        }
+
+        $format = $this->getFormat();
+
+        $displayFormat = $this->convertPhpToJsFormat($format);
+
+
         if (!$this->getEnforceFormat() && $this->timePicker && (!str_contains($displayFormat,"h" ) && !str_contains($displayFormat,"H" ))) {
             if ($this->getTimePicker24()) {
                 if ($this->getTimePickerSecond()) {
@@ -487,6 +497,72 @@ trait HasRangePicker
         }
 
         return $displayFormat;
+    }
+
+    protected function convertPhpToJsFormat(string $format): string
+    {
+        $replacements = [
+            'd' => 'DD',
+            'D' => 'ddd',
+            'j' => 'D',
+            'l' => 'dddd',
+            'N' => 'E',
+            'S' => 'o',
+            'w' => 'd',
+            'z' => 'DDD',
+            'W' => 'W',
+            'F' => 'MMMM',
+            'm' => 'MM',
+            'M' => 'MMM',
+            'n' => 'M',
+            't' => '',
+            'L' => '',
+            'o' => 'YYYY',
+            'Y' => 'YYYY',
+            'y' => 'YY',
+            'a' => 'a',
+            'A' => 'A',
+            'B' => '',
+            'g' => 'h',
+            'G' => 'H',
+            'h' => 'hh',
+            'H' => 'HH',
+            'i' => 'mm',
+            's' => 'ss',
+            'u' => 'SSS',
+            'e' => 'zz',
+            'I' => '',
+            'O' => 'ZZ',
+            'P' => 'Z',
+            'T' => 'z',
+            'Z' => '',
+            'c' => '',
+            'r' => '',
+            'U' => 'X',
+        ];
+
+        $jsFormat = "";
+        $escaped = false;
+
+        for ($i = 0; $i < strlen($format); $i++) {
+            $char = $format[$i];
+
+            if ($char === '\\') {
+                $i++;
+                if ($i < strlen($format)) {
+                    $jsFormat .= '[' . $format[$i] . ']';
+                }
+                continue;
+            }
+
+            if (isset($replacements[$char])) {
+                $jsFormat .= $replacements[$char];
+            } else {
+                $jsFormat .= $char;
+            }
+        }
+
+        return $jsFormat;
     }
 
     public function getTimePicker(): bool
