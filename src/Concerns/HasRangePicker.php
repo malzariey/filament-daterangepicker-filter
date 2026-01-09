@@ -7,6 +7,7 @@ use Closure;
 use JetBrains\PhpStorm\Deprecated;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
+use Malzariey\FilamentDaterangepickerFilter\Enums\PickerType;
 
 trait HasRangePicker
 {
@@ -55,6 +56,13 @@ trait HasRangePicker
 
     protected bool $enforceIfNull = false;
     protected bool $enforceFormat = false;
+    
+    // New properties for Alpine.js refactor
+    protected bool|Closure $teleport = true;
+    protected bool|Closure $allowInput = false;
+    protected ?string $dualStartField = null;
+    protected ?string $dualEndField = null;
+    protected PickerType|Closure $pickerType = PickerType::DAY;
 
     public function icon(string|Closure|null $icon = null): static
     {
@@ -492,5 +500,105 @@ trait HasRangePicker
         return $this->evaluate($this->timePicker);
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // New methods for Alpine.js refactor
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Enable/disable teleport to body (for modal/slideOver compatibility)
+     * When enabled, the dropdown is rendered at the document root to avoid z-index issues
+     */
+    public function teleport(bool|Closure $condition = true): static
+    {
+        $this->teleport = $condition;
+        return $this;
+    }
+
+    public function getTeleport(): bool
+    {
+        return $this->evaluate($this->teleport);
+    }
+
+    /**
+     * Allow manual input via keyboard with format validation
+     * When enabled, users can type dates directly instead of only using the picker
+     */
+    public function allowInput(bool|Closure $condition = true): static
+    {
+        $this->allowInput = $condition;
+        return $this;
+    }
+
+    public function getAllowInput(): bool
+    {
+        return $this->evaluate($this->allowInput);
+    }
+
+    /**
+     * Enable dual state mode with separate start/end fields
+     * Instead of storing "start - end" in one field, stores in two separate Livewire properties
+     */
+    public function useDualState(string $startField, string $endField): static
+    {
+        $this->dualStartField = $startField;
+        $this->dualEndField = $endField;
+        return $this;
+    }
+
+    public function isDualState(): bool
+    {
+        return $this->dualStartField !== null && $this->dualEndField !== null;
+    }
+
+    public function getDualStartField(): ?string
+    {
+        return $this->dualStartField;
+    }
+
+    public function getDualEndField(): ?string
+    {
+        return $this->dualEndField;
+    }
+
+    /**
+     * Set the picker type: day (default), month, or year
+     * - DAY: Standard day picker (default behavior)
+     * - MONTH: Pick months only (e.g., "January 2026 - March 2026")
+     * - YEAR: Pick years only (e.g., "2024 - 2026")
+     */
+    public function pickerType(PickerType|Closure $type): static
+    {
+        $this->pickerType = $type;
+        return $this;
+    }
+
+    /**
+     * Shorthand for month-only picker
+     */
+    public function monthPicker(): static
+    {
+        return $this->pickerType(PickerType::MONTH);
+    }
+
+    /**
+     * Shorthand for year-only picker
+     */
+    public function yearPicker(): static
+    {
+        return $this->pickerType(PickerType::YEAR);
+    }
+
+    public function getPickerType(): PickerType
+    {
+        return $this->evaluate($this->pickerType);
+    }
+
+    /**
+     * Get picker type as string for JavaScript
+     */
+    public function getPickerTypeValue(): string
+    {
+        return $this->getPickerType()->value;
+    }
 
 }
