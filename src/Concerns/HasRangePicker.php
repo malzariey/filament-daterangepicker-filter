@@ -87,7 +87,7 @@ trait HasRangePicker
     {
         $format = $this->evaluate($this->format);
 
-        if (!$this->getEnforceFormat() && $this->timePicker && (!str_contains($format,"h" ) && !str_contains($format,"h" ))) {
+        if (!$this->getEnforceFormat() && $this->timePicker && (!str_contains($format,"h" ) && !str_contains($format,"H" ))) {
             if ($this->getTimePicker24()) {
                 if ($this->getTimePickerSecond()) {
                     $format .= ' H:i:s';
