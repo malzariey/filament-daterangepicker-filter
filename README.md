@@ -57,7 +57,7 @@ DateRangeFilter::make('created_at'),
 ### Options
 
 #### Timezone
-Set the picker timezone, defaults to the project timezone. Example setting timezone to 'UTC'.
+Set the picker timezone, defaults to Filament timezone. Example setting timezone to 'UTC'.
 
 ```php
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
