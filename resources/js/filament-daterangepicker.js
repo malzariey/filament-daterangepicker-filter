@@ -24,7 +24,7 @@ let instanceCounter = 0;
 /**
  * DateRangePicker Alpine.js Component
  * A native Alpine.js/Day.js replacement for the jQuery daterangepicker
- * 
+ *
  * Features:
  * - Date range selection with calendar UI
  * - Time picker support (12/24 hour)
@@ -1191,6 +1191,12 @@ export default function dateRangeComponent(config) {
             if (range && range.length === 2) {
                 this.selection.start = dayjs(range[0]);
                 this.selection.end = dayjs(range[1]);
+
+                if (this.config.timePicker) {
+                    this.startTime = this.extractTime(this.selection.start);
+                    this.endTime = this.extractTime(this.selection.end);
+                }
+
                 this.viewDate = this.selection.start;
 
                 if (this.config.autoApply) {
@@ -1220,8 +1226,22 @@ export default function dateRangeComponent(config) {
             const rangeStart = dayjs(range[0]);
             const rangeEnd = dayjs(range[1]);
 
-            return this.selection.start.isSame(rangeStart, 'day') &&
-                this.selection.end.isSame(rangeEnd, 'day');
+            return this.matchesPresetRange(this.selection.start, this.selection.end, rangeStart, rangeEnd);
+        },
+
+        getPresetComparisonUnit() {
+            if (!this.config.timePicker) {
+                return 'day';
+            }
+
+            return this.config.timePickerSecond ? 'second' : 'minute';
+        },
+
+        matchesPresetRange(selectionStart, selectionEnd, presetStart, presetEnd) {
+            const comparisonUnit = this.getPresetComparisonUnit();
+
+            return selectionStart.isSame(presetStart, comparisonUnit) &&
+                selectionEnd.isSame(presetEnd, comparisonUnit);
         },
 
         // ─────────────────────────────────────────────────────────────
@@ -1509,8 +1529,7 @@ export default function dateRangeComponent(config) {
                     if (range.length === 2) {
                         const presetStart = dayjs(range[0]);
                         const presetEnd = dayjs(range[1]);
-                        if (this.selection.start.isSame(presetStart, 'day') &&
-                            this.selection.end.isSame(presetEnd, 'day')) {
+                        if (this.matchesPresetRange(this.selection.start, this.selection.end, presetStart, presetEnd)) {
                             return label;
                         }
                     }

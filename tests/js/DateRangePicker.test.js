@@ -499,6 +499,48 @@ describe('Advanced Features', () => {
             // Should snap back to the selected date's month
             expect(component.viewDate.month()).toBe(0); // January
         });
+
+        it('should preserve preset time values when timePicker is enabled', async () => {
+            const start = dayjs('2026-01-09T06:30:15');
+            const end = dayjs('2026-01-09T18:45:50');
+
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                timePickerSecond: true,
+                displayFormat: 'DD/MM/YYYY HH:mm:ss',
+                ranges: {
+                    'Last 12 Hours': [start.toISOString(), end.toISOString()],
+                },
+            });
+
+            component.selectPreset('Last 12 Hours');
+
+            expect(component.startTime.hour).toBe(6);
+            expect(component.startTime.minute).toBe(30);
+            expect(component.startTime.second).toBe(15);
+            expect(component.endTime.hour).toBe(18);
+            expect(component.endTime.minute).toBe(45);
+            expect(component.endTime.second).toBe(50);
+            expect(component.getDisplayValue()).toBe('09/01/2026 06:30:15 - 09/01/2026 18:45:50');
+        });
+
+        it('should only mark matching timed preset as active', async () => {
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                timePickerSecond: true,
+                ranges: {
+                    'Last 6 Hours': ['2026-01-09T12:00:00.000Z', '2026-01-09T18:00:00.000Z'],
+                    'Last 12 Hours': ['2026-01-09T06:00:00.000Z', '2026-01-09T18:00:00.000Z'],
+                },
+            });
+
+            component.selectPreset('Last 12 Hours');
+
+            expect(component.isActiveRange('Last 12 Hours')).toBe(true);
+            expect(component.isActiveRange('Last 6 Hours')).toBe(false);
+        });
     });
 
     describe('Disabled Dates', () => {
@@ -854,6 +896,25 @@ describe('Livewire Integration', () => {
             const displayValue = component.getDisplayValue();
 
             expect(displayValue).toBe('Today');
+        });
+
+        it('should match preset label by time when timePicker is enabled', async () => {
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                timePickerSecond: true,
+                useRangeLabels: true,
+                ranges: {
+                    'Last 6 Hours': ['2026-01-09T12:00:00.000Z', '2026-01-09T18:00:00.000Z'],
+                    'Last 12 Hours': ['2026-01-09T06:00:00.000Z', '2026-01-09T18:00:00.000Z'],
+                },
+            });
+
+            component.selectPreset('Last 12 Hours');
+
+            const displayValue = component.getDisplayValue();
+
+            expect(displayValue).toBe('Last 12 Hours');
         });
 
         it('should return empty string when no selection', async () => {

@@ -258,7 +258,7 @@ class DateRangePicker extends Field implements HasAffixActions
 
         foreach ($ranges as $key => $dates) {
             $ranges[$key] = array_map(function ($date) {
-                return $date instanceof Carbon ? $date->toDateString() : $date;
+                return $date instanceof Carbon ? $date->toDateTimeString() : $date;
             }, $dates);
         }
 
