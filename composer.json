@@ -32,7 +32,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Malzariey\\FilamentDaterangepickerFilter\\Tests\\": "tests"
+            "Malzariey\\FilamentDaterangepickerFilter\\Tests\\": "tests",
+            "Workbench\\App\\": "workbench/app/"
         }
     },
     "scripts": {

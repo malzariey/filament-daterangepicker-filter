@@ -283,7 +283,7 @@
 
 /* Start of range */
 .fi-daterangepicker-day.fi-start {
-    @apply rounded-l-lg rounded-r-none;
+    @apply rounded-s-lg rounded-e-none;
 }
 
 .fi-daterangepicker-day.fi-start.fi-selected {
@@ -292,7 +292,7 @@
 
 /* End of range */
 .fi-daterangepicker-day.fi-end {
-    @apply rounded-r-lg rounded-l-none;
+    @apply rounded-e-lg rounded-s-none;
 }
 
 .fi-daterangepicker-day.fi-end.fi-selected {
@@ -356,7 +356,7 @@
 }
 
 .fi-daterangepicker-month-cell.fi-start {
-    @apply rounded-l-lg rounded-r-none;
+    @apply rounded-s-lg rounded-e-none;
 }
 
 .fi-daterangepicker-month-cell.fi-start.fi-selected {
@@ -364,7 +364,7 @@
 }
 
 .fi-daterangepicker-month-cell.fi-end {
-    @apply rounded-r-lg rounded-l-none;
+    @apply rounded-e-lg rounded-s-none;
 }
 
 .fi-daterangepicker-month-cell.fi-end.fi-selected {
@@ -423,7 +423,7 @@
 }
 
 .fi-daterangepicker-year-cell.fi-start {
-    @apply rounded-l-lg rounded-r-none;
+    @apply rounded-s-lg rounded-e-none;
 }
 
 .fi-daterangepicker-year-cell.fi-start.fi-selected {
@@ -431,7 +431,7 @@
 }
 
 .fi-daterangepicker-year-cell.fi-end {
-    @apply rounded-r-lg rounded-l-none;
+    @apply rounded-e-lg rounded-s-none;
 }
 
 .fi-daterangepicker-year-cell.fi-end.fi-selected {
@@ -514,27 +514,21 @@
 
 /* ─────────────────────────────────────────────────────────────
    RTL Support
+   
+   When the document direction is RTL, the calendar dropdown
+   inherits RTL direction naturally. We apply additional
+   RTL-specific layout adjustments here.
    ───────────────────────────────────────────────────────────── */
 
-[dir="rtl"] .fi-daterangepicker-ranges {
-    @apply border-e-0 border-s;
-    @apply pe-0 ps-4 me-0 ms-0;
+/* Rotate navigation arrows in RTL so they point the correct direction */
+[dir="rtl"] .fi-daterangepicker-nav-btn {
+    transform: scaleX(-1);
 }
 
-[dir="rtl"] .fi-daterangepicker-range-btn {
-    @apply text-end;
-}
-
-[dir="rtl"] .fi-daterangepicker-day.fi-start {
-    @apply rounded-l-none rounded-r-lg;
-}
-
-[dir="rtl"] .fi-daterangepicker-day.fi-end {
-    @apply rounded-r-none rounded-l-lg;
-}
-
-[dir="rtl"] .fi-daterangepicker-day.fi-start.fi-end {
-    @apply rounded-lg;
+/* Reverse grid flow for month/year pickers in RTL */
+[dir="rtl"] .fi-daterangepicker-month-grid,
+[dir="rtl"] .fi-daterangepicker-year-grid {
+    direction: rtl;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -590,6 +584,10 @@
         @apply overflow-x-auto;
         /* Fade effect at edges */
         mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+    }
+
+    [dir="rtl"] .fi-daterangepicker-ranges {
+        mask-image: linear-gradient(to left, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
     }
 
     .fi-daterangepicker-ranges ul {
@@ -691,6 +689,13 @@
     background-repeat: no-repeat;
     background-size: 1.25em 1.25em;
     padding-right: 1.75rem;
+}
+
+[dir="rtl"] .fi-daterangepicker-select.fi-time,
+[dir="rtl"] .fi-daterangepicker-select.fi-ampm {
+    background-position: left 0.25rem center;
+    padding-right: 0;
+    padding-left: 1.75rem;
 }
 
 /* Dark mode dropdown arrow */

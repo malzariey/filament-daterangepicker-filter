@@ -265,6 +265,14 @@ export default function dateRangeComponent(config) {
             const input = this.$refs.input;
             if (!input) return;
 
+            // Force LTR direction on the input for date formatting
+            // Date strings (numbers, slashes, dashes) are inherently LTR
+            // and the bidi algorithm garbles partially-typed dates in RTL
+            input.setAttribute('dir', 'ltr');
+            if (document.documentElement.dir === 'rtl') {
+                input.style.textAlign = 'right';
+            }
+
             // Set placeholder based on format
             const placeholder = this.formatToPlaceholder(this.config.displayFormat);
             const rangePlaceholder = this.config.singleCalendar

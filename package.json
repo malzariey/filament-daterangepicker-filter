@@ -4,8 +4,10 @@
     "scripts": {
         "dev:styles": "npx @tailwindcss/cli -i resources/css/filament-daterangepicker.css -o dist/filament-daterangepicker.css --watch",
         "dev:scripts": "node bin/build.js --dev",
+        "dev:publish-css": "node bin/publish-css.js",
         "build:styles": "npx @tailwindcss/cli -i resources/css/filament-daterangepicker.css -o dist/filament-daterangepicker.css --minify",
         "build:scripts": "node bin/build.js",
+        "build:publish": "node bin/publish-css.js --once",
         "dev": "npm-run-all --parallel dev:*",
         "build": "npm-run-all build:*",
         "prettier": "npx prettier --write .",
