@@ -87,7 +87,7 @@ DateRangePicker::make('fiscal_years')
 
 ---
 
-## New Features (v4.1)
+## New Features
 
 ### Keyboard Input
 Allow users to type dates directly:
