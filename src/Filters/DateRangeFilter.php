@@ -73,11 +73,11 @@ class DateRangeFilter extends BaseFilter
             $dates = [];
         }
 
-        if (count($dates) == 2) {
-            $from = $dates[0];
-            $to = $dates[1];
+        if (count($dates) === 2) {
+            $from = trim($dates[0]);
+            $to = trim($dates[1]);
 
-            if ($this->timePicker) {
+            if ($this->getTimePicker()) {
                 $dates = [
                     Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->timezone($this->getSystemTimezone()),
                     Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->timezone($this->getSystemTimezone())
@@ -108,7 +108,7 @@ class DateRangeFilter extends BaseFilter
             return $query;
         }
 
-        if ($dates == null) {
+        if (empty($dates)) {
             return $query;
         }
 
@@ -197,6 +197,9 @@ class DateRangeFilter extends BaseFilter
                 ->showDropdowns($this->showDropdowns)
                 ->minYear($this->minYear)
                 ->maxYear($this->maxYear)
+                ->teleport($this->teleport)
+                ->allowInput($this->allowInput)
+                ->pickerType($this->pickerType)
         ];
     }
 

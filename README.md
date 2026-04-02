@@ -60,7 +60,7 @@ Select specific dates:
 
 ```php
 DateRangePicker::make('date_range')
-    ->displayFormat('DD/MM/YYYY');
+    ->format('d/m/Y');
 ```
 
 ### Month Picker
@@ -71,7 +71,7 @@ use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
 DateRangePicker::make('billing_period')
     ->monthPicker()
-    ->displayFormat('MMMM YYYY');
+    ->format('F Y');
 ```
 
 ### Year Picker
@@ -80,7 +80,7 @@ Select entire years:
 ```php
 DateRangePicker::make('fiscal_years')
     ->yearPicker()
-    ->displayFormat('YYYY')
+    ->format('Y')
     ->minYear(2020)
     ->maxYear(2030);
 ```
@@ -208,12 +208,20 @@ DateRangePicker::make('created_at')
 
 ### Display Format
 
-Use [Day.js format tokens](https://day.js.org/docs/en/display/format):
+Use PHP [Carbon date format](https://www.php.net/manual/en/datetime.format.php) tokens. The JavaScript display format is auto-converted:
 
 ```php
 DateRangePicker::make('created_at')
-    ->format('d M Y')               // PHP Carbon format
+    ->format('d/m/Y')      // Renders as DD/MM/YYYY in the browser
+
+DateRangePicker::make('created_at')
+    ->format('Y-m-d')      // Renders as YYYY-MM-DD in the browser
+
+DateRangePicker::make('created_at')
+    ->format('d M Y')      // Renders as DD MMM YYYY in the browser
 ```
+
+> **Note:** The deprecated `->displayFormat('DD/MM/YYYY')` method still works but is no longer recommended. Use `->format()` with PHP Carbon tokens instead — the JavaScript display format is auto-converted.
 
 ### Predefined Ranges
 ```php
@@ -290,12 +298,13 @@ DateRangeFilter::make('created_at')->withIndicator()
 
 ---
 
-## Migration from v3.x and x4.0
+## Migration from v3.x to v4.x
 
 ### Breaking Changes
 
 1. **jQuery/Moment.js removed** - The component now uses Alpine.js and Day.js
-2. **Format tokens** - No need to use javascript format tokens as it is now using Carbon format tokens and auto converts the javascript format tokens
+2. **Format tokens** - Use `->format()` with PHP Carbon tokens (e.g. `d/m/Y`). The JavaScript display format is auto-converted — there is no need to specify Day.js tokens manually.
+3. **Laravel 13 support** - Added `illuminate/contracts: ^13.0` compatibility
 
 ### New Methods
 
@@ -304,8 +313,24 @@ DateRangeFilter::make('created_at')->withIndicator()
 | `->monthPicker()` | Select months only |
 | `->yearPicker()` | Select years only |
 | `->allowInput()` | Enable keyboard date entry |
-| `->teleport(bool)` | Control dropdown positioning |
+| `->teleport(bool)` | Control dropdown positioning (enabled by default) |
 | `->useDualState(start, end)` | Store dates in separate properties |
+| `->format('d/m/Y')` | Set date format using PHP Carbon tokens (auto-converts to JS) |
+| `->pickerType(PickerType)` | Set picker granularity via enum |
+
+### Deprecated Methods
+
+| Deprecated Method | Replacement | Since |
+|---|---|---|
+| `->displayFormat('DD/MM/YYYY')` | `->format('d/m/Y')` | 2.5.1 |
+| `->setTimePickerOption()` | `->timePicker()` | 2.5.1 |
+| `->setTimePickerIncrementOption()` | `->timePickerIncrement()` | 2.5.1 |
+| `->setAutoApplyOption()` | `->autoApply()` | 2.5.1 |
+| `->setLinkedCalendarsOption()` | `->linkedCalendars()` | 2.5.1 |
+| `->getTimePickerIncrementOption()` | `->getTimePickerIncrement()` | 2.5.1 |
+| `->getAutoApplyOption()` | `->getAutoApply()` | 2.5.1 |
+| `->getLinkedCalendarsOption()` | `->getLinkedCalendars()` | 2.5.1 |
+| `->getTimePickerOption()` | `->getTimePicker()` | 2.5.1 |
 
 ---
 

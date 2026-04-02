@@ -31,10 +31,41 @@ class DateRangePicker extends Field implements HasAffixActions
     {
         parent::setUp();
 
-        $this->afterStateHydrated(function($operation) {
-            $this->processDefault($operation);
-        } );
+        // Use Filament's native default() with a Closure that builds
+        // the value lazily from startDate/endDate when the field hydrates.
+        $this->default(fn () => $this->buildDefaultValue());
 
+        // Only needed for the enforceIfNull edge case: force state
+        // on edit operations when the existing value is null.
+        $this->afterStateHydrated(function (string $operation) {
+            if ($this->enforceIfNull && $operation === 'edit' && $this->getState() === null) {
+                $default = $this->buildDefaultValue();
+                if ($default !== null) {
+                    $this->state($default);
+                }
+            }
+        });
+    }
+
+    /**
+     * Build the default value string from configured startDate/endDate.
+     * Returns null if neither date is configured.
+     */
+    protected function buildDefaultValue(): ?string
+    {
+        $startDate = $this->getStartDate();
+        $endDate = $this->getEndDate();
+
+        if ($startDate === null && $endDate === null) {
+            return null;
+        }
+
+        $format = $this->getFormat();
+        $separator = $this->getRangeSeparator();
+        $start = ($startDate ?? $endDate)->format($format);
+        $end = ($endDate ?? $startDate)->format($format);
+
+        return $start . $separator . $end;
     }
 
     public function disableClear(bool|Closure $disable = true): static
@@ -45,7 +76,6 @@ class DateRangePicker extends Field implements HasAffixActions
         if ($condition) {
             $this->suffixAction(fn() => null);
             $this->suffixIcon($icon);
-
         } else {
             $this->suffixAction(
                 Action::make('clear')
@@ -54,7 +84,6 @@ class DateRangePicker extends Field implements HasAffixActions
                     ->action(fn() => $this->clear())
             );
             $this->suffixIcon(null);
-
         }
 
         return $this;
@@ -65,7 +94,7 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this->evaluate($this->icon) ?? 'heroicon-m-calendar-days';
     }
 
-    public function clear()
+    public function clear(): void
     {
         $this->state(null);
     }
@@ -79,35 +108,6 @@ class DateRangePicker extends Field implements HasAffixActions
         $this->firstDayOfWeek = $day;
 
         return $this;
-    }
-
-
-    public function processDefault($operation): void
-    {
-        $default = null;
-
-        $state = $this->getState();
-
-        if($state != null) {
-            $default = $state;
-        }else {
-            $startDate = $this->getStartDate();
-            $endDate = $this->getEndDate();
-
-            if ($startDate != null && $endDate != null) {
-                $default = $startDate->format($this->getFormat()) . $this->rangeSeparator . $endDate->format($this->getFormat());
-            } else if ($startDate != null && $endDate == null) {
-                $default = $startDate->format($this->getFormat()) . $this->rangeSeparator . $startDate->format($this->getFormat());
-            } else if ($startDate == null && $endDate != null) {
-                $default = $endDate->format($this->getFormat()) . $this->rangeSeparator . $endDate->format($this->getFormat());
-            }
-        }
-
-        $this->default($default);
-
-        if ($default != null && ($operation != "edit" || ($this->enforceIfNull && $state == null))) {
-            $this->state($default);
-        }
     }
 
     public function getStartDate()
@@ -244,22 +244,24 @@ class DateRangePicker extends Field implements HasAffixActions
         $ranges = $this->evaluate($this->ranges);
 
         if (empty($ranges)) {
+            $now = $this->now();
             $ranges = [
-                __('filament-daterangepicker-filter::message.today') => [$this->now(), $this->now()],
-                __('filament-daterangepicker-filter::message.yesterday') => [$this->now()->subDay(), $this->now()->subDay()],
-                __('filament-daterangepicker-filter::message.last_7_days') => [$this->now()->subDays(6), $this->now()],
-                __('filament-daterangepicker-filter::message.last_30_days') => [$this->now()->subDays(29), $this->now()],
-                __('filament-daterangepicker-filter::message.this_month') => [$this->now()->startOfMonth(), $this->now()->endOfMonth()],
-                __('filament-daterangepicker-filter::message.last_month') => [$this->now()->subMonthNoOverflow()->startOfMonth(), $this->now()->subMonthNoOverflow()->endOfMonth()],
-                __('filament-daterangepicker-filter::message.this_year') => [$this->now()->startOfYear(), $this->now()->endOfYear()],
-                __('filament-daterangepicker-filter::message.last_year') => [$this->now()->subYear()->startOfYear(), $this->now()->subYear()->endOfYear()],
+                __('filament-daterangepicker-filter::message.today') => [$now->copy(), $now->copy()],
+                __('filament-daterangepicker-filter::message.yesterday') => [$now->copy()->subDay(), $now->copy()->subDay()],
+                __('filament-daterangepicker-filter::message.last_7_days') => [$now->copy()->subDays(6), $now->copy()],
+                __('filament-daterangepicker-filter::message.last_30_days') => [$now->copy()->subDays(29), $now->copy()],
+                __('filament-daterangepicker-filter::message.this_month') => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
+                __('filament-daterangepicker-filter::message.last_month') => [$now->copy()->subMonthNoOverflow()->startOfMonth(), $now->copy()->subMonthNoOverflow()->endOfMonth()],
+                __('filament-daterangepicker-filter::message.this_year') => [$now->copy()->startOfYear(), $now->copy()->endOfYear()],
+                __('filament-daterangepicker-filter::message.last_year') => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
             ];
         }
 
         foreach ($ranges as $key => $dates) {
-            $ranges[$key] = array_map(function ($date) {
-                return $date instanceof Carbon ? $date->toDateString() : $date;
-            }, $dates);
+            $ranges[$key] = array_map(
+                fn ($date) => $date instanceof Carbon ? $date->toDateString() : $date,
+                $dates
+            );
         }
 
         return $ranges;

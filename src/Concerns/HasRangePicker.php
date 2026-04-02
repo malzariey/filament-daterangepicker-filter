@@ -12,6 +12,22 @@ use Malzariey\FilamentDaterangepickerFilter\Enums\PickerType;
 
 trait HasRangePicker
 {
+    /**
+     * PHP date format → Day.js format token mapping.
+     * Static to avoid rebuilding on every convertPhpToJsFormat() call.
+     */
+    private static array $phpToJsFormatMap = [
+        'd' => 'DD', 'D' => 'ddd', 'j' => 'D', 'l' => 'dddd',
+        'N' => 'E', 'S' => 'o', 'w' => 'd', 'z' => 'DDD',
+        'W' => 'W', 'F' => 'MMMM', 'm' => 'MM', 'M' => 'MMM',
+        'n' => 'M', 't' => '', 'L' => '', 'o' => 'YYYY',
+        'Y' => 'YYYY', 'y' => 'YY', 'a' => 'a', 'A' => 'A',
+        'B' => '', 'g' => 'h', 'G' => 'H', 'h' => 'hh',
+        'H' => 'HH', 'i' => 'mm', 's' => 'ss', 'u' => 'SSS',
+        'e' => 'zz', 'I' => '', 'O' => 'ZZ', 'P' => 'Z',
+        'T' => 'z', 'Z' => '', 'c' => '', 'r' => '', 'U' => 'X',
+    ];
+
     protected CarbonInterface|string|Closure|null $maxDate = null;
 
     protected CarbonInterface|string|Closure|null $minDate = null;
@@ -57,8 +73,7 @@ trait HasRangePicker
 
     protected bool $enforceIfNull = false;
     protected bool $enforceFormat = false;
-    
-    // New properties for Alpine.js refactor
+
     protected bool|Closure $teleport = true;
     protected bool|Closure $allowInput = false;
     protected ?string $dualStartField = null;
@@ -88,21 +103,14 @@ trait HasRangePicker
     {
         $format = $this->evaluate($this->format);
 
-        if (!$this->getEnforceFormat() && $this->timePicker && (!str_contains($format,"h" ) && !str_contains($format,"H" ))) {
+        if (!$this->getEnforceFormat() && $this->getTimePicker() && (!str_contains($format, 'h') && !str_contains($format, 'H'))) {
             if ($this->getTimePicker24()) {
-                if ($this->getTimePickerSecond()) {
-                    $format .= ' H:i:s';
-                } else {
-                    $format .= ' H:i';
-                }
+                $format .= $this->getTimePickerSecond() ? ' H:i:s' : ' H:i';
             } else {
-                if ($this->getTimePickerSecond()) {
-                    $format .= ' h:i:s A';
-                } else {
-                    $format .= ' h:i A';
-                }
+                $format .= $this->getTimePickerSecond() ? ' h:i:s A' : ' h:i A';
             }
         }
+
         return $format;
     }
 
@@ -476,91 +484,28 @@ trait HasRangePicker
             return $displayFormat;
         }
 
-        $format = $this->getFormat();
-
-        $displayFormat = $this->convertPhpToJsFormat($format);
-
-
-        if (!$this->getEnforceFormat() && $this->timePicker && (!str_contains($displayFormat,"h" ) && !str_contains($displayFormat,"H" ))) {
-            if ($this->getTimePicker24()) {
-                if ($this->getTimePickerSecond()) {
-                    $displayFormat .= ' HH:mm:ss';
-                } else {
-                    $displayFormat .= ' HH:mm';
-                }
-            } else {
-                if ($this->getTimePickerSecond()) {
-                    $displayFormat .= ' hh:mm:ss A';
-                } else {
-                    $displayFormat .= ' hh:mm A';
-                }
-            }
-        }
-
-        return $displayFormat;
+        // getFormat() already appends time tokens when timePicker is enabled,
+        // so convertPhpToJsFormat() will include them in the JS format string.
+        return $this->convertPhpToJsFormat($this->getFormat());
     }
 
     protected function convertPhpToJsFormat(string $format): string
     {
-        $replacements = [
-            'd' => 'DD',
-            'D' => 'ddd',
-            'j' => 'D',
-            'l' => 'dddd',
-            'N' => 'E',
-            'S' => 'o',
-            'w' => 'd',
-            'z' => 'DDD',
-            'W' => 'W',
-            'F' => 'MMMM',
-            'm' => 'MM',
-            'M' => 'MMM',
-            'n' => 'M',
-            't' => '',
-            'L' => '',
-            'o' => 'YYYY',
-            'Y' => 'YYYY',
-            'y' => 'YY',
-            'a' => 'a',
-            'A' => 'A',
-            'B' => '',
-            'g' => 'h',
-            'G' => 'H',
-            'h' => 'hh',
-            'H' => 'HH',
-            'i' => 'mm',
-            's' => 'ss',
-            'u' => 'SSS',
-            'e' => 'zz',
-            'I' => '',
-            'O' => 'ZZ',
-            'P' => 'Z',
-            'T' => 'z',
-            'Z' => '',
-            'c' => '',
-            'r' => '',
-            'U' => 'X',
-        ];
+        $jsFormat = '';
+        $length = strlen($format);
 
-        $jsFormat = "";
-        $escaped = false;
-
-        for ($i = 0; $i < strlen($format); $i++) {
+        for ($i = 0; $i < $length; $i++) {
             $char = $format[$i];
 
             if ($char === '\\') {
                 $i++;
-                if ($i < strlen($format)) {
+                if ($i < $length) {
                     $jsFormat .= '[' . $format[$i] . ']';
                 }
                 continue;
             }
 
-            if (isset($replacements[$char])) {
-                $jsFormat .= $replacements[$char];
-            } else {
-                $jsFormat .= $char;
-            }
+            $jsFormat .= self::$phpToJsFormatMap[$char] ?? $char;
         }
 
         return $jsFormat;

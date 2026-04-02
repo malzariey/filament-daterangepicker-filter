@@ -5,7 +5,6 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import localeData from 'dayjs/plugin/localeData';
 import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
 import IMask from 'imask';
 
@@ -16,7 +15,45 @@ dayjs.extend(weekOfYear);
 dayjs.extend(customParseFormat);
 dayjs.extend(timezone);
 dayjs.extend(utc);
-dayjs.extend(localeData);
+
+// ─────────────────────────────────────────────────────────────
+// Static Day.js Locale Imports
+// These match the PHP translation packs in resources/lang/.
+// Static imports are required because esbuild bundles into a
+// single file — dynamic import() can't resolve node_modules
+// at runtime.
+// ─────────────────────────────────────────────────────────────
+import 'dayjs/locale/ar';
+import 'dayjs/locale/cs';
+import 'dayjs/locale/da';
+import 'dayjs/locale/de';
+import 'dayjs/locale/es';
+import 'dayjs/locale/fa';
+import 'dayjs/locale/fr';
+import 'dayjs/locale/el';
+import 'dayjs/locale/he';
+import 'dayjs/locale/hu';
+import 'dayjs/locale/id';
+import 'dayjs/locale/it';
+import 'dayjs/locale/ko';
+import 'dayjs/locale/lt';
+import 'dayjs/locale/lv';
+import 'dayjs/locale/nl';
+import 'dayjs/locale/nb';
+import 'dayjs/locale/pl';
+import 'dayjs/locale/pt';
+import 'dayjs/locale/pt-br';
+import 'dayjs/locale/ro';
+import 'dayjs/locale/ru';
+import 'dayjs/locale/sk';
+import 'dayjs/locale/sl';
+import 'dayjs/locale/tr';
+import 'dayjs/locale/uk';
+import 'dayjs/locale/uz';
+import 'dayjs/locale/vi';
+import 'dayjs/locale/zh-cn';
+import 'dayjs/locale/zh-tw';
+import 'dayjs/locale/ku';
 
 // Global instance counter for unique IDs
 let instanceCounter = 0;
@@ -160,19 +197,14 @@ export default function dateRangeComponent(config) {
         // Initialization
         // ─────────────────────────────────────────────────────────────
 
-        async init() {
+        init() {
             // Setup input masking immediately for visual feedback
             if (this.allowManualInput) {
                 this.setupInputMask();
             }
 
-            // Load Day.js locale
-            await this.loadLocale(this.config.locale);
-
-            // Set timezone if provided
-            if (this.config.timezone) {
-                dayjs.tz.setDefault(this.config.timezone);
-            }
+            // Set Day.js locale (all locales are statically imported)
+            this.setLocale(this.config.locale);
 
             // Parse initial state
             this.parseState(this.config.state);
@@ -180,7 +212,6 @@ export default function dateRangeComponent(config) {
             // Update input value
             this.updateInputValue();
 
-            // Watch for external state changes (Livewire updates)
             // Watch for external state changes (Livewire updates)
             this.$watch('config.state', (value) => {
                 if (this.isSyncing) return;
@@ -218,43 +249,50 @@ export default function dateRangeComponent(config) {
             }
         },
 
-        async loadLocale(locale) {
-            // Map common PHP locale codes to Day.js
+        /**
+         * Set Day.js locale from PHP locale code.
+         * All locales are statically imported at the top of this file,
+         * so this is a synchronous operation.
+         */
+        setLocale(locale) {
+            // Map PHP locale codes → Day.js locale identifiers
             const localeMap = {
                 'en': 'en',
                 'ar': 'ar',
+                'ckb': 'ku',
+                'cs': 'cs',
+                'da': 'da',
                 'de': 'de',
                 'es': 'es',
+                'fa': 'fa',
                 'fr': 'fr',
+                'gr': 'el',
+                'he': 'he',
+                'hu': 'hu',
+                'id': 'id',
                 'it': 'it',
-                'ja': 'ja',
                 'ko': 'ko',
+                'lt': 'lt',
+                'lv': 'lv',
                 'nl': 'nl',
+                'no': 'nb',
                 'pl': 'pl',
                 'pt': 'pt',
                 'pt_BR': 'pt-br',
+                'ro': 'ro',
                 'ru': 'ru',
+                'sk': 'sk',
+                'sl': 'sl',
                 'tr': 'tr',
                 'uk': 'uk',
+                'uz': 'uz',
                 'vi': 'vi',
                 'zh_CN': 'zh-cn',
                 'zh_TW': 'zh-tw',
             };
 
             const dayjsLocale = localeMap[locale] || locale.toLowerCase().replace('_', '-');
-
-            if (dayjsLocale === 'en') {
-                dayjs.locale('en');
-                return;
-            }
-
-            try {
-                await import(`dayjs/locale/${dayjsLocale}.js`);
-                dayjs.locale(dayjsLocale);
-            } catch (e) {
-                console.warn(`[DateRangePicker] Locale '${dayjsLocale}' not available, using 'en'`);
-                dayjs.locale('en');
-            }
+            dayjs.locale(dayjsLocale);
         },
 
         // ─────────────────────────────────────────────────────────────
