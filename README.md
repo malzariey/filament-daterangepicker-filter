@@ -298,13 +298,12 @@ DateRangeFilter::make('created_at')->withIndicator()
 
 ---
 
-## Migration from v3.x to v4.x
+## Migration from v3.x and v4.x
 
 ### Breaking Changes
 
 1. **jQuery/Moment.js removed** - The component now uses Alpine.js and Day.js
 2. **Format tokens** - Use `->format()` with PHP Carbon tokens (e.g. `d/m/Y`). The JavaScript display format is auto-converted — there is no need to specify Day.js tokens manually.
-3. **Laravel 13 support** - Added `illuminate/contracts: ^13.0` compatibility
 
 ### New Methods
 
