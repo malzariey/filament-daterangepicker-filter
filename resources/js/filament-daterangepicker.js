@@ -1248,6 +1248,30 @@ export default function dateRangeComponent(config) {
         },
 
         /**
+         * Get the comparison unit for preset matching.
+         * When timePicker is enabled, we need finer granularity
+         * to distinguish presets that share the same day but
+         * have different times (e.g. "Last 6h" vs "Last 12h").
+         */
+        getPresetComparisonUnit() {
+            if (!this.config.timePicker) return 'day';
+            return this.config.timePickerSeconds ? 'second' : 'minute';
+        },
+
+        /**
+         * Check if two date ranges match at the appropriate granularity.
+         * @param {dayjs} selStart - Selection start
+         * @param {dayjs} selEnd - Selection end
+         * @param {dayjs} preStart - Preset start
+         * @param {dayjs} preEnd - Preset end
+         * @returns {boolean}
+         */
+        matchesPresetRange(selStart, selEnd, preStart, preEnd) {
+            const unit = this.getPresetComparisonUnit();
+            return selStart.isSame(preStart, unit) && selEnd.isSame(preEnd, unit);
+        },
+
+        /**
          * Check if a preset range matches the current selection.
          * Used for highlighting active presets in the sidebar.
          * @param {string} label - The preset label
@@ -1263,11 +1287,12 @@ export default function dateRangeComponent(config) {
                 return false;
             }
 
-            const rangeStart = dayjs(range[0]);
-            const rangeEnd = dayjs(range[1]);
-
-            return this.selection.start.isSame(rangeStart, 'day') &&
-                this.selection.end.isSame(rangeEnd, 'day');
+            return this.matchesPresetRange(
+                this.selection.start,
+                this.selection.end,
+                dayjs(range[0]),
+                dayjs(range[1])
+            );
         },
 
         // ─────────────────────────────────────────────────────────────
@@ -1553,10 +1578,12 @@ export default function dateRangeComponent(config) {
             if (this.config.useRangeLabels && this.selection.start && this.selection.end) {
                 for (const [label, range] of Object.entries(this.config.ranges || {})) {
                     if (range.length === 2) {
-                        const presetStart = dayjs(range[0]);
-                        const presetEnd = dayjs(range[1]);
-                        if (this.selection.start.isSame(presetStart, 'day') &&
-                            this.selection.end.isSame(presetEnd, 'day')) {
+                        if (this.matchesPresetRange(
+                            this.selection.start,
+                            this.selection.end,
+                            dayjs(range[0]),
+                            dayjs(range[1])
+                        )) {
                             return label;
                         }
                     }
