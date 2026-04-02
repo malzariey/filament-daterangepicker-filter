@@ -4,6 +4,7 @@ namespace Malzariey\FilamentDaterangepickerFilter\Concerns;
 
 use Carbon\CarbonInterface;
 use Closure;
+use Filament\Support\Facades\FilamentTimezone;
 use JetBrains\PhpStorm\Deprecated;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
@@ -384,7 +385,7 @@ trait HasRangePicker
 
     public function getSystemTimezone(): string
     {
-        return config('app.timezone');
+        return FilamentTimezone::get();
     }
 
     public function defaultYesterday($enforceIfNull = false): static
