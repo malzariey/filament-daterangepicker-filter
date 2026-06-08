@@ -479,66 +479,115 @@ export default function dateRangeComponent(config) {
                 .replace(/ss/g, 'ss');
         },
 
-        handleManualInput(value) {
-            if (!value) {
+        handleManualInput(value, options = {}) {
+            const result = this.parseManualInput(value);
+
+            if (result.status === 'empty') {
                 this.selection = { start: null, end: null };
                 this.syncState();
-                return;
+                return true;
+            }
+
+            if (result.status !== 'valid') {
+                if (options.revertOnInvalid) {
+                    this.updateInputValue();
+                }
+                return false;
+            }
+
+            this.selection.start = result.start;
+            this.selection.end = result.end;
+            this.viewDate = result.start;
+            this.syncState();
+
+            return true;
+        },
+
+        commitManualInput() {
+            if (!this.allowManualInput) return false;
+
+            const value = this.inputMask?.value ?? this.$refs.input?.value ?? this.inputValue;
+            return this.handleManualInput(value, { revertOnInvalid: true });
+        },
+
+        parseManualInput(value) {
+            const input = String(value ?? '').trim();
+
+            if (!input) {
+                return { status: 'empty' };
             }
 
             const format = this.config.displayFormat;
             const separator = this.config.separator;
 
             if (this.config.singleCalendar) {
-                const date = dayjs(value, format, true);
-                if (date.isValid() && !this.isDisabled(date)) {
-                    this.selection.start = date;
-                    this.selection.end = date;
-                    this.syncState();
-                }
-            } else {
+                const date = dayjs(input, format, true);
 
-                const parts = value.split(separator);
-
-                // Parse Start Date
-                const startString = parts[0]?.trim();
-                if (startString) {
-                    const start = dayjs(startString, format, true);
-                    if (start.isValid() && !this.isDisabled(start)) {
-                        this.viewDate = start;
-                        this.selection.start = start;
-                    } else {
-                        this.selection.start = null;
-                    }
+                if (!date.isValid() || !this.isDateAllowedForPicker(date)) {
+                    return { status: 'invalid' };
                 }
 
-                // Parse End Date & Handle Full Range
-                if (parts.length === 2) {
-                    const start = dayjs(parts[0].trim(), format, true);
-                    const end = dayjs(parts[1].trim(), format, true);
-
-                    if (start.isValid() && end.isValid() &&
-                        !this.isDisabled(start) && !this.isDisabled(end)) {
-
-                        // Auto-correct if start > end
-                        if (start.isAfter(end, 'day')) {
-                            this.selection.start = end;
-                            this.selection.end = start;
-                            // Update view to the new start if needed
-                            this.viewDate = end;
-                        } else {
-                            this.selection.start = start;
-                            this.selection.end = end;
-                        }
-                        this.syncState();
-                    } else {
-                        // If partial/invalid end, clear selection end to match input state
-                        this.selection.end = null;
-                    }
-                } else {
-                    this.selection.end = null;
-                }
+                return {
+                    status: 'valid',
+                    start: this.normalizeSelectionStart(date),
+                    end: this.normalizeSelectionEnd(date),
+                };
             }
+
+            const parts = input.split(separator);
+
+            if (parts.length !== 2) {
+                return { status: 'invalid' };
+            }
+
+            const start = dayjs(parts[0].trim(), format, true);
+            const end = dayjs(parts[1].trim(), format, true);
+
+            if (!start.isValid() || !end.isValid() ||
+                !this.isDateAllowedForPicker(start) || !this.isDateAllowedForPicker(end)) {
+                return { status: 'invalid' };
+            }
+
+            const unit = this.getPickerUnit();
+            const isReversed = start.isAfter(end, unit);
+            const rangeStart = isReversed ? end : start;
+            const rangeEnd = isReversed ? start : end;
+
+            return {
+                status: 'valid',
+                start: this.normalizeSelectionStart(rangeStart),
+                end: this.normalizeSelectionEnd(rangeEnd),
+            };
+        },
+
+        getPickerUnit() {
+            if (this.isMonthPicker) return 'month';
+            if (this.isYearPicker) return 'year';
+            return 'day';
+        },
+
+        normalizeSelectionStart(date) {
+            if (this.isMonthPicker) return date.startOf('month');
+            if (this.isYearPicker) return date.startOf('year');
+            return date;
+        },
+
+        normalizeSelectionEnd(date) {
+            if (this.isMonthPicker) return date.endOf('month');
+            if (this.isYearPicker) return date.endOf('year');
+            return date;
+        },
+
+        isDateAllowedForPicker(date) {
+            if (this.isMonthPicker) {
+                return !this.isMonthDisabled(date.startOf('month'));
+            }
+
+            if (this.isYearPicker) {
+                return !this.isYearDisabled(date.startOf('year'));
+            }
+
+            return !this.isDisabled(date);
         },
 
         updateInputValue() {
@@ -671,13 +720,26 @@ export default function dateRangeComponent(config) {
         },
 
         isMonthDisabled(monthDate) {
+            const year = monthDate.year();
+            const minYear = this.getMinConstraintYear();
+            const maxYear = this.getMaxConstraintYear();
+
+            if (minYear !== null && year < minYear) return true;
+            if (maxYear !== null && year > maxYear) return true;
+
             if (this.config.minDate) {
-                const min = dayjs(this.config.minDate).startOf('month');
-                if (monthDate.isBefore(min, 'month')) return true;
+                const minDate = dayjs(this.config.minDate);
+                if (minDate.isValid()) {
+                    const min = minDate.startOf('month');
+                    if (monthDate.isBefore(min, 'month')) return true;
+                }
             }
             if (this.config.maxDate) {
-                const max = dayjs(this.config.maxDate).endOf('month');
-                if (monthDate.isAfter(max, 'month')) return true;
+                const maxDate = dayjs(this.config.maxDate);
+                if (maxDate.isValid()) {
+                    const max = maxDate.endOf('month');
+                    if (monthDate.isAfter(max, 'month')) return true;
+                }
             }
             return false;
         },
@@ -789,16 +851,12 @@ export default function dateRangeComponent(config) {
 
         isYearDisabled(yearDate) {
             const year = yearDate.year();
-            if (this.config.minYear && year < this.config.minYear) return true;
-            if (this.config.maxYear && year > this.config.maxYear) return true;
-            if (this.config.minDate) {
-                const minYear = dayjs(this.config.minDate).year();
-                if (year < minYear) return true;
-            }
-            if (this.config.maxDate) {
-                const maxYear = dayjs(this.config.maxDate).year();
-                if (year > maxYear) return true;
-            }
+            const minYear = this.getMinConstraintYear();
+            const maxYear = this.getMaxConstraintYear();
+
+            if (minYear !== null && year < minYear) return true;
+            if (maxYear !== null && year > maxYear) return true;
+
             return false;
         },
 
@@ -847,12 +905,132 @@ export default function dateRangeComponent(config) {
             this.tempEndDate = yearItem.date.endOf('year');
         },
 
+        getMinConstraintYear() {
+            const years = [];
+
+            if (this.config.minYear !== null && this.config.minYear !== undefined) {
+                years.push(parseInt(this.config.minYear));
+            }
+
+            if (this.config.minDate) {
+                const minDate = dayjs(this.config.minDate);
+                if (minDate.isValid()) {
+                    years.push(minDate.year());
+                }
+            }
+
+            const validYears = years.filter(year => Number.isFinite(year));
+
+            return validYears.length ? Math.max(...validYears) : null;
+        },
+
+        getMaxConstraintYear() {
+            const years = [];
+
+            if (this.config.maxYear !== null && this.config.maxYear !== undefined) {
+                years.push(parseInt(this.config.maxYear));
+            }
+
+            if (this.config.maxDate) {
+                const maxDate = dayjs(this.config.maxDate);
+                if (maxDate.isValid()) {
+                    years.push(maxDate.year());
+                }
+            }
+
+            const validYears = years.filter(year => Number.isFinite(year));
+
+            return validYears.length ? Math.min(...validYears) : null;
+        },
+
+        getYearOptions() {
+            const currentYear = dayjs().year();
+            const minYear = this.getMinConstraintYear() ?? currentYear - 100;
+            const maxYear = this.getMaxConstraintYear() ?? currentYear + 20;
+
+            if (maxYear < minYear) {
+                return [];
+            }
+
+            return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+        },
+
+        clampYearToConstraints(year) {
+            let constrainedYear = parseInt(year);
+
+            if (!Number.isFinite(constrainedYear)) {
+                return null;
+            }
+
+            const minYear = this.getMinConstraintYear();
+            const maxYear = this.getMaxConstraintYear();
+
+            if (minYear !== null && constrainedYear < minYear) {
+                constrainedYear = minYear;
+            }
+
+            if (maxYear !== null && constrainedYear > maxYear) {
+                constrainedYear = maxYear;
+            }
+
+            return constrainedYear;
+        },
+
+        constrainMonthPickerViewDate(date) {
+            if (!date) return date;
+
+            const minYear = this.getMinConstraintYear();
+            const maxYear = this.getMaxConstraintYear();
+
+            if (minYear === null && maxYear === null) {
+                return date;
+            }
+
+            let year = date.year();
+
+            if (minYear !== null && year < minYear) {
+                year = minYear;
+            }
+
+            if (maxYear !== null) {
+                const visibleYearOffset = this.config.singleCalendar ? 0 : 1;
+                if (year + visibleYearOffset > maxYear) {
+                    const maxBaseYear = maxYear - visibleYearOffset;
+                    year = minYear !== null ? Math.max(minYear, maxBaseYear) : maxBaseYear;
+                }
+            }
+
+            return date.year(year);
+        },
+
+        canShowPreviousMonthPickerYear() {
+            const minYear = this.getMinConstraintYear();
+
+            return minYear === null || this.viewDate.year() > minYear;
+        },
+
+        canShowNextMonthPickerYear() {
+            const maxYear = this.getMaxConstraintYear();
+
+            if (maxYear === null) {
+                return true;
+            }
+
+            const rightMostVisibleYear = this.viewDate.year() + (this.config.singleCalendar ? 0 : 1);
+
+            return rightMostVisibleYear < maxYear;
+        },
+
         // Navigation for month/year pickers
         prevYear() {
+            if (!this.canShowPreviousMonthPickerYear()) return;
+
             this.viewDate = this.viewDate.subtract(1, 'year');
         },
 
         nextYear() {
+            if (!this.canShowNextMonthPickerYear()) return;
+
             this.viewDate = this.viewDate.add(1, 'year');
         },
 
@@ -1032,9 +1210,9 @@ export default function dateRangeComponent(config) {
             if (this.config.singleCalendar) {
                 const date = dayjs(stateString.trim(), format, true);
                 if (date.isValid()) {
-                    this.selection.start = date;
-                    this.selection.end = date;
-                    this.viewDate = date;
+                    this.selection.start = this.normalizeSelectionStart(date);
+                    this.selection.end = this.normalizeSelectionEnd(date);
+                    this.viewDate = this.selection.start;
                 }
             } else {
                 const parts = stateString.split(separator);
@@ -1043,11 +1221,11 @@ export default function dateRangeComponent(config) {
                     const end = dayjs(parts[1].trim(), format, true);
 
                     if (start.isValid()) {
-                        this.selection.start = start;
-                        this.viewDate = start;
+                        this.selection.start = this.normalizeSelectionStart(start);
+                        this.viewDate = this.selection.start;
                     }
                     if (end.isValid()) {
-                        this.selection.end = end;
+                        this.selection.end = this.normalizeSelectionEnd(end);
                     }
                 }
             }
@@ -1169,6 +1347,10 @@ export default function dateRangeComponent(config) {
             await this.$nextTick();
             this.setupPositioning();
             this.focusedDate = this.selection.start || dayjs();
+
+            if (this.isMonthPicker) {
+                this.viewDate = this.constrainMonthPickerViewDate(this.viewDate);
+            }
 
             // Dispatch show event for Livewire/external listeners
             this.$el?.dispatchEvent(new CustomEvent('show.daterangepicker', {
@@ -1315,6 +1497,15 @@ export default function dateRangeComponent(config) {
             this.viewDate = this.viewDate.year(parseInt(year));
         },
 
+        setMonthPickerYear(year, offset = 0) {
+            const constrainedYear = this.clampYearToConstraints(year);
+
+            if (constrainedYear === null) return;
+
+            this.viewDate = this.viewDate.year(constrainedYear - parseInt(offset || 0));
+            this.viewDate = this.constrainMonthPickerViewDate(this.viewDate);
+        },
+
         // ─────────────────────────────────────────────────────────────
         // Positioning (Floating UI)
         // ─────────────────────────────────────────────────────────────
@@ -1381,6 +1572,12 @@ export default function dateRangeComponent(config) {
         handleKeydown(event) {
             // If focused on the input, allow native navigation/typing for specific keys
             if (this.$refs.input && event.target === this.$refs.input) {
+                if (event.key === 'Enter' && this.allowManualInput) {
+                    event.preventDefault();
+                    this.commitManualInput();
+                    return;
+                }
+
                 // Arrow Key Navigation: Jump between date blocks with padding
                 if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
                     const input = this.$refs.input;
@@ -1491,6 +1688,10 @@ export default function dateRangeComponent(config) {
 
                 case 'Enter':
                 case ' ':
+                    if (!this.isDayPicker) {
+                        return;
+                    }
+
                     event.preventDefault();
                     if (this.focusedDate) {
                         const isDisabled = this.isDisabled(this.focusedDate);
@@ -1630,10 +1831,11 @@ export default function dateRangeComponent(config) {
         },
 
         get years() {
-            const currentYear = dayjs().year();
-            const minYear = this.config.minYear || currentYear - 100;
-            const maxYear = this.config.maxYear || currentYear + 20;
-            return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+            return this.getYearOptions();
+        },
+
+        get monthPickerYears() {
+            return this.getYearOptions();
         },
 
         get hasRanges() {

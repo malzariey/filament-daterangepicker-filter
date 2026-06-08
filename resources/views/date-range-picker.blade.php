@@ -327,7 +327,9 @@
                                             type="button"
                                             @click="prevYear()"
                                             x-show="offset === 0"
+                                            :disabled="!canShowPreviousMonthPickerYear()"
                                             class="fi-daterangepicker-nav-btn"
+                                            :class="{ 'fi-disabled': !canShowPreviousMonthPickerYear() }"
                                             aria-label="Previous year"
                                         >
                                             <x-filament::icon
@@ -337,16 +339,29 @@
                                         </button>
                                         <span x-show="offset !== 0" class="w-5"></span>
 
-                                        <span
-                                            class="fi-daterangepicker-month-label"
-                                            x-text="generateMonthGrid(offset).year"
-                                        ></span>
+                                        <div class="fi-daterangepicker-month-year">
+                                            <select
+                                                @change="setMonthPickerYear($event.target.value, offset)"
+                                                class="fi-daterangepicker-select fi-daterangepicker-year-select"
+                                                aria-label="Year"
+                                            >
+                                                <template x-for="y in monthPickerYears" :key="y">
+                                                    <option
+                                                        :value="y"
+                                                        x-text="y"
+                                                        :selected="generateMonthGrid(offset).year === y"
+                                                    ></option>
+                                                </template>
+                                            </select>
+                                        </div>
 
                                         <button
                                             type="button"
                                             @click="nextYear()"
                                             x-show="config.singleCalendar ? true : offset === 1"
+                                            :disabled="!canShowNextMonthPickerYear()"
                                             class="fi-daterangepicker-nav-btn"
+                                            :class="{ 'fi-disabled': !canShowNextMonthPickerYear() }"
                                             aria-label="Next year"
                                         >
                                             <x-filament::icon
