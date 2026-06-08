@@ -199,6 +199,14 @@ class DemoPage extends Page
                             ->monthPicker()
                             ->placeholder($isArabic ? 'اختر نطاق شهري' : 'Select month range'),
 
+                        DateRangePicker::make('month_picker_manual_single')
+                            ->label($isArabic ? 'منتقي شهر بإدخال يدوي' : 'Month Picker Manual Single')
+                            ->monthPicker()
+                            ->singleCalendar()
+                            ->allowInput()
+                            ->format('m/Y')
+                            ->placeholder('mm/yyyy'),
+
                         DateRangePicker::make('year_picker')
                             ->label($isArabic ? 'منتقي السنة' : 'Year Picker')
                             ->yearPicker()
