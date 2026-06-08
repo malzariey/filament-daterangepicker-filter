@@ -331,24 +331,7 @@ export default function dateRangeComponent(config) {
             const format = this.config.displayFormat; // e.g., "DD/MM/YYYY"
             const separator = this.config.separator; // e.g., " - "
 
-            // Create date mask options
-            const dateMaskOptions = {
-                mask: Date,
-                pattern: format,
-                lazy: false,
-                autofix: 'pad',
-                blocks: {
-                    DD: { mask: IMask.MaskedRange, from: 1, to: 31, maxLength: 2 },
-                    MM: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2 },
-                    YYYY: { mask: IMask.MaskedRange, from: 1900, to: 2100, maxLength: 4 },
-                    HH: { mask: IMask.MaskedRange, from: 0, to: 23, maxLength: 2 },
-                    hh: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2 },
-                    mm: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2 },
-                    ss: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2 },
-                },
-                format: (date) => dayjs(date).format(format),
-                parse: (str) => dayjs(str, format).toDate(),
-            };
+            const dateMaskOptions = this.createDateMaskOptions(format);
 
             if (this.config.singleCalendar) {
                 // Single date mask
@@ -369,6 +352,54 @@ export default function dateRangeComponent(config) {
                 this.handleManualInput(this.inputMask.value);
             });
         },
+
+        createDateMaskOptions(format) {
+            if (!this.isDayPicker) {
+                return this.createNumericPatternMaskOptions(format);
+            }
+
+            return {
+                mask: Date,
+                pattern: format,
+                lazy: false,
+                autofix: 'pad',
+                blocks: {
+                    DD: { mask: IMask.MaskedRange, from: 1, to: 31, maxLength: 2 },
+                    MM: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2 },
+                    YYYY: { mask: IMask.MaskedRange, from: 1900, to: 2100, maxLength: 4 },
+                    HH: { mask: IMask.MaskedRange, from: 0, to: 23, maxLength: 2 },
+                    hh: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2 },
+                    mm: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2 },
+                    ss: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2 },
+                },
+                format: (date) => dayjs(date).format(format),
+                parse: (str) => dayjs(str, format).toDate(),
+            };
+        },
+
+        createNumericPatternMaskOptions(format) {
+            return {
+                mask: format,
+                lazy: false,
+                blocks: {
+                    DD: { mask: IMask.MaskedRange, from: 1, to: 31, maxLength: 2, autofix: 'pad' },
+                    D: { mask: IMask.MaskedRange, from: 1, to: 31, maxLength: 2 },
+                    MM: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2, autofix: 'pad' },
+                    M: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2 },
+                    YYYY: { mask: '0000' },
+                    YY: { mask: '00' },
+                    HH: { mask: IMask.MaskedRange, from: 0, to: 23, maxLength: 2, autofix: 'pad' },
+                    H: { mask: IMask.MaskedRange, from: 0, to: 23, maxLength: 2 },
+                    hh: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2, autofix: 'pad' },
+                    h: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2 },
+                    mm: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2, autofix: 'pad' },
+                    m: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2 },
+                    ss: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2, autofix: 'pad' },
+                    s: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2 },
+                },
+            };
+        },
+
 
         smartAutoPadAndJump() {
             const input = this.$refs.input;
@@ -1494,7 +1525,15 @@ export default function dateRangeComponent(config) {
         },
 
         setYear(year) {
-            this.viewDate = this.viewDate.year(parseInt(year));
+            let constrainedYear = this.clampYearToConstraints(year);
+
+            if (constrainedYear === null) return;
+
+            this.viewDate = this.viewDate.year(constrainedYear);
+
+            if (this.isMonthPicker) {
+                this.viewDate = this.constrainMonthPickerViewDate(this.viewDate);
+            }
         },
 
         setMonthPickerYear(year, offset = 0) {

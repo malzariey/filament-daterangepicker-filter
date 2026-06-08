@@ -1015,6 +1015,24 @@ describe('Input Logic', () => {
             expect(component.config.state).toBe('06/2026');
         });
 
+        it('should not recurse when month input mask receives a short year partial', async () => {
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+                singleCalendar: true,
+                allowInput: true,
+                displayFormat: 'MM/YYYY',
+                initialState: '06/2026',
+            });
+
+            expect(() => {
+                component.inputMask.value = '01/22';
+            }).not.toThrow();
+
+            expect(component.selection.start.format('MM/YYYY')).toBe('06/2026');
+            expect(component.inputValue).toBe('06/2026');
+            expect(component.config.state).toBe('06/2026');
+        });
+
         it('should parse month range manual input as a selected month range', async () => {
             const { component } = await createTestComponent({
                 pickerType: 'month',

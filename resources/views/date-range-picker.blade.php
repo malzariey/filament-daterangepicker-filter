@@ -327,9 +327,7 @@
                                             type="button"
                                             @click="prevYear()"
                                             x-show="offset === 0"
-                                            :disabled="!canShowPreviousMonthPickerYear()"
                                             class="fi-daterangepicker-nav-btn"
-                                            :class="{ 'fi-disabled': !canShowPreviousMonthPickerYear() }"
                                             aria-label="Previous year"
                                         >
                                             <x-filament::icon
@@ -344,11 +342,11 @@
                                                 type="number"
                                                 inputmode="numeric"
                                                 pattern="[0-9]*"
-                                                :value="getMonthPickerYearInputValue(offset)"
-                                                :min="getMinConstraintYear() ?? undefined"
-                                                :max="getMaxConstraintYear() ?? undefined"
-                                                @change="handleMonthPickerYearInput($event, offset)"
-                                                @keydown.enter.prevent="handleMonthPickerYearInput($event, offset)"
+                                                :value="generateMonthGrid(offset).year"
+                                                :min="config.minYear ?? undefined"
+                                                :max="config.maxYear ?? undefined"
+                                                @change="setYear(parseInt($event.target.value || generateMonthGrid(offset).year) - parseInt(offset || 0)); $nextTick(() => $event.target.value = generateMonthGrid(offset).year)"
+                                                @keydown.enter.prevent="setYear(parseInt($event.target.value || generateMonthGrid(offset).year) - parseInt(offset || 0)); $nextTick(() => $event.target.value = generateMonthGrid(offset).year)"
                                                 class="fi-daterangepicker-select fi-daterangepicker-year-input"
                                                 style="width: 5.5rem; text-align: center;"
                                                 aria-label="Year"
@@ -359,9 +357,7 @@
                                             type="button"
                                             @click="nextYear()"
                                             x-show="config.singleCalendar ? true : offset === 1"
-                                            :disabled="!canShowNextMonthPickerYear()"
                                             class="fi-daterangepicker-nav-btn"
-                                            :class="{ 'fi-disabled': !canShowNextMonthPickerYear() }"
                                             aria-label="Next year"
                                         >
                                             <x-filament::icon
