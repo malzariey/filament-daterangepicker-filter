@@ -64,7 +64,7 @@ DateRangePicker::make('date_range')
 ```
 
 ### Month Picker
-Select entire months:
+Select entire months. The popup header includes previous/next-year buttons and a direct year selector, so users can jump to a year without stepping one year at a time.
 
 ```php
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
@@ -72,6 +72,43 @@ use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 DateRangePicker::make('billing_period')
     ->monthPicker()
     ->format('F Y');
+```
+
+Month picker mode also supports typed input. Pressing Enter applies the typed month value without falling through to day-picker selection behavior:
+
+```php
+DateRangePicker::make('billing_period')
+    ->monthPicker()
+    ->singleCalendar()
+    ->allowInput()
+    ->format('m/Y');
+```
+
+Range input works with the configured separator:
+
+```php
+DateRangePicker::make('billing_period')
+    ->monthPicker()
+    ->allowInput()
+    ->format('m/Y');
+```
+
+Example input:
+
+```text
+06/2026 - 08/2026
+```
+
+Month picker year options and disabled months respect `minYear()`, `maxYear()`, `minDate()`, and `maxDate()`:
+
+```php
+DateRangePicker::make('billing_period')
+    ->monthPicker()
+    ->format('m/Y')
+    ->minYear(2020)
+    ->maxYear(2030)
+    ->minDate('2020-06-01')
+    ->maxDate('2030-12-31');
 ```
 
 ### Year Picker
@@ -96,6 +133,8 @@ Allow users to type dates directly:
 DateRangePicker::make('dates')
     ->allowInput(); // Enable keyboard entry with format validation
 ```
+
+When `allowInput()` is enabled, pressing Enter while focused inside the input parses and applies the typed value first. Invalid partial input does not overwrite the previous valid selection unless the user clears the field.
 
 ### Modal & Slide-Over Compatibility
 The dropdown teleports to `<body>` by default to avoid z-index issues:
@@ -267,13 +306,17 @@ DateRangePicker::make('created_at')
     ->showISOWeekNumbers()  // ISO week numbers
 ```
 
-### Month/Year Dropdowns
+### Day Picker Month/Year Dropdowns
+Use `showDropdowns()` to show month and year dropdowns in the day picker header:
+
 ```php
 DateRangePicker::make('created_at')
     ->showDropdowns()
     ->minYear(2000)
     ->maxYear(2030)
 ```
+
+Month picker mode always shows its own year selector in the popup header and uses the same year/date constraints.
 
 ---
 
