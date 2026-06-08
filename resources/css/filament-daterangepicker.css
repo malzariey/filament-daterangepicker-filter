@@ -117,6 +117,13 @@
     @apply cursor-pointer;
 }
 
+.fi-daterangepicker-nav-btn.fi-disabled,
+.fi-daterangepicker-nav-btn:disabled {
+    @apply opacity-40;
+    @apply cursor-not-allowed;
+    @apply hover:bg-transparent dark:hover:bg-transparent;
+}
+
 .fi-daterangepicker-month-year {
     @apply flex items-center gap-1;
 }
@@ -146,6 +153,10 @@
 .fi-daterangepicker-select option {
     @apply bg-white dark:bg-gray-900;
     @apply text-gray-950 dark:text-white;
+}
+
+.fi-daterangepicker-year-select {
+    @apply w-24 text-center;
 }
 
 /* ─────────────────────────────────────────────────────────────

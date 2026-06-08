@@ -724,6 +724,54 @@ describe('Advanced Features', () => {
             expect(component.selection.start.format('YYYY-MM')).toBe('2026-01');
             expect(component.selection.end.format('YYYY-MM')).toBe('2026-03');
         });
+
+        it('should change the visible year from the month picker header control', async () => {
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+            });
+
+            component.viewDate = dayjs('2026-01-01');
+
+            component.setMonthPickerYear(2030, 0);
+
+            expect(component.generateMonthGrid(0).year).toBe(2030);
+
+            component.setMonthPickerYear(2032, 1);
+
+            expect(component.generateMonthGrid(1).year).toBe(2032);
+            expect(component.generateMonthGrid(0).year).toBe(2031);
+        });
+
+        it('should apply min/max year constraints to month picker years and cells', async () => {
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+                singleCalendar: true,
+                minYear: 2025,
+                maxYear: 2027,
+            });
+
+            expect(component.monthPickerYears).toEqual([2025, 2026, 2027]);
+            expect(component.isMonthDisabled(dayjs('2024-12-01'))).toBe(true);
+            expect(component.isMonthDisabled(dayjs('2025-01-01'))).toBe(false);
+            expect(component.isMonthDisabled(dayjs('2028-01-01'))).toBe(true);
+
+            component.setMonthPickerYear(2030);
+
+            expect(component.viewDate.year()).toBe(2027);
+        });
+
+        it('should derive month picker year constraints from minDate and maxDate', async () => {
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+                minDate: '2026-06-15',
+                maxDate: '2028-03-10',
+            });
+
+            expect(component.monthPickerYears).toEqual([2026, 2027, 2028]);
+            expect(component.isMonthDisabled(dayjs('2026-05-01'))).toBe(true);
+            expect(component.isMonthDisabled(dayjs('2026-06-01'))).toBe(false);
+            expect(component.isMonthDisabled(dayjs('2028-04-01'))).toBe(true);
+        });
     });
 
     describe('Year Picker Mode', () => {
@@ -928,6 +976,53 @@ describe('Input Logic', () => {
 
             // Should not crash, selection might be null
             expect(component.selection.start).toBeNull();
+        });
+
+        it('should keep previous valid month value when partial manual input is invalid', async () => {
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+                singleCalendar: true,
+                allowInput: true,
+                displayFormat: 'MM/YYYY',
+                initialState: '06/2026',
+            });
+
+            const handled = component.handleManualInput('07/');
+
+            expect(handled).toBe(false);
+            expect(component.selection.start.format('MM/YYYY')).toBe('06/2026');
+            expect(component.inputValue).toBe('06/2026');
+            expect(component.config.state).toBe('06/2026');
+        });
+
+        it('should parse month range manual input as a selected month range', async () => {
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+                allowInput: true,
+                displayFormat: 'MM/YYYY',
+            });
+
+            component.handleManualInput('06/2026 - 08/2026');
+
+            expect(component.selection.start.format('YYYY-MM-DD')).toBe('2026-06-01');
+            expect(component.selection.end.format('YYYY-MM-DD')).toBe('2026-08-31');
+            expect(component.inputValue).toBe('06/2026 - 08/2026');
+        });
+
+        it('should clear manual input when the field is emptied', async () => {
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+                singleCalendar: true,
+                allowInput: true,
+                displayFormat: 'MM/YYYY',
+                initialState: '06/2026',
+            });
+
+            component.handleManualInput('');
+
+            expect(component.selection.start).toBeNull();
+            expect(component.selection.end).toBeNull();
+            expect(component.config.state).toBe('');
         });
     });
 
@@ -1211,6 +1306,95 @@ describe('Keyboard Navigation', () => {
         component.handleKeydown(event);
 
         expect(component.selection.start.format('YYYY-MM-DD')).toBe('2026-01-15');
+    });
+
+    it('should apply month input on Enter without day selection reset', async () => {
+        const { component } = await createTestComponent({
+            pickerType: 'month',
+            singleCalendar: true,
+            allowInput: true,
+            displayFormat: 'MM/YYYY',
+            initialState: '01/2025',
+        });
+
+        await component.openPicker();
+        component.focusedDate = dayjs('2025-01-01');
+        component.$refs.input.value = '06/2026';
+        component.inputValue = '06/2026';
+        component.inputMask.value = '06/2026';
+
+        const dayClickSpy = vi.spyOn(component, 'handleDayClick');
+        const event = {
+            key: 'Enter',
+            target: component.$refs.input,
+            preventDefault: vi.fn(),
+        };
+
+        component.handleKeydown(event);
+
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(dayClickSpy).not.toHaveBeenCalled();
+        expect(component.selection.start.format('MM/YYYY')).toBe('06/2026');
+        expect(component.inputValue).toBe('06/2026');
+        expect(component.config.state).toBe('06/2026');
+    });
+
+    it('should apply month range input on Enter without day selection reset', async () => {
+        const { component } = await createTestComponent({
+            pickerType: 'month',
+            allowInput: true,
+            displayFormat: 'MM/YYYY',
+            initialState: '01/2025 - 02/2025',
+        });
+
+        await component.openPicker();
+        component.focusedDate = dayjs('2025-01-01');
+        component.$refs.input.value = '06/2026 - 08/2026';
+        component.inputValue = '06/2026 - 08/2026';
+        component.inputMask.value = '06/2026 - 08/2026';
+
+        const dayClickSpy = vi.spyOn(component, 'handleDayClick');
+        const event = {
+            key: 'Enter',
+            target: component.$refs.input,
+            preventDefault: vi.fn(),
+        };
+
+        component.handleKeydown(event);
+
+        expect(dayClickSpy).not.toHaveBeenCalled();
+        expect(component.selection.start.format('YYYY-MM-DD')).toBe('2026-06-01');
+        expect(component.selection.end.format('YYYY-MM-DD')).toBe('2026-08-31');
+        expect(component.inputValue).toBe('06/2026 - 08/2026');
+    });
+
+    it('should not run day selection on Enter for year picker input', async () => {
+        const { component } = await createTestComponent({
+            pickerType: 'year',
+            singleCalendar: true,
+            allowInput: true,
+            displayFormat: 'YYYY',
+            initialState: '2025',
+        });
+
+        await component.openPicker();
+        component.focusedDate = dayjs('2025-01-01');
+        component.$refs.input.value = '2027';
+        component.inputValue = '2027';
+        component.inputMask.value = '2027';
+
+        const dayClickSpy = vi.spyOn(component, 'handleDayClick');
+        const event = {
+            key: 'Enter',
+            target: component.$refs.input,
+            preventDefault: vi.fn(),
+        };
+
+        component.handleKeydown(event);
+
+        expect(dayClickSpy).not.toHaveBeenCalled();
+        expect(component.selection.start.year()).toBe(2027);
+        expect(component.inputValue).toBe('2027');
     });
 });
 
