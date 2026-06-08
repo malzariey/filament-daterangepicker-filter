@@ -64,7 +64,7 @@ DateRangePicker::make('date_range')
 ```
 
 ### Month Picker
-Select entire months. The popup header includes previous/next-year buttons and a direct year selector, so users can jump to a year without stepping one year at a time.
+Select entire months. The popup header includes previous/next-year buttons and a compact numeric year input, so users can jump to a year without stepping one year at a time.
 
 ```php
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
@@ -316,7 +316,7 @@ DateRangePicker::make('created_at')
     ->maxYear(2030)
 ```
 
-Month picker mode always shows its own year selector in the popup header and uses the same year/date constraints.
+Month picker mode always shows its own numeric year input in the popup header and uses the same year/date constraints.
 
 ---
 

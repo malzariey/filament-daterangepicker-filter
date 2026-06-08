@@ -340,19 +340,19 @@
                                         <span x-show="offset !== 0" class="w-5"></span>
 
                                         <div class="fi-daterangepicker-month-year">
-                                            <select
-                                                @change="setMonthPickerYear($event.target.value, offset)"
-                                                class="fi-daterangepicker-select fi-daterangepicker-year-select"
+                                            <input
+                                                type="number"
+                                                inputmode="numeric"
+                                                pattern="[0-9]*"
+                                                :value="getMonthPickerYearInputValue(offset)"
+                                                :min="getMinConstraintYear() ?? undefined"
+                                                :max="getMaxConstraintYear() ?? undefined"
+                                                @change="handleMonthPickerYearInput($event, offset)"
+                                                @keydown.enter.prevent="handleMonthPickerYearInput($event, offset)"
+                                                class="fi-daterangepicker-select fi-daterangepicker-year-input"
+                                                style="width: 5.5rem; text-align: center;"
                                                 aria-label="Year"
-                                            >
-                                                <template x-for="y in monthPickerYears" :key="y">
-                                                    <option
-                                                        :value="y"
-                                                        x-text="y"
-                                                        :selected="generateMonthGrid(offset).year === y"
-                                                    ></option>
-                                                </template>
-                                            </select>
+                                            />
                                         </div>
 
                                         <button

@@ -742,6 +742,26 @@ describe('Advanced Features', () => {
             expect(component.generateMonthGrid(0).year).toBe(2031);
         });
 
+        it('should render and normalize the month picker header year input value', async () => {
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+                singleCalendar: true,
+                minYear: 2020,
+                maxYear: 2030,
+            });
+
+            component.viewDate = dayjs('2026-01-01');
+
+            expect(component.getMonthPickerYearInputValue(0)).toBe(2026);
+
+            const input = { value: '2035' };
+            component.handleMonthPickerYearInput({ target: input }, 0);
+            await flushPromises();
+
+            expect(component.viewDate.year()).toBe(2030);
+            expect(input.value).toBe(2030);
+        });
+
         it('should apply min/max year constraints to month picker years and cells', async () => {
             const { component } = await createTestComponent({
                 pickerType: 'month',

@@ -155,8 +155,18 @@
     @apply text-gray-950 dark:text-white;
 }
 
-.fi-daterangepicker-year-select {
+.fi-daterangepicker-year-input {
     @apply w-24 text-center;
+}
+
+.fi-daterangepicker-year-input::-webkit-outer-spin-button,
+.fi-daterangepicker-year-input::-webkit-inner-spin-button {
+    @apply appearance-none;
+    margin: 0;
+}
+
+.fi-daterangepicker-year-input[type='number'] {
+    -moz-appearance: textfield;
 }
 
 /* ─────────────────────────────────────────────────────────────

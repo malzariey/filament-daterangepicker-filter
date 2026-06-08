@@ -1506,6 +1506,18 @@ export default function dateRangeComponent(config) {
             this.viewDate = this.constrainMonthPickerViewDate(this.viewDate);
         },
 
+        getMonthPickerYearInputValue(offset = 0) {
+            return this.generateMonthGrid(offset).year;
+        },
+
+        handleMonthPickerYearInput(event, offset = 0) {
+            this.setMonthPickerYear(event.target.value, offset);
+
+            this.$nextTick(() => {
+                event.target.value = this.getMonthPickerYearInputValue(offset);
+            });
+        },
+
         // ─────────────────────────────────────────────────────────────
         // Positioning (Floating UI)
         // ─────────────────────────────────────────────────────────────
