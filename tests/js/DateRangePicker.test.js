@@ -1033,6 +1033,28 @@ describe('Input Logic', () => {
             expect(component.config.state).toBe('06/2026');
         });
 
+        it('should sync externally changed input values before IMask focus handling', async () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            const { component } = await createTestComponent({
+                pickerType: 'month',
+                singleCalendar: true,
+                allowInput: true,
+                displayFormat: 'MM/YYYY',
+                initialState: '06/2026',
+            });
+
+            component.$refs.input.value = '07/2027';
+            component.$refs.input.dispatchEvent(new Event('focus'));
+
+            expect(component.inputMask.value).toBe('07/2027');
+            expect(warnSpy).not.toHaveBeenCalledWith(
+                expect.stringContaining('Element value was changed outside of mask')
+            );
+
+            warnSpy.mockRestore();
+        });
+
         it('should parse month range manual input as a selected month range', async () => {
             const { component } = await createTestComponent({
                 pickerType: 'month',

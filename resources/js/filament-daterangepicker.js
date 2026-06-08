@@ -102,6 +102,7 @@ export default function dateRangeComponent(config) {
 
         // Input masking
         inputMask: null,
+        _inputMaskSyncHandler: null,
         inputValue: '',
         allowManualInput: config.allowInput ?? false,
 
@@ -239,6 +240,12 @@ export default function dateRangeComponent(config) {
                 this.inputMask.destroy();
                 this.inputMask = null;
             }
+            if (this._inputMaskSyncHandler && this.$refs.input) {
+                ['focus', 'click', 'keydown'].forEach((eventName) => {
+                    this.$refs.input.removeEventListener(eventName, this._inputMaskSyncHandler, true);
+                });
+                this._inputMaskSyncHandler = null;
+            }
             if (this._documentKeyHandler) {
                 document.removeEventListener('keydown', this._documentKeyHandler);
                 this._documentKeyHandler = null;
@@ -351,6 +358,19 @@ export default function dateRangeComponent(config) {
             this.inputMask.on('accept', () => {
                 this.handleManualInput(this.inputMask.value);
             });
+
+            this._inputMaskSyncHandler = () => this.syncInputMaskFromElement();
+            ['focus', 'click', 'keydown'].forEach((eventName) => {
+                input.addEventListener(eventName, this._inputMaskSyncHandler, true);
+            });
+        },
+
+        syncInputMaskFromElement() {
+            if (!this.inputMask || !this.$refs.input) return;
+
+            if (this.$refs.input.value !== this.inputMask.value) {
+                this.inputMask.updateValue();
+            }
         },
 
         createDateMaskOptions(format) {

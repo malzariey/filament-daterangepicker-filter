@@ -14,6 +14,24 @@
     $locale = app()->getLocale();
     $isDisabled = $isDisabled();
     $isReadOnly = ! $getAllowInput();
+    $inputAttributes = [
+        'id' => $getId(),
+        'name' => $name,
+        'disabled' => $isDisabled,
+        'placeholder' => $getPlaceholder(),
+        'required' => $isRequired(),
+        'readonly' => $isReadOnly,
+        'type' => 'text',
+        'autocomplete' => 'off',
+        'x-on:click' => 'openPicker()',
+        'x-on:focus' => $getAllowInput() ? '' : 'openPicker()',
+    ];
+
+    if ($getAllowInput()) {
+        $inputAttributes['x-init'] = 'inputMask ? updateInputValue() : null';
+    } else {
+        $inputAttributes['x-model'] = 'inputValue';
+    }
 @endphp
 
 <x-dynamic-component
@@ -125,19 +143,7 @@
             >
                 <x-filament::input
                     x-ref="input"
-                    :attributes="\Filament\Support\prepare_inherited_attributes($getExtraInputAttributeBag())->merge([
-                        'id' => $getId(),
-                        'name' => $name,
-                        'disabled' => $isDisabled,
-                        'placeholder' => $getPlaceholder(),
-                        'required' => $isRequired(),
-                        'readonly' => $isReadOnly,
-                        'type' => 'text',
-                        'autocomplete' => 'off',
-                        'x-model' => 'inputValue',
-                        'x-on:click' => 'openPicker()',
-                        'x-on:focus' => $getAllowInput() ? '' : 'openPicker()',
-                    ], escape: false)"
+                    :attributes="\Filament\Support\prepare_inherited_attributes($getExtraInputAttributeBag())->merge($inputAttributes, escape: false)"
                 />
             </div>
         </x-filament::input.wrapper>
