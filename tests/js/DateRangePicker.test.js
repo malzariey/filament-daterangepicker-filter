@@ -136,6 +136,46 @@ describe('Initialization & State', () => {
     });
 });
 
+describe('Document click handling', () => {
+    it('keeps a teleported dropdown open for inside clicks and cancels outside clicks', async () => {
+        const { component } = await createTestComponent();
+        const dropdownChild = document.createElement('button');
+        const outside = document.createElement('button');
+        const cancel = vi.spyOn(component, 'cancel');
+
+        document.body.appendChild(component.$refs.trigger);
+        component.$refs.dropdown.appendChild(dropdownChild);
+        document.body.appendChild(outside);
+        component.open = true;
+
+        dropdownChild.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(cancel).not.toHaveBeenCalled();
+
+        component.$refs.trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(cancel).not.toHaveBeenCalled();
+
+        outside.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(cancel).toHaveBeenCalledOnce();
+
+        component.destroy();
+    });
+});
+
+describe('Selection preview', () => {
+    it('renders an empty value while a cancelled selection is being removed', async () => {
+        const { component } = await createTestComponent({
+            timePicker: true,
+            timePicker24: true,
+            displayFormat: 'DD/MM/YYYY HH:mm',
+        });
+
+        expect(component.formatSelectionPreview(null, component.startTime)).toBe('');
+        expect(
+            component.formatSelectionPreview(dayjs('2026-08-10'), component.startTime)
+        ).toBe('10/08/2026 00:00');
+    });
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 2. CORE INTERACTIONS (UI)
 // ═══════════════════════════════════════════════════════════════════════════
