@@ -47,6 +47,12 @@ trait HasRangePicker
     protected bool|Closure $linkedCalendars = true;
 
     protected string|Closure|null $timezone = null;
+
+    /**
+     * The timezone the column is STORED in. Null means config('app.timezone'),
+     * which is what Eloquent writes with, so it is right for almost everyone.
+     */
+    protected string|Closure|null $systemTimezone = null;
     protected array|Closure $disabledDates = [];
     protected array|Closure|null $maxSpan = null;
     protected bool|Closure $useRangeLabels = false;
@@ -386,14 +392,48 @@ trait HasRangePicker
         return $this;
     }
 
-    public function getTimezone(): string
+    public function systemTimezone(string|Closure|null $timezone): static
     {
-        return $this->evaluate($this->timezone) ?? $this->getSystemTimezone();
+        $this->systemTimezone = $timezone;
+
+        return $this;
     }
 
+    /**
+     * The timezone the dates on screen are written in.
+     *
+     * FilamentTimezone is Filament's DISPLAY timezone: core reads it for
+     * date-time columns, entries and pickers, and falls back to
+     * config('app.timezone') when nobody has set it. Defaulting to it here
+     * means the picker reads what the user typed in the zone they are looking
+     * at, which is the same thing Filament's own DateTimePicker does.
+     */
+    public function getTimezone(): string
+    {
+        return $this->evaluate($this->timezone) ?? FilamentTimezone::get();
+    }
+
+    /**
+     * The timezone the column is stored in.
+     *
+     * This is config('app.timezone'), not FilamentTimezone: Eloquent writes
+     * timestamps in the application timezone, and FilamentTimezone is what the
+     * panel *shows* them in. The two are the same until somebody calls
+     * FilamentTimezone::set() to display local times over UTC storage — the
+     * documented way to do it — and from that moment reading the storage zone
+     * off the display setting makes the conversion in apply() a no-op. The
+     * dates then reach the query as local wall-clock against UTC data, and
+     * every row in the first hours of a local day is filed under the day
+     * before, silently.
+     *
+     * Behaviour is unchanged for anyone who has not called
+     * FilamentTimezone::set(), because it returns config('app.timezone') in
+     * that case anyway. systemTimezone() is there for a column stored in
+     * something other than the application timezone.
+     */
     public function getSystemTimezone(): string
     {
-        return FilamentTimezone::get();
+        return $this->evaluate($this->systemTimezone) ?? config('app.timezone');
     }
 
     public function defaultYesterday($enforceIfNull = false): static
