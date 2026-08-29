@@ -84,6 +84,7 @@ trait HasRangePicker
     protected bool|Closure $allowInput = false;
     protected ?string $dualStartField = null;
     protected ?string $dualEndField = null;
+    protected bool $dualStatePathsAreRelative = false;
     protected PickerType|Closure $pickerType = PickerType::DAY;
 
     public function icon(string|Closure|null $icon = null): static
@@ -597,13 +598,17 @@ trait HasRangePicker
     }
 
     /**
-     * Enable dual state mode with separate start/end fields
-     * Instead of storing "start - end" in one field, stores in two separate Livewire properties
+     * Enable dual state mode with separate start and end paths.
+     *
+     * Paths target Livewire properties directly for backwards compatibility.
+     * Pass `$relative = true` to resolve them from the current schema container.
      */
-    public function useDualState(string $startField, string $endField): static
+    public function useDualState(string $startField, string $endField, bool $relative = false): static
     {
         $this->dualStartField = $startField;
         $this->dualEndField = $endField;
+        $this->dualStatePathsAreRelative = $relative;
+
         return $this;
     }
 
@@ -620,6 +625,11 @@ trait HasRangePicker
     public function getDualEndField(): ?string
     {
         return $this->dualEndField;
+    }
+
+    public function areDualStatePathsRelative(): bool
+    {
+        return $this->dualStatePathsAreRelative;
     }
 
     /**

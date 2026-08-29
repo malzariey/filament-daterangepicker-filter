@@ -160,6 +160,11 @@ export const createTestComponent = async (config = {}) => {
 
     const defaultConfig = {
         state: stateValue,  // Pass string directly
+        dualState: false,
+        dualStartState: null,
+        dualEndState: null,
+        storageFormat: 'YYYY-MM-DD HH:mm:ss',
+        storageTimezone: 'UTC',
         name: 'test-picker',
         locale: 'en',
         timezone: null,
@@ -235,7 +240,8 @@ export const createTestComponent = async (config = {}) => {
         input: createMockInput(),
     };
     instance.$nextTick = (cb) => Promise.resolve().then(cb);
-    instance.$watch = vi.fn();
+    const watchers = new Map();
+    instance.$watch = vi.fn((path, callback) => watchers.set(path, callback));
 
     // Initialize
     if (instance.init) {
@@ -249,6 +255,7 @@ export const createTestComponent = async (config = {}) => {
         component: instance,
         wire: mockWire,
         config: defaultConfig,
+        watchers,
     };
 };
 
