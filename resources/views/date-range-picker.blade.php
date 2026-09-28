@@ -14,6 +14,12 @@
     $locale = app()->getLocale();
     $isDisabled = $isDisabled();
     $isReadOnly = ! $getAllowInput();
+    $isDualState = $isDualState();
+    $dualStartStatePath = $isDualState ? $getDualStartStatePath() : null;
+    $dualEndStatePath = $isDualState ? $getDualEndStatePath() : null;
+    $hasErrors = $errors->has($statePath)
+        || ($dualStartStatePath && $errors->has($dualStartStatePath))
+        || ($dualEndStatePath && $errors->has($dualEndStatePath));
     $inputAttributes = [
         'id' => $getId(),
         'name' => $name,
@@ -48,6 +54,16 @@
         x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
         x-data="dateRangeComponent({
             state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$statePath}')") }},
+            dualState: @js($isDualState),
+            @if ($isDualState)
+                dualStartState: $wire.{{ $applyStateBindingModifiers("\$entangle('{$dualStartStatePath}')") }},
+                dualEndState: $wire.{{ $applyStateBindingModifiers("\$entangle('{$dualEndStatePath}')") }},
+            @else
+                dualStartState: null,
+                dualEndState: null,
+            @endif
+            storageFormat: @js($getDualStateStorageFormat()),
+            storageTimezone: @js($getDualStateStorageTimezone()),
             name: @js($name),
             locale: @js($locale),
             timezone: @js($getTimezone()),
@@ -133,7 +149,7 @@
             :suffix-actions="$suffixActions"
             :suffix-icon="$suffixIcon"
             :suffix-icon-color="$suffixIconColor"
-            :valid="! $errors->has($statePath)"
+            :valid="! $hasErrors"
             class="fi-fo-date-range-picker-input"
             :attributes="\Filament\Support\prepare_inherited_attributes($getExtraAttributeBag())"
         >
@@ -160,7 +176,6 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95"
-                @click.outside="!$refs.trigger?.contains($event.target) && cancel()"
                 @click.stop
                 @keydown.escape.stop.prevent="cancel()"
                 class="fi-daterangepicker-dropdown"
@@ -487,13 +502,13 @@
                                     <div class="fi-daterangepicker-time-inputs">
                                         <select x-model="startTime.hour" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-time">
                                             <template x-for="h in hourOptions" :key="h.value">
-                                                <option :value="h.value" x-text="h.label"></option>
+                                                <option :value="h.value" :selected="Number(startTime.hour) === h.value" x-text="h.label"></option>
                                             </template>
                                         </select>
                                         <span class="fi-daterangepicker-time-separator">:</span>
                                         <select x-model="startTime.minute" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-time">
                                             <template x-for="m in minuteOptions" :key="m.value">
-                                                <option :value="m.value" x-text="m.label"></option>
+                                                <option :value="m.value" :selected="Number(startTime.minute) === m.value" x-text="m.label"></option>
                                             </template>
                                         </select>
                                         <template x-if="config.timePickerSecond">
@@ -502,7 +517,7 @@
                                         <template x-if="config.timePickerSecond">
                                             <select x-model="startTime.second" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-time">
                                                 <template x-for="s in secondOptions" :key="s.value">
-                                                    <option :value="s.value" x-text="s.label"></option>
+                                                    <option :value="s.value" :selected="Number(startTime.second) === s.value" x-text="s.label"></option>
                                                 </template>
                                             </select>
                                         </template>
@@ -522,13 +537,13 @@
                                         <div class="fi-daterangepicker-time-inputs">
                                             <select x-model="endTime.hour" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-time">
                                                 <template x-for="h in hourOptions" :key="h.value">
-                                                    <option :value="h.value" x-text="h.label"></option>
+                                                    <option :value="h.value" :selected="Number(endTime.hour) === h.value" x-text="h.label"></option>
                                                 </template>
                                             </select>
                                             <span class="fi-daterangepicker-time-separator">:</span>
                                             <select x-model="endTime.minute" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-time">
                                                 <template x-for="m in minuteOptions" :key="m.value">
-                                                    <option :value="m.value" x-text="m.label"></option>
+                                                    <option :value="m.value" :selected="Number(endTime.minute) === m.value" x-text="m.label"></option>
                                                 </template>
                                             </select>
                                             <template x-if="config.timePickerSecond">
@@ -537,7 +552,7 @@
                                             <template x-if="config.timePickerSecond">
                                                 <select x-model="endTime.second" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-time">
                                                     <template x-for="s in secondOptions" :key="s.value">
-                                                        <option :value="s.value" x-text="s.label"></option>
+                                                        <option :value="s.value" :selected="Number(endTime.second) === s.value" x-text="s.label"></option>
                                                     </template>
                                                 </select>
                                             </template>
@@ -560,12 +575,12 @@
                             {{-- Selection Preview --}}
                             <template x-if="selection.start && (config.singleCalendar || selection.end)">
                                 <div class="fi-daterangepicker-selection-preview">
-                                    <span x-text="config.timePicker ? applyTime(selection.start, startTime).format(config.displayFormat) : selection.start.format(config.displayFormat)"></span>
+                                    <span x-text="formatSelectionPreview(selection.start, startTime)"></span>
                                     <template x-if="!config.singleCalendar && selection.end">
                                         <span class="fi-daterangepicker-selection-preview-arrow">→</span>
                                     </template>
                                     <template x-if="!config.singleCalendar && selection.end">
-                                        <span x-text="config.timePicker ? applyTime(selection.end, endTime).format(config.displayFormat) : selection.end.format(config.displayFormat)"></span>
+                                        <span x-text="formatSelectionPreview(selection.end, endTime)"></span>
                                     </template>
                                 </div>
                             </template>
@@ -581,6 +596,7 @@
                             <x-filament::button
                                 size="sm"
                                 @click="applySelection()"
+                                x-bind:disabled="! canApplySelection"
                             >
                                 <span x-text="config.labels.apply"></span>
                             </x-filament::button>
