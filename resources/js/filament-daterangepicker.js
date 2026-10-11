@@ -96,6 +96,11 @@ export default function dateRangeComponent(config) {
         focusedDate: null,
         hoverDate: null,
         isSyncing: false,
+        dualStateParseQueued: false,
+        dualStateSnapshot: {
+            start: { raw: null, display: null },
+            end: { raw: null, display: null },
+        },
 
         // Debounce timer for Livewire sync (performance optimization)
         _syncDebounceTimer: null,
@@ -113,6 +118,11 @@ export default function dateRangeComponent(config) {
         // Configuration
         config: {
             state: config.state,
+            dualState: config.dualState ?? false,
+            dualStartState: config.dualStartState ?? null,
+            dualEndState: config.dualEndState ?? null,
+            storageFormat: config.storageFormat || 'YYYY-MM-DD HH:mm:ss',
+            storageTimezone: config.storageTimezone || 'UTC',
             name: config.name,
             locale: config.locale || 'en',
             timezone: config.timezone,
@@ -193,6 +203,7 @@ export default function dateRangeComponent(config) {
 
         // Floating UI cleanup
         cleanupAutoUpdate: null,
+        _documentClickHandler: null,
 
         // ─────────────────────────────────────────────────────────────
         // Initialization
@@ -208,17 +219,20 @@ export default function dateRangeComponent(config) {
             this.setLocale(this.config.locale);
 
             // Parse initial state
-            this.parseState(this.config.state);
+            this.parseConfiguredState();
 
             // Update input value
             this.updateInputValue();
 
             // Watch for external state changes (Livewire updates)
             this.$watch('config.state', (value) => {
-                if (this.isSyncing) return;
+                if (this.isSyncing || this.config.dualState) return;
                 this.parseState(value);
                 this.updateInputValue();
             });
+
+            this.$watch('config.dualStartState', () => this.scheduleDualStateParse());
+            this.$watch('config.dualEndState', () => this.scheduleDualStateParse());
 
             // Add document-level keydown handler for Escape (SPA-safe)
             this._documentKeyHandler = (e) => {
@@ -228,6 +242,33 @@ export default function dateRangeComponent(config) {
                 }
             };
             document.addEventListener('keydown', this._documentKeyHandler);
+
+            this._documentClickHandler = (event) => {
+                if (!this.open) return;
+
+                const dropdown = document.getElementById(
+                    `fi-daterangepicker-dropdown-${this.instanceId}`
+                );
+                const eventPath = event.composedPath?.() || [];
+                const isNodeTarget = event.target instanceof Node;
+                const isInsideDropdown = (
+                    event.target instanceof Element
+                    && event.target.closest('.fi-daterangepicker-dropdown') !== null
+                ) || (
+                    dropdown
+                    && (eventPath.includes(dropdown) || (isNodeTarget && dropdown.contains(event.target)))
+                );
+                const isInsideTrigger = this.$refs.trigger
+                    && (
+                        eventPath.includes(this.$refs.trigger)
+                        || (isNodeTarget && this.$refs.trigger.contains(event.target))
+                    );
+
+                if (isInsideDropdown || isInsideTrigger) return;
+
+                this.cancel();
+            };
+            document.addEventListener('click', this._documentClickHandler);
         },
 
         destroy() {
@@ -249,6 +290,10 @@ export default function dateRangeComponent(config) {
             if (this._documentKeyHandler) {
                 document.removeEventListener('keydown', this._documentKeyHandler);
                 this._documentKeyHandler = null;
+            }
+            if (this._documentClickHandler) {
+                document.removeEventListener('click', this._documentClickHandler);
+                this._documentClickHandler = null;
             }
             if (this._syncDebounceTimer) {
                 clearTimeout(this._syncDebounceTimer);
@@ -549,9 +594,8 @@ export default function dateRangeComponent(config) {
             this.selection.start = result.start;
             this.selection.end = result.end;
             this.viewDate = result.start;
-            this.syncState();
 
-            return true;
+            return this.syncState();
         },
 
         commitManualInput() {
@@ -809,6 +853,26 @@ export default function dateRangeComponent(config) {
                 return;
             }
 
+            if (!this.selection.start && this.selection.end) {
+                const existingEnd = this.selection.end.endOf('month');
+
+                if (clickedDate.isBefore(existingEnd, 'month')) {
+                    this.selection.start = clickedDate.startOf('month');
+                    this.selection.end = existingEnd;
+                } else {
+                    this.selection.start = existingEnd.startOf('month');
+                    this.selection.end = clickedDate.endOf('month');
+                }
+
+                if (this.config.autoApply) {
+                    this.applySelection();
+                }
+
+                this.updateInputValue();
+
+                return;
+            }
+
             // Range selection logic
             if (!this.selection.start || this.selection.end) {
                 this.selection.start = clickedDate.startOf('month');
@@ -922,6 +986,26 @@ export default function dateRangeComponent(config) {
                 if (this.config.autoApply) {
                     this.applySelection();
                 }
+                return;
+            }
+
+            if (!this.selection.start && this.selection.end) {
+                const existingEnd = this.selection.end.endOf('year');
+
+                if (clickedDate.isBefore(existingEnd, 'year')) {
+                    this.selection.start = clickedDate.startOf('year');
+                    this.selection.end = existingEnd;
+                } else {
+                    this.selection.start = existingEnd.startOf('year');
+                    this.selection.end = clickedDate.endOf('year');
+                }
+
+                if (this.config.autoApply) {
+                    this.applySelection();
+                }
+
+                this.updateInputValue();
+
                 return;
             }
 
@@ -1125,6 +1209,25 @@ export default function dateRangeComponent(config) {
                 return;
             }
 
+            if (!this.selection.start && this.selection.end) {
+                const existingEnd = this.selection.end;
+
+                if (clickedDate.isBefore(existingEnd, 'day')) {
+                    this.selection.start = clickedDate;
+                } else {
+                    this.selection.start = existingEnd;
+                    this.selection.end = clickedDate;
+                }
+
+                if (this.config.autoApply) {
+                    this.applySelection();
+                }
+
+                this.updateInputValue();
+
+                return;
+            }
+
             // Range selection logic
             if (!this.selection.start || this.selection.end) {
                 // Start new selection
@@ -1249,6 +1352,133 @@ export default function dateRangeComponent(config) {
         // State Sync (Livewire)
         // ─────────────────────────────────────────────────────────────
 
+        parseConfiguredState() {
+            if (this.config.dualState) {
+                this.parseDualState(
+                    this.config.dualStartState,
+                    this.config.dualEndState
+                );
+
+                return;
+            }
+
+            this.parseState(this.config.state);
+        },
+
+        parseDualState(startState, endState) {
+            const start = this.parseDualDate(startState);
+            const end = this.parseDualDate(endState);
+
+            this.selection = {
+                start: start ? this.normalizeSelectionStart(start) : null,
+                end: end ? this.normalizeSelectionEnd(end) : null,
+            };
+
+            if (this.selection.start || this.selection.end) {
+                this.viewDate = this.selection.start || this.selection.end;
+            }
+
+            this.dualStateSnapshot = {
+                start: {
+                    raw: startState ?? null,
+                    display: this.selection.start?.format(this.config.displayFormat) ?? null,
+                },
+                end: {
+                    raw: endState ?? null,
+                    display: this.selection.end?.format(this.config.displayFormat) ?? null,
+                },
+            };
+
+            if (this.config.timePicker && this.selection.start) {
+                this.startTime = this.extractTime(this.selection.start);
+            }
+
+            if (this.config.timePicker && this.selection.end) {
+                this.endTime = this.extractTime(this.selection.end);
+            }
+
+            this.config.state = this.getDisplayValue();
+        },
+
+        parseDualDate(state) {
+            if (state === null || state === undefined || state === '') return null;
+
+            try {
+                const value = String(state);
+
+                if (!this.formatHasTimeTokens(this.config.storageFormat)) {
+                    const parsed = dayjs(value, this.config.storageFormat, true);
+
+                    if (!parsed.isValid() || parsed.format(this.config.storageFormat) !== value) {
+                        return null;
+                    }
+
+                    return parsed;
+                }
+
+                const parsed = dayjs.tz(
+                    value,
+                    this.config.storageFormat,
+                    this.config.storageTimezone
+                );
+
+                if (!parsed.isValid() || parsed.format(this.config.storageFormat) !== value) {
+                    return null;
+                }
+
+                return this.toWallClockDate(parsed, this.config.timezone);
+            } catch {
+                return null;
+            }
+        },
+
+        formatHasTimeTokens(format) {
+            const formatWithoutLiterals = format.replace(/\[[^\]]*]/g, '');
+
+            return /[HhkmsSaAXxZz]/.test(formatWithoutLiterals);
+        },
+
+        toWallClockDate(date, timezoneName) {
+            const parts = new Intl.DateTimeFormat('en-CA-u-ca-gregory', {
+                timeZone: timezoneName,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23',
+            }).formatToParts(date.toDate());
+            const values = Object.fromEntries(
+                parts
+                    .filter(({ type }) => type !== 'literal')
+                    .map(({ type, value }) => [type, value])
+            );
+
+            return dayjs(
+                `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}:${values.second}`,
+                'YYYY-MM-DD HH:mm:ss',
+                true
+            );
+        },
+
+        scheduleDualStateParse() {
+            if (this.isSyncing || !this.config.dualState || this.dualStateParseQueued) return;
+
+            this.dualStateParseQueued = true;
+            this.$nextTick(() => {
+                this.dualStateParseQueued = false;
+
+                if (this.isSyncing) return;
+
+                this.parseDualState(
+                    this.config.dualStartState,
+                    this.config.dualEndState
+                );
+                this.updateInputValue();
+            });
+        },
+
         parseState(stateString) {
             if (!stateString) {
                 this.selection = { start: null, end: null };
@@ -1306,12 +1536,18 @@ export default function dateRangeComponent(config) {
         },
 
         syncState() {
+            if (this.config.dualState && this.dualStateStatus === 'incomplete') {
+                return false;
+            }
+
             const format = this.config.displayFormat;
             let value = '';
+            let start = null;
+            let end = null;
 
             if (this.selection.start && this.selection.end) {
-                let start = this.selection.start;
-                let end = this.selection.end;
+                start = this.selection.start;
+                end = this.selection.end;
 
                 // Apply time if timePicker is enabled
                 if (this.config.timePicker) {
@@ -1326,12 +1562,86 @@ export default function dateRangeComponent(config) {
                 }
             }
 
+            let dualStartState = null;
+            let dualEndState = null;
+
+            if (this.config.dualState) {
+                dualStartState = start ? this.serializeDualDate(start, 'start') : null;
+                dualEndState = end ? this.serializeDualDate(end, 'end') : null;
+
+                if ((start && dualStartState === null) || (end && dualEndState === null)) {
+                    return false;
+                }
+            }
+
             this.isSyncing = true;
             this.config.state = value;
-            this.$nextTick(() => {
+
+            if (this.config.dualState) {
+                this.config.dualStartState = dualStartState;
+                this.config.dualEndState = dualEndState;
+                this.dualStateSnapshot = {
+                    start: {
+                        raw: dualStartState,
+                        display: start?.format(format) ?? null,
+                    },
+                    end: {
+                        raw: dualEndState,
+                        display: end?.format(format) ?? null,
+                    },
+                };
+            }
+
+            setTimeout(() => {
                 this.isSyncing = false;
-            });
+            }, 0);
             this.updateInputValue();
+
+            return true;
+        },
+
+        serializeDualDate(date, boundary) {
+            const display = date.format(this.config.displayFormat);
+            const snapshot = this.dualStateSnapshot[boundary];
+
+            if (snapshot.raw !== null && snapshot.display === display) {
+                return snapshot.raw;
+            }
+
+            try {
+                if (!this.formatHasTimeTokens(this.config.storageFormat)) {
+                    const serialized = date.format(this.config.storageFormat);
+                    const parsed = dayjs(serialized, this.config.storageFormat, true);
+
+                    return parsed.isValid() && parsed.format(this.config.storageFormat) === serialized
+                        ? serialized
+                        : null;
+                }
+
+                const parsed = dayjs.tz(
+                    display,
+                    this.config.displayFormat,
+                    this.config.timezone
+                );
+
+                if (!parsed.isValid() || parsed.format(this.config.displayFormat) !== display) {
+                    return null;
+                }
+
+                const normalizedDisplay = this
+                    .toWallClockDate(parsed, this.config.timezone)
+                    .format(this.config.displayFormat);
+
+                if (normalizedDisplay !== display) {
+                    return null;
+                }
+
+                return this
+                    .toWallClockDate(parsed, this.config.storageTimezone)
+                    .format(this.config.storageFormat);
+            } catch {
+                return null;
+            }
         },
 
         applyTime(date, time) {
@@ -1342,10 +1652,21 @@ export default function dateRangeComponent(config) {
                 else if (time.ampm === 'AM' && hour === 12) hour = 0;
             }
 
+            const minute = parseInt(time.minute);
+            const second = this.config.timePickerSecond ? parseInt(time.second) : 0;
+
+            if (
+                date.hour() === hour &&
+                date.minute() === minute &&
+                date.second() === second
+            ) {
+                return date;
+            }
+
             return date
                 .hour(hour)
-                .minute(parseInt(time.minute))
-                .second(this.config.timePickerSecond ? parseInt(time.second) : 0);
+                .minute(minute)
+                .second(second);
         },
 
         // ─────────────────────────────────────────────────────────────
@@ -1431,7 +1752,8 @@ export default function dateRangeComponent(config) {
         },
 
         applySelection() {
-            this.syncState();
+            if (!this.canApplySelection) return;
+            if (!this.syncState()) return;
 
             // Dispatch apply event for Livewire/external listeners
             this.$el?.dispatchEvent(new CustomEvent('apply.daterangepicker', {
@@ -1447,7 +1769,7 @@ export default function dateRangeComponent(config) {
         },
 
         cancel() {
-            this.parseState(this.config.state); // Reset to original
+            this.parseConfiguredState(); // Reset to original
             this.updateInputValue();
 
             // Dispatch cancel event for Livewire/external listeners
@@ -1884,6 +2206,16 @@ export default function dateRangeComponent(config) {
             return '';
         },
 
+        formatSelectionPreview(date, time) {
+            if (!date) return '';
+
+            const value = this.config.timePicker
+                ? this.applyTime(date, time)
+                : date;
+
+            return value.format(this.config.displayFormat);
+        },
+
         get weekDays() {
             const days = [];
             const labels = this.config.labels.daysOfWeek;
@@ -1915,6 +2247,17 @@ export default function dateRangeComponent(config) {
 
         get calendarCount() {
             return this.config.singleCalendar ? 1 : 2;
+        },
+
+        get dualStateStatus() {
+            if (this.selection.start && this.selection.end) return 'complete';
+            if (this.selection.start || this.selection.end) return 'incomplete';
+
+            return 'empty';
+        },
+
+        get canApplySelection() {
+            return !this.config.dualState || this.dualStateStatus === 'complete';
         },
 
         // Time picker helpers

@@ -8,7 +8,10 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Concerns\{HasAffixes, HasExtraInputAttributes, HasPlaceholder};
 use Filament\Schemas\Components\Contracts\HasAffixActions;
 use Filament\Forms\Components\Field;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
+use Illuminate\Support\Arr;
 use Illuminate\View\ComponentAttributeBag;
 use JetBrains\PhpStorm\Deprecated;
 use Malzariey\FilamentDaterangepickerFilter\Concerns\HasRangePicker;
@@ -35,16 +38,119 @@ class DateRangePicker extends Field implements HasAffixActions
         // the value lazily from startDate/endDate when the field hydrates.
         $this->default(fn () => $this->buildDefaultValue());
 
-        // Only needed for the enforceIfNull edge case: force state
-        // on edit operations when the existing value is null.
-        $this->afterStateHydrated(function (string $operation) {
-            if ($this->enforceIfNull && $operation === 'edit' && $this->getState() === null) {
-                $default = $this->buildDefaultValue();
+        // Keep Filament's validation state in sync with dual backing values,
+        // and handle the enforceIfNull edit edge case.
+        $this->afterStateHydrated(function (DateRangePicker $component, Get $get, Set $set, string $operation) {
+            if ($component->isDualState()) {
+                $usesRelativeSiblingPaths = $component->areDualStatePathsRelative()
+                    && ! str_starts_with($component->getDualStartField(), '/')
+                    && ! str_starts_with($component->getDualEndField(), '/');
+                $startState = $usesRelativeSiblingPaths
+                    ? $get($component->getDualStartField())
+                    : data_get($component->getLivewire(), $component->getDualStartStatePath());
+                $endState = $usesRelativeSiblingPaths
+                    ? $get($component->getDualEndField())
+                    : data_get($component->getLivewire(), $component->getDualEndStatePath());
+
+                $set($component->getDualStartStatePath(), $startState, isAbsolute: true);
+                $set($component->getDualEndStatePath(), $endState, isAbsolute: true);
+
+                $component->state(
+                    filled($startState) && filled($endState)
+                        ? $startState . $component->getRangeSeparator() . $endState
+                        : null,
+                );
+            }
+
+            if ($component->enforceIfNull && $operation === 'edit' && $component->getState() === null) {
+                $default = $component->buildDefaultValue();
                 if ($default !== null) {
-                    $this->state($default);
+                    $component->state($default);
                 }
             }
         });
+    }
+
+    public function getDualStartStatePath(): ?string
+    {
+        $field = $this->getDualStartField();
+
+        return $field === null ? null : $this->resolveDualStatePath($field);
+    }
+
+    public function getDualEndStatePath(): ?string
+    {
+        $field = $this->getDualEndField();
+
+        return $field === null ? null : $this->resolveDualStatePath($field);
+    }
+
+    protected function resolveDualStatePath(string $path): string
+    {
+        if (str_starts_with($path, '/')) {
+            return $this->resolveRelativeStatePath($path);
+        }
+
+        if ($this->areDualStatePathsRelative()) {
+            return $this->resolveRelativeStatePath($path);
+        }
+
+        return $path;
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     */
+    public function dehydrateState(array &$state, bool $isDehydrated = true): void
+    {
+        if (! $this->isDualState()) {
+            parent::dehydrateState($state, $isDehydrated);
+
+            return;
+        }
+
+        foreach ([$this->getDualStartStatePath(), $this->getDualEndStatePath()] as $statePath) {
+            if ($this->getRootContainer()->hasDehydratedComponent($statePath)) {
+                continue;
+            }
+
+            Arr::forget($state, $statePath);
+        }
+
+        parent::dehydrateState($state, $isDehydrated);
+
+        if ($this->hasStatePath()) {
+            Arr::forget($state, $this->getStatePath());
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getStateToDehydrate(mixed $state): array
+    {
+        if (! $this->isDualState()) {
+            return parent::getStateToDehydrate($state);
+        }
+
+        $startStatePath = $this->getDualStartStatePath();
+        $endStatePath = $this->getDualEndStatePath();
+        $livewire = $this->getLivewire();
+
+        return [
+            $startStatePath => data_get($livewire, $startStatePath),
+            $endStatePath => data_get($livewire, $endStatePath),
+        ];
+    }
+
+    public function getDualStateStorageFormat(): string
+    {
+        return $this->convertPhpToJsFormat($this->getFormat());
+    }
+
+    public function getDualStateStorageTimezone(): string
+    {
+        return config('app.timezone');
     }
 
     /**

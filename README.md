@@ -148,6 +148,9 @@ DateRangePicker::make('dates')
 ```
 
 ### Dual State Mode
+
+#### Separate Livewire Properties
+
 Store start and end dates in separate Livewire properties:
 
 ```php
@@ -158,6 +161,57 @@ DateRangePicker::make('date_range')
 public ?string $start_date = null;
 public ?string $end_date = null;
 ```
+
+By default, the paths passed to `useDualState()` refer directly to properties
+on the Livewire component. This is the existing behavior and does not require
+`relative: true`.
+
+#### Filament Forms, Action Forms, Nested Schemas, and Repeater Items
+
+For Filament forms, action forms, nested schemas, and repeater items,
+`relative: true` is required. It resolves the start and end paths relative to
+the current Filament schema container so that the values are stored alongside
+the picker:
+
+```php
+Repeater::make('dates')
+    ->schema([
+        DateRangePicker::make('date_range')
+            ->useDualState('start_date', 'end_date', relative: true)
+            ->format('Y-m-d H:i:s', enforceFormat: true)
+            ->displayFormat('DD.MM.YYYY HH:mm')
+            ->timezone('Europe/Berlin')
+            ->timePicker()
+            ->timePicker24(),
+    ]);
+```
+
+In relative mode, the picker dehydrates the start and end values as sibling
+keys in the containing schema state. The picker field itself is UI and
+validation state, so `date_range` is omitted from the dehydrated data:
+
+```php
+[
+    'start_date' => '2026-08-04 08:17:00',
+    'end_date' => '2026-08-05 14:43:00',
+]
+```
+
+Prefix a path with `/` to address an absolute Livewire state path while
+relative mode is enabled, for example
+`->useDualState('/start_date', '/end_date', relative: true)`.
+
+In dual state mode, `format()` defines the format of the stored start and end
+values, while `displayFormat()` defines the format shown in the picker. Values
+whose storage format contains a time component are interpreted in the
+application's timezone (`config('app.timezone')`), displayed in the configured
+picker `timezone()`, and converted back when the selection changes. Date-only,
+month, and year values are calendar values and are not shifted between
+timezones.
+
+Both backing values must be present before a range can be applied. If an
+external update provides only a start or end value, the picker preserves that
+value and disables Apply until the range is completed or explicitly cleared.
 
 ---
 

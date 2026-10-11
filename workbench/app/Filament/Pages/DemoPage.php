@@ -28,7 +28,14 @@ class DemoPage extends Page
             app()->setLocale($locale);
         }
 
-        $this->form->fill();
+        $this->form->fill([
+            'dual_start_utc' => '2026-08-04 08:17:00',
+            'dual_end_utc' => '2026-08-05 14:43:00',
+            'dual_date_start' => '2026-08-04',
+            'dual_date_end' => '2026-08-05',
+            'dual_partial_start' => '2026-08-04',
+            'dual_partial_end' => null,
+        ]);
     }
 
     public function form(Schema $schema): Schema
@@ -109,6 +116,40 @@ class DemoPage extends Page
                             ->label($isArabic ? 'نطاق مخصص' : 'Default: Custom Range')
                             ->defaultCustom(Carbon::parse('2026-01-01'), Carbon::parse('2026-06-30'))
                             ->placeholder($isArabic ? 'مخصص' : 'Jan 1 - Jun 30, 2026'),
+                    ]),
+
+                Section::make($isArabic ? 'حالة مزدوجة' : 'Dual State')
+                    ->columns(2)
+                    ->schema([
+                        DateRangePicker::make('dual_state_range')
+                            ->label($isArabic ? 'تاريخ البدء والانتهاء' : 'Separate UTC Start / End')
+                            ->useDualState('dual_start_utc', 'dual_end_utc', relative: true)
+                            ->format('Y-m-d H:i:s', enforceFormat: true)
+                            ->displayFormat('DD.MM.YYYY HH:mm')
+                            ->timezone('Europe/Berlin')
+                            ->timePicker()
+                            ->timePicker24()
+                            ->timePickerIncrement(1)
+                            ->disableRanges()
+                            ->extraInputAttributes(['data-testid' => 'dual-state-range']),
+
+                        DateRangePicker::make('dual_date_range')
+                            ->label($isArabic ? 'نطاق تاريخ فقط' : 'Date-only without timezone shift')
+                            ->useDualState('dual_date_start', 'dual_date_end', relative: true)
+                            ->format('Y-m-d', enforceFormat: true)
+                            ->displayFormat('DD.MM.YYYY')
+                            ->timezone('America/Los_Angeles')
+                            ->disableRanges()
+                            ->extraInputAttributes(['data-testid' => 'dual-date-only-range']),
+
+                        DateRangePicker::make('dual_partial_range')
+                            ->label($isArabic ? 'نطاق غير مكتمل' : 'Incomplete range')
+                            ->useDualState('dual_partial_start', 'dual_partial_end', relative: true)
+                            ->format('Y-m-d', enforceFormat: true)
+                            ->displayFormat('DD.MM.YYYY')
+                            ->timezone('Europe/Berlin')
+                            ->disableRanges()
+                            ->extraInputAttributes(['data-testid' => 'dual-partial-range']),
                     ]),
 
                 // ─────────────────────────────────────────────────────
