@@ -1472,6 +1472,11 @@ export default function dateRangeComponent(config) {
                 this.selection.end = dayjs(range[1]);
                 this.viewDate = this.selection.start;
 
+                if (this.config.timePicker) {
+                    this.startTime = this.extractTime(this.selection.start);
+                    this.endTime = this.extractTime(this.selection.end);
+                }
+
                 if (this.config.autoApply) {
                     this.applySelection();
                 } else {
