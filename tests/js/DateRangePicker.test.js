@@ -499,6 +499,25 @@ describe('Advanced Features', () => {
             // Should snap back to the selected date's month
             expect(component.viewDate.month()).toBe(0); // January
         });
+
+        it('should sync startTime/endTime from the preset when timePicker is enabled', async () => {
+            const { component } = await createTestComponent({
+                timePicker: true,
+                ranges: {
+                    'Last 24 Hours': [
+                        dayjs().subtract(24, 'hours').toISOString(),
+                        dayjs().toISOString(),
+                    ],
+                },
+            });
+
+            component.selectPreset('Last 24 Hours');
+
+            expect(component.startTime.hour).toBe(component.selection.start.hour());
+            expect(component.startTime.minute).toBe(component.selection.start.minute());
+            expect(component.endTime.hour).toBe(component.selection.end.hour());
+            expect(component.endTime.minute).toBe(component.selection.end.minute());
+        });
     });
 
     describe('Disabled Dates', () => {
