@@ -52,6 +52,7 @@
         @endif
         x-ignore
         x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('dateRangeComponent', 'malzariey/filament-daterangepicker-filter') }}"
+        x-load-css="[@js(\Filament\Support\Facades\FilamentAsset::getStyleHref('date-range-picker', package: 'malzariey/filament-daterangepicker-filter'))]"
         x-data="dateRangeComponent({
             state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$statePath}')") }},
             dualState: @js($isDualState),
