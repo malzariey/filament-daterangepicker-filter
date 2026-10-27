@@ -148,9 +148,14 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this->convertPhpToJsFormat($this->getFormat());
     }
 
+    /**
+     * Dual-state values are written straight into the backing columns, so they
+     * use the STORAGE timezone — the same getSystemTimezone() the filter
+     * converts into (config('app.timezone') unless systemTimezone() is set).
+     */
     public function getDualStateStorageTimezone(): string
     {
-        return config('app.timezone');
+        return $this->getSystemTimezone();
     }
 
     /**

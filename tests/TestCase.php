@@ -29,5 +29,9 @@ class TestCase extends Orchestra
     protected function getEnvironmentSetUp($app): void
     {
         config()->set('database.default', 'testing');
+
+        // phpunit.xml is gitignored, so nothing else provides a key; rendering
+        // a Livewire form (dual-state tests) needs one for the session/CSRF.
+        config()->set('app.key', 'base64:'.base64_encode(str_repeat('k', 32)));
     }
 }

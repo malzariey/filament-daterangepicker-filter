@@ -415,6 +415,19 @@ describe('New Features', function () {
         expect($field->getDualStateStorageFormat())->toBe('YYYY-MM-DD HH:mm:ss')
             ->and($field->getDualStateStorageTimezone())->toBe('UTC');
     });
+
+    it('honours systemTimezone() for dual state storage', function () {
+        // 5.0.7 added systemTimezone() for a column stored outside the
+        // application timezone; dual-state values must be written in it too.
+        config()->set('app.timezone', 'UTC');
+
+        $field = DateRangePicker::make('date_range')
+            ->format('Y-m-d H:i:s', enforceFormat: true)
+            ->systemTimezone('Asia/Riyadh')
+            ->useDualState('start_date', 'end_date');
+
+        expect($field->getDualStateStorageTimezone())->toBe('Asia/Riyadh');
+    });
 });
 
 // ─────────────────────────────────────────────────────────────
