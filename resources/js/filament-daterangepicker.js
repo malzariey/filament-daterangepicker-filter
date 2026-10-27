@@ -1472,6 +1472,24 @@ export default function dateRangeComponent(config) {
                 this.selection.end = dayjs(range[1]);
                 this.viewDate = this.selection.start;
 
+                if (this.config.timePicker) {
+                    // A date-only preset ("2026-08-18", which is how the PHP
+                    // side sends every Carbon preset) carries no time of day:
+                    // it means the whole day, so it keeps 00:00 → 23:59:59
+                    // rather than ending at midnight.
+                    const isDateOnly = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+
+                    if (isDateOnly(range[0])) {
+                        this.selection.start = this.selection.start.startOf('day');
+                    }
+                    if (isDateOnly(range[1])) {
+                        this.selection.end = this.selection.end.endOf('day');
+                    }
+
+                    this.startTime = this.extractTime(this.selection.start);
+                    this.endTime = this.extractTime(this.selection.end);
+                }
+
                 if (this.config.autoApply) {
                     this.applySelection();
                 } else {
