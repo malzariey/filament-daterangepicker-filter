@@ -2294,10 +2294,21 @@ export default function dateRangeComponent(config) {
 
         get minuteOptions() {
             const increment = this.config.timePickerIncrement || 1;
-            return Array.from({ length: Math.floor(60 / increment) }, (_, i) => ({
-                value: i * increment,
-                label: String(i * increment).padStart(2, '0'),
-            }));
+            const values = Array.from({ length: Math.floor(60 / increment) }, (_, i) => i * increment);
+
+            // Keep the minutes actually selected (the default end is 23:59, and
+            // presets or typed values can land off the increment) so the
+            // select shows the real value instead of silently showing :00.
+            for (const time of [this.startTime, this.endTime]) {
+                const minute = parseInt(time?.minute);
+                if (Number.isInteger(minute) && minute >= 0 && minute < 60 && !values.includes(minute)) {
+                    values.push(minute);
+                }
+            }
+
+            return values
+                .sort((a, b) => a - b)
+                .map((value) => ({ value, label: String(value).padStart(2, '0') }));
         },
 
         get secondOptions() {

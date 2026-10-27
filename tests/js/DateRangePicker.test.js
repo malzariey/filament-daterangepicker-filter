@@ -675,6 +675,24 @@ describe('Advanced Features', () => {
     });
 
     describe('Time Picker', () => {
+        it('should offer the current minute even when it is off the increment', async () => {
+            // The default end time is 23:59 but the default increment is 30, so
+            // the minute select had no "59" option and showed "00" while the
+            // value applied was :59 — the dropdown lied about what was picked.
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                timePickerIncrement: 30,
+            });
+
+            const values = component.minuteOptions.map((o) => o.value);
+
+            expect(values).toContain(0);
+            expect(values).toContain(30);
+            expect(values).toContain(59);
+            expect(values).toEqual([...values].sort((a, b) => a - b));
+        });
+
         it('should initialize with default time values', async () => {
             const { component } = await createTestComponent({
                 timePicker: true,
@@ -756,7 +774,11 @@ describe('Advanced Features', () => {
                 timePickerIncrement: 15,
             });
 
-            expect(component.minuteOptions).toHaveLength(4);
+            // Only the increments, plus the minute currently selected (the
+            // default end time is 23:59, see "off the increment" below).
+            expect(component.minuteOptions.map(m => m.value)).toEqual([0, 15, 30, 45, 59]);
+
+            component.endTime.minute = 45;
             expect(component.minuteOptions.map(m => m.value)).toEqual([0, 15, 30, 45]);
         });
     });
