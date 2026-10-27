@@ -739,8 +739,30 @@
     @apply text-sm font-medium text-gray-500 dark:text-gray-400;
 }
 
+/* The trigger input: a value made of digits and separators has no strong
+   direction, so in an RTL panel "27/10/2026 00:00 - 27/10/2026 23:59" was
+   laid out RTL and read "23:59 27/10/2026 - 00:00 27/10/2026". plaintext
+   takes the direction from the text itself (digits → LTR, an Arabic
+   placeholder or month name → RTL); keep it right-aligned in RTL panels. */
+.fi-fo-date-range-picker-input input {
+    unicode-bidi: plaintext;
+}
+
+[dir='rtl'] .fi-fo-date-range-picker-input input {
+    text-align: right;
+}
+
+/* Each date is LTR data: in an RTL panel "27/10/2026 00:00" otherwise
+   renders as "00:00 27/10/2026". The arrow flips so it still points from
+   the start date to the end date. */
+.fi-daterangepicker-selection-preview > span {
+    unicode-bidi: isolate;
+    direction: ltr;
+}
+
 .fi-daterangepicker-selection-preview-arrow {
     @apply text-primary-400 dark:text-primary-500;
+    @apply inline-block rtl:-scale-x-100;
 }
 
 /* ─────────────────────────────────────────────────────────────
