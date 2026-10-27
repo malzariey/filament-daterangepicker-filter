@@ -48,6 +48,45 @@ describe('Initialization & State', () => {
     });
 
     describe('Initial State Parsing', () => {
+        it('should show a lone date in range mode as that one day', async () => {
+            // Filament persists filter state, and a range picked only at its
+            // start leaves a lone date behind. The server reads it as that
+            // whole day; the input used to stay empty while the filter was
+            // active, so the user could not see (or clear) what filtered them.
+            const { component } = await createTestComponent({
+                initialState: '27/10/2026',
+            });
+
+            await flushPromises();
+
+            expect(component.selection.start?.format('DD/MM/YYYY')).toBe('27/10/2026');
+            expect(component.selection.end?.format('DD/MM/YYYY')).toBe('27/10/2026');
+            expect(component.getDisplayValue()).toBe('27/10/2026 - 27/10/2026');
+        });
+
+        it('should show a lone date-time under timePicker as the whole day', async () => {
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                displayFormat: 'DD/MM/YYYY HH:mm',
+                initialState: '27/10/2026 10:30',
+            });
+
+            await flushPromises();
+
+            expect(component.getDisplayValue()).toBe('27/10/2026 00:00 - 27/10/2026 23:59');
+        });
+
+        it('should show a lone date with a trailing separator as that one day', async () => {
+            const { component } = await createTestComponent({
+                initialState: '27/10/2026 - ',
+            });
+
+            await flushPromises();
+
+            expect(component.getDisplayValue()).toBe('27/10/2026 - 27/10/2026');
+        });
+
         it('should parse single date state correctly', async () => {
             const { component } = await createTestComponent({
                 singleCalendar: true,

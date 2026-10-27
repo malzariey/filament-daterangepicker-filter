@@ -1496,8 +1496,22 @@ export default function dateRangeComponent(config) {
                     this.viewDate = this.selection.start;
                 }
             } else {
-                const parts = stateString.split(separator);
-                if (parts.length === 2) {
+                const parts = stateString
+                    .split(separator)
+                    .map((part) => part.trim())
+                    .filter((part) => part !== '');
+
+                if (parts.length === 1) {
+                    // A lone date (only the start was picked, then persisted):
+                    // the server filters it as that whole day, so show it as
+                    // that day rather than an empty input over an active filter.
+                    const date = dayjs(parts[0], format, true);
+                    if (date.isValid()) {
+                        this.selection.start = this.normalizeSelectionStart(date.startOf('day'));
+                        this.selection.end = this.normalizeSelectionEnd(date.endOf('day'));
+                        this.viewDate = this.selection.start;
+                    }
+                } else if (parts.length === 2) {
                     const start = dayjs(parts[0].trim(), format, true);
                     const end = dayjs(parts[1].trim(), format, true);
 
