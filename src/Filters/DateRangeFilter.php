@@ -186,6 +186,12 @@ class DateRangeFilter extends BaseFilter
                 return null;
             }
 
+            // Don't advertise a filter apply() is ignoring because the state
+            // does not parse.
+            if ($this->parseRange($datesString) === [null, null]) {
+                return null;
+            }
+
             return __('filament-daterangepicker-filter::message.period', [
                 'label' => $this->getLabel(),
                 'column' => $this->column,

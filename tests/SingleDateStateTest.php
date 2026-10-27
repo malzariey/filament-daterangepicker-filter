@@ -136,3 +136,11 @@ it('still filters a complete range exactly as before', function () {
 
     expect(singleDateIds($filter, '2026-08-10 - 2026-08-11'))->toBe([1, 2, 3, 5]);
 });
+
+it('shows an indicator for a lone date but none for state it ignores', function () {
+    $filter = DateRangeFilter::make('at')->format('Y-m-d');
+    $indicate = fn (mixed $state) => invade($filter)->evaluate(invade($filter)->indicateUsing, ['data' => ['at' => $state]]);
+
+    expect($indicate('2026-08-11'))->not->toBeNull()
+        ->and($indicate('not-a-date'))->toBeNull();
+});
