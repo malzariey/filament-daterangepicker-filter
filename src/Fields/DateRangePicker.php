@@ -3,6 +3,7 @@
 namespace Malzariey\FilamentDaterangepickerFilter\Fields;
 
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Concerns\{HasAffixes, HasExtraInputAttributes, HasPlaceholder};
@@ -172,11 +173,45 @@ class DateRangePicker extends Field implements HasAffixActions
         }
 
         $format = $this->getFormat();
+        $startDate = $this->toDefaultDate($startDate, $format);
+        $endDate = $this->toDefaultDate($endDate, $format);
+
+        if ($startDate === null && $endDate === null) {
+            return null;
+        }
+
         $separator = $this->getRangeSeparator();
         $start = ($startDate ?? $endDate)->format($format);
         $end = ($endDate ?? $startDate)->format($format);
 
         return $start . $separator . $end;
+    }
+
+    /**
+     * startDate()/endDate()/defaultCustom() accept a string as well as a
+     * Carbon. Read it in the field's own format first, then as any date
+     * Carbon understands; anything else is no default rather than an error.
+     */
+    protected function toDefaultDate(mixed $date, string $format): ?CarbonInterface
+    {
+        if ($date instanceof CarbonInterface || $date === null) {
+            return $date;
+        }
+
+        if (! is_string($date) || trim($date) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat($format, trim($date), $this->getTimezone());
+        } catch (\Throwable) {
+        }
+
+        try {
+            return Carbon::parse(trim($date), $this->getTimezone());
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function disableClear(bool|Closure $disable = true): static
@@ -210,12 +245,10 @@ class DateRangePicker extends Field implements HasAffixActions
         $this->state(null);
     }
 
-    public function firstDayOfWeek(int|null $day): static
+    public function firstDayOfWeek(int|Closure|null $day): static
     {
-        if ($day < 0 || $day > 7) {
-            $day = $this->getDefaultFirstDayOfWeek();
-        }
-
+        // Out-of-range values fall back to the default in getFirstDayOfWeek(),
+        // which also covers a closure that returns one.
         $this->firstDayOfWeek = $day;
 
         return $this;
@@ -315,12 +348,12 @@ class DateRangePicker extends Field implements HasAffixActions
     #[Deprecated(since: '2.5.1')]
     public function getAutoApplyOption(): bool
     {
-        return $this->autoApply;
+        return $this->getAutoApply();
     }
 
     public function getAutoApply(): bool
     {
-        return $this->autoApply;
+        return (bool) $this->evaluate($this->autoApply);
     }
 
     public function singleCalendar(bool|Closure $condition = true): static
@@ -333,7 +366,7 @@ class DateRangePicker extends Field implements HasAffixActions
     #[Deprecated(since: '2.5.1')]
     public function getLinkedCalendarsOption(): bool
     {
-        return $this->linkedCalendars;
+        return $this->getLinkedCalendars();
     }
 
     public function getLinkedCalendars(): bool
@@ -370,7 +403,7 @@ class DateRangePicker extends Field implements HasAffixActions
 
         foreach ($ranges as $key => $dates) {
             $ranges[$key] = array_map(
-                fn ($date) => $date instanceof Carbon ? $date->toDateString() : $date,
+                fn ($date) => $date instanceof CarbonInterface ? $date->toDateString() : $date,
                 $dates
             );
         }

@@ -38,7 +38,7 @@ trait HasRangePicker
 
     protected string|Closure|null $displayFormat = null;
     protected string|Closure|null $format = 'd/m/Y';
-    protected int|null $firstDayOfWeek = 1;
+    protected int|Closure|null $firstDayOfWeek = 1;
     protected bool|Closure $timePicker = false;
     protected bool|Closure $timePicker24 = false;
     protected bool|Closure $timePickerSecond = false;

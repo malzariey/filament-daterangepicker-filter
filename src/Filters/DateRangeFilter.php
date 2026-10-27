@@ -139,6 +139,10 @@ class DateRangeFilter extends BaseFilter
         if (! $this->getTimePicker()) {
             $from->startOfDay();
             $to->endOfDay();
+        } elseif (! str_contains($this->getFormat(), 's')) {
+            // Without seconds on screen, "23:59" means the whole of that
+            // minute; read as 23:59:00 it would drop the last 59 seconds.
+            $to->endOfMinute();
         }
 
         return [
