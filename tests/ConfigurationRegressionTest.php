@@ -47,6 +47,20 @@ it('builds the default value from string start and end dates', function () {
     expect(invade($field)->buildDefaultValue())->toBe('01/08/2026 - 05/08/2026');
 });
 
+it('builds the default value from strings with Carbon strict mode off', function () {
+    // Non-strict createFromFormat() returns null instead of throwing; the
+    // Carbon::parse() fallback must still run.
+    \Carbon\Carbon::useStrictMode(false);
+
+    try {
+        $field = DateRangePicker::make('x')->format('d/m/Y')->defaultCustom('2026-08-01', '2026-08-05');
+
+        expect(invade($field)->buildDefaultValue())->toBe('01/08/2026 - 05/08/2026');
+    } finally {
+        \Carbon\Carbon::useStrictMode(true);
+    }
+});
+
 it('builds the default value from strings already in the field format', function () {
     $field = DateRangePicker::make('x')->format('d/m/Y')->defaultCustom('01/08/2026', '05/08/2026');
 

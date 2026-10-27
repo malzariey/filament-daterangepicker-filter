@@ -159,6 +159,14 @@ class DateRangeFilter extends BaseFilter
             return null;
         }
 
+        // createFromFormat() rolls an impossible date over ("31/02" → 3 March)
+        // with only a warning; that is not the day anyone picked.
+        $errors = \DateTime::getLastErrors();
+
+        if (is_array($errors) && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
+            return null;
+        }
+
         return $date instanceof Carbon ? $date : null;
     }
 

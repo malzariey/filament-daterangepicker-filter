@@ -107,6 +107,8 @@ it('ignores state it cannot parse instead of throwing', function (mixed $state) 
     expect(singleDateIds($filter, $state))->toBe([1, 2, 3, 4, 5]);
 })->with([
     'garbage' => 'not-a-date',
+    'impossible day' => '2026-02-31',
+    'impossible day in a range' => '2026-02-01 - 2026-02-31',
     'wrong format' => '11/08/2026',
     'half garbage range' => '2026-08-11 - nope',
     'three parts' => '2026-08-01 - 2026-08-02 - 2026-08-03',

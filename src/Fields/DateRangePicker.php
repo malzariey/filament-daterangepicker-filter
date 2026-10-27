@@ -203,7 +203,12 @@ class DateRangePicker extends Field implements HasAffixActions
         }
 
         try {
-            return Carbon::createFromFormat($format, trim($date), $this->getTimezone());
+            $parsed = Carbon::createFromFormat($format, trim($date), $this->getTimezone());
+
+            // Null rather than an exception when Carbon strict mode is off.
+            if ($parsed instanceof CarbonInterface) {
+                return $parsed;
+            }
         } catch (\Throwable) {
         }
 
