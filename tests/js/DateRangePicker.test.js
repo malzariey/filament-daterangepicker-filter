@@ -518,6 +518,26 @@ describe('Advanced Features', () => {
             expect(component.endTime.hour).toBe(component.selection.end.hour());
             expect(component.endTime.minute).toBe(component.selection.end.minute());
         });
+
+        it('should keep a date-only preset covering the whole day when timePicker is enabled', async () => {
+            // The PHP side sends every Carbon preset (including the built-in
+            // Today / Last 7 days...) as a plain Y-m-d string. Taking the time
+            // off that string would end "Today" at 00:00 instead of 23:59:59.
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                displayFormat: 'DD/MM/YYYY HH:mm',
+                ranges: {
+                    Today: ['2026-08-18', '2026-08-18'],
+                },
+            });
+
+            component.selectPreset('Today');
+
+            expect(component.startTime).toMatchObject({ hour: 0, minute: 0 });
+            expect(component.endTime).toMatchObject({ hour: 23, minute: 59 });
+            expect(component.getDisplayValue()).toBe('18/08/2026 00:00 - 18/08/2026 23:59');
+        });
     });
 
     describe('Disabled Dates', () => {
