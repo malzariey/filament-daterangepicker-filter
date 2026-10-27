@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Concerns\HasRangePicker;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
+use Throwable;
 
 class DateRangeFilter extends BaseFilter
 {
@@ -67,33 +68,7 @@ class DateRangeFilter extends BaseFilter
 
         $datesString = data_get($data, $this->column);
 
-        if (!empty($datesString)) {
-            $dates = explode($this->rangeSeparator, $datesString);
-        } else {
-            $dates = [];
-        }
-
-        if (count($dates) === 2) {
-            $from = trim($dates[0]);
-            $to = trim($dates[1]);
-
-            if ($this->getTimePicker()) {
-                $dates = [
-                    Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->timezone($this->getSystemTimezone()),
-                    Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->timezone($this->getSystemTimezone())
-                ];
-            } else {
-                $dates = [
-                    Carbon::createFromFormat($this->getFormat(), $from, $this->getTimezone())->startOfDay()->timezone($this->getSystemTimezone()),
-                    Carbon::createFromFormat($this->getFormat(), $to, $this->getTimezone())->endOfDay()->timezone($this->getSystemTimezone()),
-                ];
-            }
-
-        } else {
-            $from = null;
-            $to = null;
-        }
-
+        [$startDate, $endDate] = $this->parseRange($datesString);
 
         if ($this->hasQueryModificationCallback()) {
             $callback = $this->modifyQueryUsing;
@@ -102,21 +77,85 @@ class DateRangeFilter extends BaseFilter
                 'query' => $query,
                 'state' => $data,
                 'dateString' => $datesString,
-                'startDate' => $dates[0] ?? null,
-                'endDate' => $dates[1] ?? null,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
             ]);
             return $query;
         }
 
-        if (empty($dates)) {
+        if ($startDate === null || $endDate === null) {
             return $query;
         }
 
-        return $query
-            ->when(
-                $from !== null && $to !== null,
-                fn(Builder $query, $date): Builder => $query->whereBetween($this->column, $dates),
-            );
+        return $query->whereBetween($this->column, [$startDate, $endDate]);
+    }
+
+    /**
+     * The filter state as two instants in the storage timezone, or two nulls.
+     *
+     * - "start - end": both ends, read in the display timezone. Without a time
+     *   picker they widen to start-of-day / end-of-day.
+     * - a lone date (only the first end was picked, and Filament persisted the
+     *   state): that whole day, start-of-day to end-of-day.
+     * - anything else, or anything that does not parse: [null, null], so the
+     *   filter does nothing. Filter state is persisted per user, so throwing
+     *   here would 500 the table on every visit until the session expired.
+     *
+     * @return array{0: Carbon|null, 1: Carbon|null}
+     */
+    protected function parseRange(mixed $datesString): array
+    {
+        if (! is_string($datesString) || trim($datesString) === '') {
+            return [null, null];
+        }
+
+        $parts = array_map('trim', explode($this->rangeSeparator, $datesString));
+        $parts = array_values(array_filter($parts, fn (string $part): bool => $part !== ''));
+
+        if (count($parts) === 1) {
+            $day = $this->parseDate($parts[0]);
+
+            if ($day === null) {
+                return [null, null];
+            }
+
+            return [
+                $day->copy()->startOfDay()->timezone($this->getSystemTimezone()),
+                $day->copy()->endOfDay()->timezone($this->getSystemTimezone()),
+            ];
+        }
+
+        if (count($parts) !== 2) {
+            return [null, null];
+        }
+
+        $from = $this->parseDate($parts[0]);
+        $to = $this->parseDate($parts[1]);
+
+        if ($from === null || $to === null) {
+            return [null, null];
+        }
+
+        if (! $this->getTimePicker()) {
+            $from->startOfDay();
+            $to->endOfDay();
+        }
+
+        return [
+            $from->timezone($this->getSystemTimezone()),
+            $to->timezone($this->getSystemTimezone()),
+        ];
+    }
+
+    protected function parseDate(string $value): ?Carbon
+    {
+        try {
+            $date = Carbon::createFromFormat($this->getFormat(), $value, $this->getTimezone());
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $date instanceof Carbon ? $date : null;
     }
 
     protected function setUp(): void
