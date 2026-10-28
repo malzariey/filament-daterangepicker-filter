@@ -7,6 +7,7 @@ use Filament\Tables\Filters\BaseFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Concerns\HasRangePicker;
+use Malzariey\FilamentDaterangepickerFilter\Enums\PickerType;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 use Throwable;
 
@@ -120,8 +121,8 @@ class DateRangeFilter extends BaseFilter
             }
 
             return [
-                $day->copy()->startOfDay()->timezone($this->getSystemTimezone()),
-                $day->copy()->endOfDay()->timezone($this->getSystemTimezone()),
+                $this->startOfPeriod($day->copy())->timezone($this->getSystemTimezone()),
+                $this->endOfPeriod($day->copy())->timezone($this->getSystemTimezone()),
             ];
         }
 
@@ -136,9 +137,9 @@ class DateRangeFilter extends BaseFilter
             return [null, null];
         }
 
-        if (! $this->getTimePicker()) {
-            $from->startOfDay();
-            $to->endOfDay();
+        if ($this->getPickerType() !== PickerType::DAY || ! $this->getTimePicker()) {
+            $this->startOfPeriod($from);
+            $this->endOfPeriod($to);
         } elseif (! str_contains($this->getFormat(), 's')) {
             // Without seconds on screen, "23:59" means the whole of that
             // minute; read as 23:59:00 it would drop the last 59 seconds.
@@ -151,10 +152,44 @@ class DateRangeFilter extends BaseFilter
         ];
     }
 
+    /**
+     * The first instant of the picked day, month or year.
+     */
+    protected function startOfPeriod(Carbon $date): Carbon
+    {
+        return match ($this->getPickerType()) {
+            PickerType::MONTH => $date->startOfMonth(),
+            PickerType::YEAR => $date->startOfYear(),
+            default => $date->startOfDay(),
+        };
+    }
+
+    /**
+     * The last instant of the picked day, month or year.
+     */
+    protected function endOfPeriod(Carbon $date): Carbon
+    {
+        return match ($this->getPickerType()) {
+            PickerType::MONTH => $date->endOfMonth(),
+            PickerType::YEAR => $date->endOfYear(),
+            default => $date->endOfDay(),
+        };
+    }
+
     protected function parseDate(string $value): ?Carbon
     {
+        // '!' resets every field the format does not carry to its zero
+        // value. Without it they come from "now": "06/2026" parsed as today's
+        // day of June, and on the 29th-31st "02/2026" rolled into March.
+        // A format with no year keeps "this year" rather than 1970.
+        $format = $this->getFormat();
+
+        if (! str_starts_with($format, '!') && ! str_contains($format, '|') && strpbrk(preg_replace('/\\\\./s', '', $format), 'YyoXxU') !== false) {
+            $format = '!' . $format;
+        }
+
         try {
-            $date = Carbon::createFromFormat($this->getFormat(), $value, $this->getTimezone());
+            $date = Carbon::createFromFormat($format, $value, $this->getTimezone());
         } catch (Throwable) {
             return null;
         }
