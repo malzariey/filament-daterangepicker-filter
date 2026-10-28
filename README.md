@@ -319,11 +319,24 @@ DateRangePicker::make('created_at')
 ### Predefined Ranges
 ```php
 DateRangePicker::make('created_at')
-    ->ranges([
-        'Today' => [now(), now()],
-        'This Week' => [now()->startOfWeek(), now()->endOfWeek()],
-        'Last 30 Days' => [now()->subDays(30), now()],
+    ->ranges(fn (DateRangePicker $component) => [
+        'Today' => [$component->now(), $component->now()],
+        'This Week' => [$component->now()->startOfWeek(), $component->now()->endOfWeek()],
+        'Last 30 Days' => [$component->now()->subDays(30), $component->now()],
     ])
+```
+
+Build custom presets from `$component->now()`, which is "now" in the picker's display timezone (`->timezone()`, else `FilamentTimezone`). The built-in presets already do this. A bare `now()` is in `config('app.timezone')`, so with UTC storage and a local display timezone "Today" is the previous day for the first hours of every local day.
+
+Carbon presets are sent to the browser as dates (`Y-m-d`). Under `->timePicker()` a date-only preset covers the whole day (00:00 → 23:59:59). For a preset with a time of day, such as "Last 6 hours", pass the bounds as `Y-m-d H:i:s` strings in the display timezone:
+
+```php
+->ranges(fn (DateRangePicker $component) => [
+    'Last 6 hours' => [
+        $component->now()->subHours(6)->format('Y-m-d H:i:s'),
+        $component->now()->format('Y-m-d H:i:s'),
+    ],
+])
 ```
 
 ### Use Range Labels

@@ -732,7 +732,7 @@ export default function dateRangeComponent(config) {
                 date: date,
                 day: date.date(),
                 isCurrentMonth: date.month() === currentMonth,
-                isToday: date.isSame(dayjs(), 'day'),
+                isToday: date.isSame(this.today(), 'day'),
                 isSelected: (date.month() === currentMonth) && this.isSelected(date),
                 inRange: (date.month() === currentMonth) && this.isInRange(date),
                 isStart: (date.month() === currentMonth) && this.isStartDate(date),
@@ -770,7 +770,7 @@ export default function dateRangeComponent(config) {
                     monthName: this.config.labels.monthNames[i],
                     shortName: this.config.labels.monthNames[i].substring(0, 3),
                     year: currentYear,
-                    isCurrentMonth: monthDate.isSame(dayjs(), 'month'),
+                    isCurrentMonth: monthDate.isSame(this.today(), 'month'),
                     isSelected: this.isMonthSelected(monthDate),
                     inRange: this.isMonthInRange(monthDate),
                     isStart: this.isMonthStart(monthDate),
@@ -919,7 +919,7 @@ export default function dateRangeComponent(config) {
                 years.push({
                     date: yearDate,
                     year: year,
-                    isCurrentYear: year === dayjs().year(),
+                    isCurrentYear: year === this.today().year(),
                     inDecade: i >= 1 && i <= 10,
                     isSelected: this.isYearSelected(yearDate),
                     inRange: this.isYearInRange(yearDate),
@@ -1438,6 +1438,52 @@ export default function dateRangeComponent(config) {
             return /[HhkmsSaAXxZz]/.test(formatWithoutLiterals);
         },
 
+        /**
+         * Today's wall-clock date in the picker's display timezone.
+         *
+         * The PHP side computes the presets ("Today", "Yesterday"...) in
+         * getTimezone() and reads typed dates in it, so the calendar's
+         * "today" marker has to use the same zone. With the browser clock a
+         * Riyadh panel opened from a UTC laptop at 01:30 marked the 29th as
+         * today while the Today preset selected the 30th.
+         */
+        today() {
+            if (!this.config.timezone) return dayjs();
+
+            // Called for every calendar cell: build the formatter once and
+            // recompute at most once a minute. Only the date is read, so a
+            // display-zone hour that does not exist in the browser's zone
+            // (a DST gap) cannot make the result invalid.
+            const minute = Math.floor(Date.now() / 60000);
+
+            if (this._today?.minute === minute) return this._today.value;
+
+            let value;
+
+            try {
+                this._todayFormatter ??= new Intl.DateTimeFormat('en-CA-u-ca-gregory', {
+                    timeZone: this.config.timezone,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                });
+                const parts = Object.fromEntries(
+                    this._todayFormatter.formatToParts(new Date())
+                        .filter(({ type }) => type !== 'literal')
+                        .map(({ type, value }) => [type, value])
+                );
+                value = dayjs(`${parts.year}-${parts.month}-${parts.day}`, 'YYYY-MM-DD', true);
+            } catch {
+                value = null;
+            }
+
+            if (!value?.isValid()) value = dayjs();
+
+            this._today = { minute, value };
+
+            return value;
+        },
+
         toWallClockDate(date, timezoneName) {
             const parts = new Intl.DateTimeFormat('en-CA-u-ca-gregory', {
                 timeZone: timezoneName,
@@ -1480,8 +1526,12 @@ export default function dateRangeComponent(config) {
         },
 
         parseState(stateString) {
+            // Start from an empty selection: a state that does not parse (or
+            // only half parses) must clear the input, not leave the previous
+            // range on screen over a value the server no longer holds.
+            this.selection = { start: null, end: null };
+
             if (!stateString) {
-                this.selection = { start: null, end: null };
                 return;
             }
 
@@ -1515,12 +1565,10 @@ export default function dateRangeComponent(config) {
                     const start = dayjs(parts[0].trim(), format, true);
                     const end = dayjs(parts[1].trim(), format, true);
 
-                    if (start.isValid()) {
+                    if (start.isValid() && end.isValid()) {
                         this.selection.start = this.normalizeSelectionStart(start);
-                        this.viewDate = this.selection.start;
-                    }
-                    if (end.isValid()) {
                         this.selection.end = this.normalizeSelectionEnd(end);
+                        this.viewDate = this.selection.start;
                     }
                 }
             }
@@ -1732,7 +1780,7 @@ export default function dateRangeComponent(config) {
             this.open = true;
             await this.$nextTick();
             this.setupPositioning();
-            this.focusedDate = this.selection.start || dayjs();
+            this.focusedDate = this.selection.start || this.today();
 
             if (this.isMonthPicker) {
                 this.viewDate = this.constrainMonthPickerViewDate(this.viewDate);
@@ -1801,27 +1849,36 @@ export default function dateRangeComponent(config) {
             this.close();
         },
 
+        /**
+         * A preset's [start, end] as Day.js dates.
+         *
+         * A date-only preset ("2026-08-18", which is how the PHP side sends
+         * every Carbon preset) carries no time of day: it means the whole
+         * day, so under timePicker it is 00:00 → 23:59:59 rather than ending
+         * at midnight. Selecting, highlighting and useRangeLabels all go
+         * through here so they agree on that.
+         */
+        presetBounds(range) {
+            let start = dayjs(range[0]);
+            let end = dayjs(range[1]);
+
+            if (this.config.timePicker) {
+                const isDateOnly = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+
+                if (isDateOnly(range[0])) start = start.startOf('day');
+                if (isDateOnly(range[1])) end = end.endOf('day');
+            }
+
+            return [start, end];
+        },
+
         selectPreset(label) {
             const range = this.config.ranges[label];
             if (range && range.length === 2) {
-                this.selection.start = dayjs(range[0]);
-                this.selection.end = dayjs(range[1]);
+                [this.selection.start, this.selection.end] = this.presetBounds(range);
                 this.viewDate = this.selection.start;
 
                 if (this.config.timePicker) {
-                    // A date-only preset ("2026-08-18", which is how the PHP
-                    // side sends every Carbon preset) carries no time of day:
-                    // it means the whole day, so it keeps 00:00 → 23:59:59
-                    // rather than ending at midnight.
-                    const isDateOnly = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
-
-                    if (isDateOnly(range[0])) {
-                        this.selection.start = this.selection.start.startOf('day');
-                    }
-                    if (isDateOnly(range[1])) {
-                        this.selection.end = this.selection.end.endOf('day');
-                    }
-
                     this.startTime = this.extractTime(this.selection.start);
                     this.endTime = this.extractTime(this.selection.end);
                 }
@@ -1877,8 +1934,7 @@ export default function dateRangeComponent(config) {
             return this.matchesPresetRange(
                 this.selection.start,
                 this.selection.end,
-                dayjs(range[0]),
-                dayjs(range[1])
+                ...this.presetBounds(range)
             );
         },
 
@@ -1973,7 +2029,11 @@ export default function dateRangeComponent(config) {
                     middleware: [
                         offset(8),
                         flip({ fallbackPlacements: ['top', 'bottom', 'top-start', 'top-end', 'bottom-start', 'bottom-end'] }),
-                        shift({ padding: 8 })
+                        // crossAxis: on a phone the dropdown (up to 85vh) fits
+                        // neither above nor below the field, and flip() then
+                        // left it hanging off the top of the screen with the
+                        // presets out of reach. Clamp it into the viewport.
+                        shift({ padding: 8, crossAxis: true })
                     ]
                 });
 
@@ -2207,8 +2267,7 @@ export default function dateRangeComponent(config) {
                         if (this.matchesPresetRange(
                             this.selection.start,
                             this.selection.end,
-                            dayjs(range[0]),
-                            dayjs(range[1])
+                            ...this.presetBounds(range)
                         )) {
                             return label;
                         }

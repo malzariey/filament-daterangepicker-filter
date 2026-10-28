@@ -107,3 +107,39 @@ it('keeps an explicit input timezone independent of the display setting', functi
         ->and($filter->getSystemTimezone())->toBe('UTC')
         ->and(filterIds($filter, '2026-08-18 - 2026-08-18'))->toBe([3]);
 });
+
+it('computes the built-in presets in the display timezone, not the app timezone', function () {
+    // 22:30 UTC on the 29th is 01:30 on the 30th in Riyadh: "Today" is the
+    // day the operator is looking at, not the server's.
+    config(['app.timezone' => 'UTC']);
+    FilamentTimezone::set('Asia/Riyadh');
+    \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-10-29 22:30:00', 'UTC'));
+
+    try {
+        $ranges = \Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker::make('x')->getRanges();
+
+        expect(array_values($ranges)[0])->toBe(['2026-10-30', '2026-10-30'])
+            ->and(array_values($ranges)[1])->toBe(['2026-10-29', '2026-10-29']);
+    } finally {
+        \Carbon\Carbon::setTestNow();
+        FilamentTimezone::set(null);
+    }
+});
+
+it('lets a custom preset closure use the field clock in the display timezone', function () {
+    config(['app.timezone' => 'UTC']);
+    \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-10-29 22:30:00', 'UTC'));
+
+    try {
+        $ranges = \Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker::make('x')
+            ->timezone('Asia/Riyadh')
+            ->ranges(fn (\Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker $component) => [
+                'Today' => [$component->now(), $component->now()],
+            ])
+            ->getRanges();
+
+        expect($ranges['Today'])->toBe(['2026-10-30', '2026-10-30']);
+    } finally {
+        \Carbon\Carbon::setTestNow();
+    }
+});

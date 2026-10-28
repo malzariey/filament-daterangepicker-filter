@@ -175,6 +175,40 @@ describe('Initialization & State', () => {
     });
 });
 
+describe('Unparseable state', () => {
+    it('clears the input when the state cannot be parsed', async () => {
+        const { component, watchers } = await createTestComponent({ initialState: '01/10/2026 - 05/10/2026' });
+        expect(component.inputValue).toBe('01/10/2026 - 05/10/2026');
+
+        component.config.state = 'not a date';
+        watchers.get('config.state')('not a date');
+
+        expect(component.selection.start).toBeNull();
+        expect(component.selection.end).toBeNull();
+        expect(component.inputValue).toBe('');
+    });
+
+    it('clears the input when only one end of the range parses', async () => {
+        // Used to keep the old end date: "01/10/2026 - 05/10/2026" stayed
+        // on screen over a state of "01/10/2026 - 99/99/9999".
+        const { component, watchers } = await createTestComponent({ initialState: '01/10/2026 - 05/10/2026' });
+
+        component.config.state = '01/10/2026 - 99/99/9999';
+        watchers.get('config.state')('01/10/2026 - 99/99/9999');
+
+        expect(component.inputValue).toBe('');
+    });
+
+    it('clears a single-calendar input when the state cannot be parsed', async () => {
+        const { component, watchers } = await createTestComponent({ singleCalendar: true, initialState: '01/10/2026' });
+
+        component.config.state = 'garbage';
+        watchers.get('config.state')('garbage');
+
+        expect(component.inputValue).toBe('');
+    });
+});
+
 describe('Document click handling', () => {
     it('keeps a teleported dropdown open for inside clicks and cancels outside clicks', async () => {
         const { component } = await createTestComponent();
@@ -616,6 +650,72 @@ describe('Advanced Features', () => {
             expect(component.startTime).toMatchObject({ hour: 0, minute: 0 });
             expect(component.endTime).toMatchObject({ hour: 23, minute: 59 });
             expect(component.getDisplayValue()).toBe('18/08/2026 00:00 - 18/08/2026 23:59');
+        });
+    });
+
+    describe('Presets under timePicker', () => {
+        it('highlights a date-only preset as active after selecting it', async () => {
+            // Selecting "Today" widens it to 00:00 → 23:59:59; comparing that
+            // with the bare "2026-08-18" (midnight) never matched, so the
+            // built-in presets were never highlighted with timePicker on.
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                displayFormat: 'DD/MM/YYYY HH:mm',
+                ranges: { Today: ['2026-08-18', '2026-08-18'] },
+            });
+
+            component.selectPreset('Today');
+
+            expect(component.isActiveRange('Today')).toBe(true);
+        });
+
+        it('shows the preset label with useRangeLabels for a date-only preset', async () => {
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                useRangeLabels: true,
+                displayFormat: 'DD/MM/YYYY HH:mm',
+                ranges: { Today: ['2026-08-18', '2026-08-18'] },
+            });
+
+            component.selectPreset('Today');
+
+            expect(component.getDisplayValue()).toBe('Today');
+        });
+
+        it('keeps the time of a preset sent as a date-time string', async () => {
+            const { component } = await createTestComponent({
+                timePicker: true,
+                timePicker24: true,
+                displayFormat: 'DD/MM/YYYY HH:mm',
+                ranges: { 'Last 6 hours': ['2026-08-18 08:20:00', '2026-08-18 14:20:00'] },
+            });
+
+            component.selectPreset('Last 6 hours');
+
+            expect(component.getDisplayValue()).toBe('18/08/2026 08:20 - 18/08/2026 14:20');
+            expect(component.isActiveRange('Last 6 hours')).toBe(true);
+        });
+    });
+
+    describe('Today in the display timezone', () => {
+        afterEach(() => vi.useRealTimers());
+
+        it('marks today in config.timezone, matching the PHP presets', async () => {
+            // 22:30 UTC on the 29th is 01:30 on the 30th in Riyadh: the PHP
+            // Today preset is the 30th, so the calendar must mark the 30th.
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date(Date.UTC(2026, 9, 29, 22, 30, 0)));
+
+            const { component } = await createTestComponent({ timezone: 'Asia/Riyadh' });
+
+            expect(component.today().format('YYYY-MM-DD')).toBe('2026-10-30');
+
+            component.viewDate = dayjs('2026-10-01');
+            const days = component.generateGrid(0).weeks.flat();
+            const marked = days.filter((d) => d.isToday && d.isCurrentMonth).map((d) => d.day);
+            expect(marked).toEqual([30]);
         });
     });
 
@@ -1643,5 +1743,21 @@ describe('State Helpers', () => {
 
         expect(component.isFocused(dayjs('2026-01-15'))).toBe(true);
         expect(component.isFocused(dayjs('2026-01-10'))).toBe(false);
+    });
+});
+
+describe('Today in the display timezone across a browser DST gap', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('stays a valid date when the display hour does not exist in the browser zone', async () => {
+        // 02:30 UTC on 8 March 2026 is inside New York's spring-forward gap;
+        // strict-parsing "2026-03-08 02:30" in the browser zone was invalid.
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(Date.UTC(2026, 2, 8, 2, 30, 0)));
+
+        const { component } = await createTestComponent({ timezone: 'UTC' });
+
+        expect(component.today().isValid()).toBe(true);
+        expect(component.today().format('YYYY-MM-DD')).toBe('2026-03-08');
     });
 });
