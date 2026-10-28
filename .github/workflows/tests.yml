@@ -1,0 +1,87 @@
+name: Tests
+
+on:
+  push:
+    branches: [x5]
+  pull_request:
+    branches: [x5]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+        laravel: ['12.*', '13.*']
+        include:
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # The suite runs on sqlite :memory: (phpunit.xml.dist sets
+      # DB_CONNECTION=testing), so no database service is needed.
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, intl, pdo_sqlite, sqlite3, bcmath, zip, fileinfo
+          coverage: none
+
+      # composer.lock is not committed (this is a library), so each cell
+      # resolves its own set: Laravel 12 pairs with Testbench 10 / Pest 3,
+      # Laravel 13 with Testbench 11 / Pest 4.
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Installed versions
+        run: composer show | grep -E '^(laravel/framework|orchestra/testbench|pestphp/pest|phpunit/phpunit|filament/filament) '
+
+      # Package is the default suite in phpunit.xml.dist.
+      - name: Tests (Package suite)
+        run: ./vendor/bin/pest --parallel
+
+      # tests/Browser renders components through Livewire and Blade only; it
+      # needs no real browser, so it runs here too.
+      - name: Tests (Browser suite)
+        run: ./vendor/bin/pest --testsuite=Browser --parallel
+
+  js:
+    name: JS (vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Tests (vitest)
+        run: npx vitest run
+
+# Not run here: tests/playwright (a Playwright spec against the local host
+# daterangepicker-test.test; @playwright/test is not a dependency).
