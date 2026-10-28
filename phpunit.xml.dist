@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Committed test configuration. A local phpunit.xml (gitignored) overrides
+    this file when present; CI and fresh clones use this one.
+
+    "Package" is the default suite and the one CI runs (vendor/bin/pest with the parallel flag).
+    "Browser" holds tests/Browser and runs on demand:
+        vendor/bin/pest with testsuite Browser
+    tests/playwright is a separate Playwright spec run with npx, not PHPUnit.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         defaultTestSuite="Package"
+         colors="true">
+    <testsuites>
+        <testsuite name="Package">
+            <directory>tests</directory>
+            <exclude>tests/Browser</exclude>
+            <exclude>tests/playwright</exclude>
+            <exclude>tests/js</exclude>
+        </testsuite>
+        <testsuite name="Browser">
+            <directory>tests/Browser</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+    <php>
+        <env name="DB_CONNECTION" value="testing"/>
+    </php>
+</phpunit>
