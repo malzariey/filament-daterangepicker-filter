@@ -679,8 +679,11 @@
     .fi-daterangepicker-actions {
         @apply flex-col sm:flex-row;
         @apply gap-2;
-        /* Sticky footer */
-        @apply sticky bottom-0 left-0 right-0;
+        /* Sticky footer. bottom is minus the dropdown's p-4: at bottom-0
+           the bar stuck 1rem above the dropdown's edge and the calendar
+           scrolled by visibly underneath it. */
+        @apply sticky left-0 right-0;
+        bottom: -1rem;
         @apply bg-white dark:bg-gray-900;
         @apply border-t border-gray-200 dark:border-white/10;
         @apply z-10;
