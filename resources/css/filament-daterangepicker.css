@@ -6,13 +6,28 @@
  * All colors use CSS custom properties for theme compatibility.
  */
 
-@import 'tailwindcss';
-@source '../../resources/views/**/*.blade.php';
-@source '../../src/**/*.php';
+/*
+ * Tailwind is here only to resolve `@apply`. No preflight, no utility scanned from
+ * the views, no theme variable emitted: this stylesheet is lazy-loaded AFTER the
+ * panel theme, and every rule it shares with the theme lands in the same cascade
+ * layer (`base`, `theme`, `utilities` are merged across stylesheets by name), where
+ * the later sheet wins at equal specificity. A generic `.bg-white` or `.hidden`
+ * here would beat the app's `dark:bg-white/5` or `sm:flex` on every page with a
+ * date filter, and a `:root` palette would recolour the whole page.
+ *
+ * `theme(inline)` writes Tailwind's tokens into the rules instead of reading them
+ * from `:root`: a panel theme only emits the variables it uses itself, and
+ * Filament's own lacks `--color-gray-50` and `--tracking-wide`. Gray and primary
+ * follow the panel through Filament's `--gray-*` and `--primary-*` (block below).
+ * Markup in the view uses `fi-daterangepicker-*` classes only, defined below.
+ */
+@import 'tailwindcss/theme.css' layer(theme) theme(inline);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Theme configuration - extends Tailwind with Filament's color system */
-@theme {
+/* Theme configuration - extends Tailwind with Filament's color system.
+   `inline`: utilities read the fallback chain directly, nothing lands on :root. */
+@theme inline {
     /* Primary colors - default to blue, can be overridden by Filament theme */
     --color-primary-50: var(--primary-50, var(--fi-primary-50, #eff6ff));
     --color-primary-100: var(--primary-100, var(--fi-primary-100, #dbeafe));
@@ -25,6 +40,32 @@
     --color-primary-800: var(--primary-800, var(--fi-primary-800, #1e40af));
     --color-primary-900: var(--primary-900, var(--fi-primary-900, #1e3a8a));
     --color-primary-950: var(--primary-950, var(--fi-primary-950, #172554));
+
+    /* Gray follows the panel palette (Filament sets --gray-*), Tailwind's as fallback */
+    --color-gray-50: var(--gray-50, oklch(98.5% 0.002 247.839));
+    --color-gray-100: var(--gray-100, oklch(96.7% 0.003 264.542));
+    --color-gray-200: var(--gray-200, oklch(92.8% 0.006 264.531));
+    --color-gray-300: var(--gray-300, oklch(87.2% 0.01 258.338));
+    --color-gray-400: var(--gray-400, oklch(70.7% 0.022 261.325));
+    --color-gray-500: var(--gray-500, oklch(55.1% 0.027 264.364));
+    --color-gray-600: var(--gray-600, oklch(44.6% 0.03 256.802));
+    --color-gray-700: var(--gray-700, oklch(37.3% 0.034 259.733));
+    --color-gray-800: var(--gray-800, oklch(27.8% 0.033 256.848));
+    --color-gray-900: var(--gray-900, oklch(21% 0.034 264.665));
+    --color-gray-950: var(--gray-950, oklch(13% 0.028 261.692));
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Field
+   ───────────────────────────────────────────────────────────── */
+
+.fi-fo-date-range-picker,
+.fi-daterangepicker-trigger {
+    @apply relative;
+}
+
+.fi-daterangepicker-trigger {
+    @apply w-full;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -124,8 +165,17 @@
     @apply hover:bg-transparent dark:hover:bg-transparent;
 }
 
-.fi-daterangepicker-month-year {
+.fi-daterangepicker-month-year,
+.fi-daterangepicker-month-year-selects {
     @apply flex items-center gap-1;
+}
+
+.fi-daterangepicker-nav-icon {
+    @apply h-5 w-5;
+}
+
+.fi-daterangepicker-nav-spacer {
+    @apply w-5;
 }
 
 .fi-daterangepicker-month-label {
