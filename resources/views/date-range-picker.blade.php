@@ -134,7 +134,7 @@
         wire:ignore.self
         id="fi-daterangepicker-{{ $name }}"
         wire:key="fi-daterangepicker-{{ $name }}"
-        {{ $attributes->merge($getExtraAttributes(), escape: false)->class(['fi-fo-date-range-picker relative']) }}
+        {{ $attributes->merge($getExtraAttributes(), escape: false)->class(['fi-fo-date-range-picker']) }}
         {{ $getExtraAlpineAttributeBag() }}
     >
         {{-- Input Wrapper --}}
@@ -156,7 +156,7 @@
         >
             <div
                 x-ref="trigger"
-                class="relative w-full"
+                class="fi-daterangepicker-trigger"
             >
                 <x-filament::input
                     x-ref="input"
@@ -228,14 +228,14 @@
                                         >
                                             <x-filament::icon
                                                 icon="heroicon-m-chevron-left"
-                                                class="h-5 w-5"
+                                                class="fi-daterangepicker-nav-icon"
                                             />
                                         </button>
-                                        <span x-show="offset !== 0" class="w-5"></span>
+                                        <span x-show="offset !== 0" class="fi-daterangepicker-nav-spacer"></span>
 
                                         <div class="fi-daterangepicker-month-year">
                                             <template x-if="config.showDropdowns">
-                                                <div class="flex items-center gap-1">
+                                                <div class="fi-daterangepicker-month-year-selects">
                                                     <select
                                                         x-model="viewDate.add(offset, 'month').month()"
                                                         @change="setMonth($event.target.value)"
@@ -280,10 +280,10 @@
                                         >
                                             <x-filament::icon
                                                 icon="heroicon-m-chevron-right"
-                                                class="h-5 w-5"
+                                                class="fi-daterangepicker-nav-icon"
                                             />
                                         </button>
-                                        <span x-show="!config.singleCalendar && offset === 0" class="w-5"></span>
+                                        <span x-show="!config.singleCalendar && offset === 0" class="fi-daterangepicker-nav-spacer"></span>
                                     </div>
 
                                     {{-- Weekday Headers --}}
@@ -354,10 +354,10 @@
                                         >
                                             <x-filament::icon
                                                 icon="heroicon-m-chevron-left"
-                                                class="h-5 w-5"
+                                                class="fi-daterangepicker-nav-icon"
                                             />
                                         </button>
-                                        <span x-show="offset !== 0" class="w-5"></span>
+                                        <span x-show="offset !== 0" class="fi-daterangepicker-nav-spacer"></span>
 
                                         <div class="fi-daterangepicker-month-year">
                                             <input
@@ -384,10 +384,10 @@
                                         >
                                             <x-filament::icon
                                                 icon="heroicon-m-chevron-right"
-                                                class="h-5 w-5"
+                                                class="fi-daterangepicker-nav-icon"
                                             />
                                         </button>
-                                        <span x-show="!config.singleCalendar && offset === 0" class="w-5"></span>
+                                        <span x-show="!config.singleCalendar && offset === 0" class="fi-daterangepicker-nav-spacer"></span>
                                     </div>
 
                                     {{-- Month Grid (4x3) --}}
@@ -435,10 +435,10 @@
                                         >
                                             <x-filament::icon
                                                 icon="heroicon-m-chevron-left"
-                                                class="h-5 w-5"
+                                                class="fi-daterangepicker-nav-icon"
                                             />
                                         </button>
-                                        <span x-show="offset !== 0" class="w-5"></span>
+                                        <span x-show="offset !== 0" class="fi-daterangepicker-nav-spacer"></span>
 
                                         <span
                                             class="fi-daterangepicker-month-label"
@@ -454,10 +454,10 @@
                                         >
                                             <x-filament::icon
                                                 icon="heroicon-m-chevron-right"
-                                                class="h-5 w-5"
+                                                class="fi-daterangepicker-nav-icon"
                                             />
                                         </button>
-                                        <span x-show="!config.singleCalendar && offset === 0" class="w-5"></span>
+                                        <span x-show="!config.singleCalendar && offset === 0" class="fi-daterangepicker-nav-spacer"></span>
                                     </div>
 
                                     {{-- Year Grid (4x3) --}}
