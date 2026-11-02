@@ -171,12 +171,12 @@
                 x-ref="dropdown"
                 x-show="open"
                 x-cloak
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 scale-95"
-                x-transition:enter-end="opacity-100 scale-100"
-                x-transition:leave="transition ease-in duration-150"
-                x-transition:leave-start="opacity-100 scale-100"
-                x-transition:leave-end="opacity-0 scale-95"
+                x-transition:enter="fi-daterangepicker-transition-enter"
+                x-transition:enter-start="fi-daterangepicker-transition-hidden"
+                x-transition:enter-end="fi-daterangepicker-transition-shown"
+                x-transition:leave="fi-daterangepicker-transition-leave"
+                x-transition:leave-start="fi-daterangepicker-transition-shown"
+                x-transition:leave-end="fi-daterangepicker-transition-hidden"
                 @click.stop
                 @keydown.escape.stop.prevent="cancel()"
                 class="fi-daterangepicker-dropdown"

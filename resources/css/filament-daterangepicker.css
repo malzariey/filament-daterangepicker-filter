@@ -868,6 +868,23 @@
     display: none !important;
 }
 
+/* x-transition classes for opening and closing the dropdown */
+.fi-daterangepicker-transition-enter {
+    @apply transition ease-out duration-200;
+}
+
+.fi-daterangepicker-transition-leave {
+    @apply transition ease-in duration-150;
+}
+
+.fi-daterangepicker-transition-hidden {
+    @apply opacity-0 scale-95;
+}
+
+.fi-daterangepicker-transition-shown {
+    @apply opacity-100 scale-100;
+}
+
 /* Smooth dropdown animation override for better feel */
 .fi-daterangepicker-dropdown {
     transform-origin: top center;
