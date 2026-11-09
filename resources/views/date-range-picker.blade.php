@@ -202,6 +202,8 @@
                                                 :class="{
                                                     'fi-active': isActiveRange(label)
                                                 }"
+                                                :disabled="isPresetDisabled(label)"
+                                                :aria-disabled="isPresetDisabled(label)"
                                                 role="option"
                                                 x-text="label"
                                             ></button>

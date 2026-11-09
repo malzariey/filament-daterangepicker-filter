@@ -1872,10 +1872,67 @@ export default function dateRangeComponent(config) {
             return [start, end];
         },
 
+        /**
+         * A preset's bounds limited to minDate / maxDate, or null when the
+         * preset has no day in the allowed range.
+         *
+         * The bounds are compared the way the calendar disables its cells
+         * (isDisabled, isMonthDisabled, isYearDisabled): per day in the day
+         * picker, per month / year in the month and year pickers, against the
+         * minDate / maxDate wall-clock strings in the display timezone. A
+         * partially overlapping preset is clamped to the first / last
+         * allowed cell, so "Last 7 days" with minDate two days ago selects
+         * those three days instead of being thrown away. Selecting,
+         * highlighting and useRangeLabels all go through here so a clamped
+         * preset still reads as active.
+         */
+        constrainedPresetBounds(range) {
+            let [start, end] = this.presetBounds(range);
+
+            if (!start.isValid() || !end.isValid()) return [start, end];
+
+            const unit = this.isMonthPicker ? 'month' : (this.isYearPicker ? 'year' : 'day');
+            const min = this.config.minDate ? dayjs(this.config.minDate) : null;
+            const max = this.config.maxDate ? dayjs(this.config.maxDate) : null;
+            const hasMin = min?.isValid() ?? false;
+            const hasMax = max?.isValid() ?? false;
+
+            if (hasMin && end.isBefore(min, unit)) return null;
+            if (hasMax && start.isAfter(max, unit)) return null;
+
+            if (hasMin && start.isBefore(min, unit)) {
+                start = min.startOf(unit);
+            }
+
+            if (hasMax && end.isAfter(max, unit)) {
+                // Date-only presets end at midnight of their last day; keep
+                // that shape unless the time picker shows the time.
+                end = this.config.timePicker
+                    ? max.endOf(unit)
+                    : max.endOf(unit).startOf('day');
+            }
+
+            return [start, end];
+        },
+
+        /**
+         * True when a preset lies wholly outside minDate / maxDate, so its
+         * button is disabled and selecting it does nothing.
+         */
+        isPresetDisabled(label) {
+            const range = this.config.ranges?.[label];
+            if (!range || range.length !== 2) return false;
+
+            return this.constrainedPresetBounds(range) === null;
+        },
+
         selectPreset(label) {
             const range = this.config.ranges[label];
             if (range && range.length === 2) {
-                [this.selection.start, this.selection.end] = this.presetBounds(range);
+                const bounds = this.constrainedPresetBounds(range);
+                if (!bounds) return;
+
+                [this.selection.start, this.selection.end] = bounds;
                 this.viewDate = this.selection.start;
 
                 if (this.config.timePicker) {
@@ -1931,10 +1988,15 @@ export default function dateRangeComponent(config) {
                 return false;
             }
 
+            const bounds = this.constrainedPresetBounds(range);
+            if (!bounds) {
+                return false;
+            }
+
             return this.matchesPresetRange(
                 this.selection.start,
                 this.selection.end,
-                ...this.presetBounds(range)
+                ...bounds
             );
         },
 
@@ -2264,10 +2326,11 @@ export default function dateRangeComponent(config) {
             if (this.config.useRangeLabels && this.selection.start && this.selection.end) {
                 for (const [label, range] of Object.entries(this.config.ranges || {})) {
                     if (range.length === 2) {
-                        if (this.matchesPresetRange(
+                        const bounds = this.constrainedPresetBounds(range);
+                        if (bounds && this.matchesPresetRange(
                             this.selection.start,
                             this.selection.end,
-                            ...this.presetBounds(range)
+                            ...bounds
                         )) {
                             return label;
                         }
