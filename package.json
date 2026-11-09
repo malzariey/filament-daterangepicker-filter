@@ -20,7 +20,6 @@
         "@tailwindcss/cli": "^4.0.0",
         "@tailwindcss/postcss": "^4.0.0",
         "@testing-library/dom": "^10.4.1",
-        "@vue/test-utils": "^2.4.6",
         "esbuild": "^0.28.1",
         "happy-dom": "^21.0.4",
         "jsdom": "^27.4.0",
