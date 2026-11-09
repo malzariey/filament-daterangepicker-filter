@@ -1,0 +1,17 @@
+providers:
+  - Workbench\App\Providers\WorkbenchServiceProvider
+  - Workbench\App\Providers\Filament\DemoPanelProvider
+
+env:
+  APP_NAME: "DateRangePicker Demo"
+  APP_KEY: "base64:a2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2s="
+  APP_DEBUG: true
+  DB_CONNECTION: sqlite
+  DB_DATABASE: ":memory:"
+  SESSION_DRIVER: file
+  CACHE_STORE: array
+
+workbench:
+  discovers:
+    web: true
+    views: true

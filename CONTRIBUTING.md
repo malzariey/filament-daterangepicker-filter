@@ -43,7 +43,8 @@ npm run dev
 **Terminal 2 — PHP dev server**:
 
 ```bash
-vendor/bin/testbench serve
+composer serve
+# or: vendor/bin/testbench serve
 ```
 
 Then open **http://localhost:8000/demo** in your browser.
@@ -76,7 +77,7 @@ workbench/
     └── demo.blade.php                        # Blade template (LTR/RTL toggle, slide-over action)
 ```
 
-Configuration lives in `testbench.yaml` at the project root.
+Configuration lives in `testbench.yaml` at the project root (committed, so the demo runs straight after `composer install`).
 
 ## Running Tests
 
@@ -84,9 +85,9 @@ Configuration lives in `testbench.yaml` at the project root.
 
 ```bash
 composer test
-# or:
-vendor/bin/pest
 ```
+
+`composer test` first runs `testbench package:purge-skeleton`. `testbench serve` writes a `.env` (with `SESSION_DRIVER=cookie`) into the Testbench skeleton under `vendor/`, and that file leaks into the test app and fails session tests. If you run `vendor/bin/pest` directly after serving the demo, purge first: `vendor/bin/testbench package:purge-skeleton`.
 
 ### JavaScript Tests (Vitest)
 

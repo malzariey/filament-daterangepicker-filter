@@ -37,8 +37,18 @@
         }
     },
     "scripts": {
-        "test": "pest",
-        "test-coverage": "pest --coverage"
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/testbench serve --ansi"
+        ],
+        "test": [
+            "@php vendor/bin/testbench package:purge-skeleton --ansi",
+            "pest"
+        ],
+        "test-coverage": [
+            "@php vendor/bin/testbench package:purge-skeleton --ansi",
+            "pest --coverage"
+        ]
     },
     "config": {
         "sort-packages": true,
