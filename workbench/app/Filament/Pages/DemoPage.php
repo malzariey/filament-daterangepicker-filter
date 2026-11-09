@@ -5,6 +5,7 @@ namespace Workbench\App\Filament\Pages;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
@@ -19,6 +20,9 @@ class DemoPage extends Page
     protected string $view = 'filament.pages.demo';
 
     public ?array $data = [];
+
+    /** What the last slide-over or modal action submitted, shown on the page. */
+    public ?string $lastSubmitted = null;
 
     public function mount(): void
     {
@@ -307,6 +311,46 @@ class DemoPage extends Page
                     ->timePicker24()
                     ->placeholder($isArabic ? 'منتقي وقت داخل النافذة الجانبية' : 'Time picker inside slide-over'),
             ])
-            ->action(fn (array $data) => null);
+            ->action(fn (array $data) => $this->recordSubmitted('Slide-over', $data));
+    }
+
+    /**
+     * A centered modal with a time picker (issue #264: the hour and minute
+     * selects lost focus to the modal's focus trap), plus a button that opens
+     * a nested modal holding another time picker.
+     */
+    public function modalAction(): Action
+    {
+        $isArabic = app()->getLocale() === 'ar';
+
+        return Action::make('modal')
+            ->label($isArabic ? 'فتح في نافذة منبثقة' : 'Open in Modal')
+            ->icon('heroicon-o-window')
+            ->form([
+                DateRangePicker::make('modal_time')
+                    ->label($isArabic ? 'منتقي الوقت في النافذة المنبثقة' : 'Time Picker in Modal')
+                    ->timePicker()
+                    ->timePicker24()
+                    ->placeholder($isArabic ? 'منتقي وقت داخل النافذة المنبثقة' : 'Time picker inside modal'),
+
+                Actions::make([
+                    Action::make('nestedModal')
+                        ->label($isArabic ? 'فتح نافذة متداخلة' : 'Open nested modal')
+                        ->form([
+                            DateRangePicker::make('nested_time')
+                                ->label($isArabic ? 'منتقي الوقت في النافذة المتداخلة' : 'Time Picker in Nested Modal')
+                                ->timePicker()
+                                ->timePicker24(),
+                        ])
+                        ->action(fn (array $data) => $this->recordSubmitted('Nested modal', $data)),
+                ]),
+            ])
+            ->action(fn (array $data) => $this->recordSubmitted('Modal', $data));
+    }
+
+    /** Echo the submitted state on the page so the demo shows what reached the server. */
+    protected function recordSubmitted(string $where, array $data): void
+    {
+        $this->lastSubmitted = $where.': '.json_encode($data, JSON_UNESCAPED_UNICODE);
     }
 }

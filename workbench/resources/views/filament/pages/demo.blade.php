@@ -16,10 +16,15 @@
         </a>
     </div>
 
-    {{-- Slide Over Action --}}
-    <div class="mb-6">
+    {{-- Slide Over and Modal Actions --}}
+    <div class="mb-6 flex flex-wrap gap-3">
         {{ $this->slideOverAction }}
+        {{ $this->modalAction }}
     </div>
+
+    @if ($lastSubmitted)
+        <p id="demo-last-submitted" class="mb-6 text-sm text-gray-700 dark:text-gray-200">Last submitted &rarr; {{ $lastSubmitted }}</p>
+    @endif
 
     {{-- Form --}}
     <form wire:submit.prevent>
