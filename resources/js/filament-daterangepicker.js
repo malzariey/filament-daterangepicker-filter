@@ -164,6 +164,9 @@ export default function dateRangeComponent(config) {
         // ─────────────────────────────────────────────────────────────
         open: false,
         viewDate: dayjs(),
+        // The right-hand day calendar's month under linkedCalendars(false).
+        // Null means "the month after the left one". See calendarMonth().
+        rightViewDate: null,
         selection: { start: null, end: null },
 
         // The preset the user last clicked. Two presets can clamp to the same
@@ -679,6 +682,7 @@ export default function dateRangeComponent(config) {
             this.selection.start = result.start;
             this.selection.end = result.end;
             this.viewDate = result.start;
+            this.showSelectionInUnlinkedCalendars();
             this.forgetStalePresetLabel();
 
             return this.syncState();
@@ -783,7 +787,7 @@ export default function dateRangeComponent(config) {
         // ─────────────────────────────────────────────────────────────
 
         generateGrid(monthOffset = 0) {
-            const current = this.viewDate.add(monthOffset, 'month');
+            const current = this.calendarMonth(monthOffset);
             const firstDayOfMonth = current.startOf('month');
             const lastDayOfMonth = current.endOf('month');
 
@@ -1876,6 +1880,7 @@ export default function dateRangeComponent(config) {
             await this.$nextTick();
             this.setupPositioning();
             this.focusedDate = this.selection.start || this.today();
+            this.showSelectionInUnlinkedCalendars();
 
             if (this.isMonthPicker) {
                 this.viewDate = this.constrainMonthPickerViewDate(this.viewDate);
@@ -2031,6 +2036,7 @@ export default function dateRangeComponent(config) {
                 [this.selection.start, this.selection.end] = bounds;
                 this.selectedPresetLabel = label;
                 this.viewDate = this.selection.start;
+                this.showSelectionInUnlinkedCalendars();
 
                 if (this.config.timePicker) {
                     this.startTime = this.extractTime(this.selection.start);
@@ -2162,22 +2168,111 @@ export default function dateRangeComponent(config) {
         // Navigation
         // ─────────────────────────────────────────────────────────────
 
-        prevMonth() {
-            this.viewDate = this.viewDate.subtract(1, 'month');
+        /**
+         * Whether the two day calendars move together (linkedCalendars(),
+         * the default). A single calendar has nothing to unlink, and the
+         * month and year pickers always page as one view.
+         */
+        get calendarsLinked() {
+            return this.config.linkedCalendars !== false || this.config.singleCalendar;
         },
 
-        nextMonth() {
-            this.viewDate = this.viewDate.add(1, 'month');
+        /**
+         * The month a day calendar shows: 0 is the left one, 1 the right one.
+         * Linked, the right month is always the one after the left. Unlinked,
+         * it is rightViewDate, but never at or before the left month.
+         */
+        calendarMonth(offset = 0) {
+            const linkedMonth = this.viewDate.add(offset, 'month');
+
+            if (this.calendarsLinked || offset === 0) return linkedMonth;
+
+            const right = this.rightViewDate;
+
+            return right && right.isAfter(this.viewDate, 'month')
+                ? right.add(offset - 1, 'month')
+                : linkedMonth;
         },
 
-        setMonth(month) {
+        /**
+         * Move one unlinked calendar to `month`. The other side stays where
+         * it is unless it would end up at or past this one: then it is pushed
+         * along so the right month always stays after the left month.
+         */
+        showUnlinkedCalendarMonth(offset, month) {
+            if (parseInt(offset) === 1) {
+                this.rightViewDate = month;
+                if (!month.isAfter(this.viewDate, 'month')) {
+                    this.viewDate = month.subtract(1, 'month');
+                }
+                return;
+            }
+
+            // Pin the right month before moving the left one, or it would
+            // follow the left calendar back through the "month after" default.
+            this.rightViewDate = this.calendarMonth(1);
+            this.viewDate = month;
+            if (!this.rightViewDate.isAfter(month, 'month')) {
+                this.rightViewDate = month.add(1, 'month');
+            }
+        },
+
+        /**
+         * Unlinked, show the selected range's start on the left and its end
+         * on the right (as the original daterangepicker does), unless both
+         * are already in view. Linked calendars keep their current behaviour.
+         */
+        showSelectionInUnlinkedCalendars() {
+            if (this.calendarsLinked || !this.isDayPicker) return;
+
+            const { start, end } = this.selection;
+            if (!start) return;
+
+            const isVisible = (date) => date.isSame(this.viewDate, 'month')
+                || date.isSame(this.calendarMonth(1), 'month');
+
+            if (isVisible(start) && (!end || isVisible(end))) return;
+
+            this.viewDate = start;
+            this.rightViewDate = end && end.isAfter(start, 'month') ? end : null;
+        },
+
+        prevMonth(offset = 0) {
+            if (this.calendarsLinked) {
+                this.viewDate = this.viewDate.subtract(1, 'month');
+                return;
+            }
+
+            this.showUnlinkedCalendarMonth(offset, this.calendarMonth(offset).subtract(1, 'month'));
+        },
+
+        nextMonth(offset = 0) {
+            if (this.calendarsLinked) {
+                this.viewDate = this.viewDate.add(1, 'month');
+                return;
+            }
+
+            this.showUnlinkedCalendarMonth(offset, this.calendarMonth(offset).add(1, 'month'));
+        },
+
+        setMonth(month, offset = 0) {
+            if (!this.calendarsLinked && this.isDayPicker) {
+                this.showUnlinkedCalendarMonth(offset, this.calendarMonth(offset).month(parseInt(month)));
+                return;
+            }
+
             this.viewDate = this.viewDate.month(parseInt(month));
         },
 
-        setYear(year) {
+        setYear(year, offset = 0) {
             let constrainedYear = this.clampYearToConstraints(year);
 
             if (constrainedYear === null) return;
+
+            if (!this.calendarsLinked && this.isDayPicker) {
+                this.showUnlinkedCalendarMonth(offset, this.calendarMonth(offset).year(constrainedYear));
+                return;
+            }
 
             this.viewDate = this.viewDate.year(constrainedYear);
 
@@ -2464,6 +2559,17 @@ export default function dateRangeComponent(config) {
 
         ensureFocusedDateVisible() {
             if (!this.focusedDate) return;
+
+            if (!this.calendarsLinked) {
+                // Unlinked: scroll only the side the focus walked off.
+                const right = this.calendarMonth(1);
+                if (this.focusedDate.isBefore(this.viewDate, 'month')) {
+                    this.showUnlinkedCalendarMonth(0, this.focusedDate.startOf('month'));
+                } else if (this.focusedDate.isAfter(right, 'month')) {
+                    this.showUnlinkedCalendarMonth(1, this.focusedDate.startOf('month'));
+                }
+                return;
+            }
 
             // If focused date is outside current view, update viewDate
             if (!this.focusedDate.isSame(this.viewDate, 'month')) {
