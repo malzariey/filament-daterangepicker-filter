@@ -3,6 +3,7 @@
 namespace Malzariey\FilamentDaterangepickerFilter\Filters;
 
 use Closure;
+use Filament\Forms\Components\Field;
 use Filament\Tables\Filters\BaseFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -245,56 +246,56 @@ class DateRangeFilter extends BaseFilter
         return $this;
     }
 
-    public function getSchemaComponents() : array
+    /**
+     * The picker the table renders for this filter.
+     *
+     * Built in getFormField(), the hook every supported Filament release
+     * reads: up to 5.11.1 through HasSchema::getSchemaComponents(), from
+     * 5.11.2 through HasForm::getFormSchema(). Core keeps the rest, so a
+     * schema passed to ->form() / ->schema() still replaces this field and
+     * ->modifyFormFieldUsing() still applies. Overriding either getter
+     * instead hides the picker on the release that calls the other one
+     * (issue #267).
+     */
+    public function getFormField(): ?Field
     {
-        $schema = $this->evaluate($this->schema);
-
-        if ($schema !== null) {
-            return $schema;
-        }
-
-        return [
-            DateRangePicker::make($this->column)
-                ->hiddenLabel($this->isLabelHidden)
-                ->displayFormat($this->displayFormat , $this->enforceFormat)
-                ->format($this->format, $this->enforceFormat)
-                ->placeholder($this->placeholder)
-                ->label($this->getLabel())
-                ->timezone($this->timezone)
-                ->opens($this->opens)
-                ->drops($this->drops)
-                ->startDate($this->startDate, $this->enforceIfNull)
-                ->endDate($this->endDate, $this->enforceIfNull)
-                ->firstDayOfWeek($this->firstDayOfWeek)
-                ->disableRanges($this->disableRange)
-                ->alwaysShowCalendar($this->alwaysShowCalendar)
-                ->timePicker($this->timePicker)
-                ->timePickerSecond($this->timePickerSecond)
-                ->timePicker24($this->timePicker24)
-                ->timePickerIncrement($this->timePickerIncrement)
-                ->autoApply($this->autoApply)
-                ->linkedCalendars($this->linkedCalendars)
-                ->disabledDates($this->disabledDates)
-                ->minDate($this->minDate)
-                ->maxDate($this->maxDate)
-                ->ranges($this->ranges)
-                ->maxSpan($this->maxSpan)
-                ->useRangeLabels($this->useRangeLabels)
-                ->disableCustomRange($this->disableCustomRange)
-                ->rangeSeparator($this->rangeSeparator)
-                ->icon($this->icon)
-                ->disableClear($this->disableClear)
-                ->showWeekNumbers($this->showWeekNumbers)
-                ->showISOWeekNumbers($this->showISOWeekNumbers)
-                ->showDropdowns($this->showDropdowns)
-                ->minYear($this->minYear)
-                ->maxYear($this->maxYear)
-                ->teleport($this->teleport)
-                ->allowInput($this->allowInput)
-                ->pickerType($this->pickerType)
-        ];
+        return DateRangePicker::make($this->column)
+            ->hiddenLabel($this->isLabelHidden)
+            ->displayFormat($this->displayFormat , $this->enforceFormat)
+            ->format($this->format, $this->enforceFormat)
+            ->placeholder($this->placeholder)
+            ->label($this->getLabel())
+            ->timezone($this->timezone)
+            ->opens($this->opens)
+            ->drops($this->drops)
+            ->startDate($this->startDate, $this->enforceIfNull)
+            ->endDate($this->endDate, $this->enforceIfNull)
+            ->firstDayOfWeek($this->firstDayOfWeek)
+            ->disableRanges($this->disableRange)
+            ->alwaysShowCalendar($this->alwaysShowCalendar)
+            ->timePicker($this->timePicker)
+            ->timePickerSecond($this->timePickerSecond)
+            ->timePicker24($this->timePicker24)
+            ->timePickerIncrement($this->timePickerIncrement)
+            ->autoApply($this->autoApply)
+            ->linkedCalendars($this->linkedCalendars)
+            ->disabledDates($this->disabledDates)
+            ->minDate($this->minDate)
+            ->maxDate($this->maxDate)
+            ->ranges($this->ranges)
+            ->maxSpan($this->maxSpan)
+            ->useRangeLabels($this->useRangeLabels)
+            ->disableCustomRange($this->disableCustomRange)
+            ->rangeSeparator($this->rangeSeparator)
+            ->icon($this->icon)
+            ->disableClear($this->disableClear)
+            ->showWeekNumbers($this->showWeekNumbers)
+            ->showISOWeekNumbers($this->showISOWeekNumbers)
+            ->showDropdowns($this->showDropdowns)
+            ->minYear($this->minYear)
+            ->maxYear($this->maxYear)
+            ->teleport($this->teleport)
+            ->allowInput($this->allowInput)
+            ->pickerType($this->pickerType);
     }
-
-
-
 }
