@@ -32,7 +32,7 @@ jobs:
             testbench: '11.*'
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # The suite runs on sqlite :memory: (phpunit.xml.dist sets
       # DB_CONNECTION=testing), so no database service is needed.
@@ -69,7 +69,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Setup Node
         uses: actions/setup-node@v5
