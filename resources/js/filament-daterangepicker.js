@@ -283,6 +283,7 @@ export default function dateRangeComponent(config) {
         // Floating UI cleanup
         cleanupAutoUpdate: null,
         _documentClickHandler: null,
+        _documentFocusInHandler: null,
 
         // ─────────────────────────────────────────────────────────────
         // Initialization
@@ -329,30 +330,54 @@ export default function dateRangeComponent(config) {
 
             this._documentClickHandler = (event) => {
                 if (!this.open) return;
-
-                const dropdown = document.getElementById(
-                    `fi-daterangepicker-dropdown-${this.instanceId}`
-                );
-                const eventPath = event.composedPath?.() || [];
-                const isNodeTarget = event.target instanceof Node;
-                const isInsideDropdown = (
-                    event.target instanceof Element
-                    && event.target.closest('.fi-daterangepicker-dropdown') !== null
-                ) || (
-                    dropdown
-                    && (eventPath.includes(dropdown) || (isNodeTarget && dropdown.contains(event.target)))
-                );
-                const isInsideTrigger = this.$refs.trigger
-                    && (
-                        eventPath.includes(this.$refs.trigger)
-                        || (isNodeTarget && this.$refs.trigger.contains(event.target))
-                    );
-
-                if (isInsideDropdown || isInsideTrigger) return;
+                if (this.isEventInsidePicker(event)) return;
 
                 this.cancel();
             };
             document.addEventListener('click', this._documentClickHandler);
+
+            // Focus that lands outside the trigger and the dropdown (Tab,
+            // Shift+Tab, or a programmatic focus()) closes the picker the
+            // same way an outside click does. Listening for `focusin` on the
+            // new target rather than `focusout` on the old one means focus
+            // dropping to <body> (a click on the dropdown's padding, a native
+            // <select> popup, the window losing focus) never closes it.
+            // Inside a trapping modal the #264 guard stops `focusin` from the
+            // dropdown before it reaches document; that focus is inside the
+            // picker anyway.
+            this._documentFocusInHandler = (event) => {
+                if (!this.open) return;
+                if (this.isEventInsidePicker(event)) return;
+
+                this.cancel();
+            };
+            document.addEventListener('focusin', this._documentFocusInHandler);
+        },
+
+        /**
+         * True when a document event comes from this picker's trigger or its
+         * (teleported) dropdown.
+         */
+        isEventInsidePicker(event) {
+            const dropdown = document.getElementById(
+                `fi-daterangepicker-dropdown-${this.instanceId}`
+            );
+            const eventPath = event.composedPath?.() || [];
+            const isNodeTarget = event.target instanceof Node;
+            const isInsideDropdown = (
+                event.target instanceof Element
+                && event.target.closest('.fi-daterangepicker-dropdown') !== null
+            ) || (
+                dropdown
+                && (eventPath.includes(dropdown) || (isNodeTarget && dropdown.contains(event.target)))
+            );
+            const isInsideTrigger = this.$refs.trigger
+                && (
+                    eventPath.includes(this.$refs.trigger)
+                    || (isNodeTarget && this.$refs.trigger.contains(event.target))
+                );
+
+            return Boolean(isInsideDropdown || isInsideTrigger);
         },
 
         destroy() {
@@ -378,6 +403,10 @@ export default function dateRangeComponent(config) {
             if (this._documentClickHandler) {
                 document.removeEventListener('click', this._documentClickHandler);
                 this._documentClickHandler = null;
+            }
+            if (this._documentFocusInHandler) {
+                document.removeEventListener('focusin', this._documentFocusInHandler);
+                this._documentFocusInHandler = null;
             }
             if (this._syncDebounceTimer) {
                 clearTimeout(this._syncDebounceTimer);
