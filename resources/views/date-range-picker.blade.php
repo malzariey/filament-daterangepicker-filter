@@ -180,6 +180,7 @@
                 @click.stop
                 @keydown.escape.stop.prevent="cancel()"
                 class="fi-daterangepicker-dropdown"
+                :class="{ 'fi-daterangepicker-presets-only': presetsOnly }"
                 :id="`fi-daterangepicker-dropdown-${instanceId}`"
                 :data-drops="config.drops"
                 role="dialog"
@@ -213,7 +214,8 @@
                             </div>
                         </template>
 
-                        {{-- Calendars Container --}}
+                        {{-- Calendars Container (none with disableCustomRange(): presets only) --}}
+                        <template x-if="! presetsOnly">
                         <div class="fi-daterangepicker-calendars" :class="{ 'fi-has-ranges': hasRanges }">
                         {{-- DAY PICKER (default) --}}
                         <template x-if="isDayPicker">
@@ -493,10 +495,11 @@
                             </template>
                         </template>
                         </div> {{-- End of fi-daterangepicker-calendars --}}
+                        </template>
                     </div> {{-- End of fi-daterangepicker-top --}}
 
                     {{-- Time Picker --}}
-                    <template x-if="config.timePicker">
+                    <template x-if="config.timePicker && ! presetsOnly">
                         <div class="fi-daterangepicker-time">
                             <div class="fi-daterangepicker-time-row">
                                 {{-- Start Time --}}
@@ -573,7 +576,7 @@
                     </template>
 
                     {{-- Action Buttons --}}
-                    <template x-if="!config.autoApply">
+                    <template x-if="! config.autoApply && ! presetsOnly">
                         <div class="fi-daterangepicker-actions">
                             {{-- Selection Preview --}}
                             <template x-if="selection.start && (config.singleCalendar || selection.end)">

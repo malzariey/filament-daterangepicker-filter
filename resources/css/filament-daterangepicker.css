@@ -784,6 +784,32 @@
     @apply transition-colors duration-100;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Presets only (disableCustomRange): the list is the whole dropdown,
+   so no sidebar divider and, on mobile, a plain vertical list instead
+   of the horizontal bar that sits above the calendars.
+   ───────────────────────────────────────────────────────────── */
+
+.fi-daterangepicker-presets-only {
+    @apply p-2;
+}
+
+.fi-daterangepicker-presets-only .fi-daterangepicker-ranges {
+    @apply border-0 m-0 p-0;
+    @apply overflow-visible;
+    mask-image: none;
+}
+
+@media (max-width: 640px) {
+    .fi-daterangepicker-presets-only .fi-daterangepicker-ranges ul {
+        @apply block space-y-1 pb-0;
+    }
+
+    .fi-daterangepicker-presets-only .fi-daterangepicker-range-btn {
+        @apply flex w-full;
+    }
+}
+
 /* Focus visible outlines for accessibility */
 .fi-daterangepicker-day:focus-visible,
 .fi-daterangepicker-month-cell:focus-visible,
