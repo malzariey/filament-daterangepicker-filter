@@ -128,6 +128,18 @@ describe('day picker', function () {
         expect(visibleBookingIds($component))->toBe([2, 3, 4, 5, 6]);
     });
 
+    it('isolates the indicator range as LTR text in an RTL locale only', function () {
+        app()->setLocale('ar');
+        $rtl = filterBookings('01/06/2026 - 10/06/2026')->instance()->getTable()->getFilterIndicators();
+
+        app()->setLocale('en');
+        $ltr = filterBookings('01/06/2026 - 10/06/2026')->instance()->getTable()->getFilterIndicators();
+
+        expect($rtl[0]->getLabel())->toContain("\u{2066}01/06/2026 - 10/06/2026\u{2069}")
+            ->and($ltr[0]->getLabel())->not->toContain("\u{2066}")
+            ->and($ltr[0]->getLabel())->toContain('Period 01/06/2026 - 10/06/2026');
+    });
+
     it('shows the indicator for a range it applied', function () {
         $component = filterBookings('01/06/2026 - 10/06/2026');
 

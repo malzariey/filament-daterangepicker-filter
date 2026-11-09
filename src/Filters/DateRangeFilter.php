@@ -236,10 +236,17 @@ class DateRangeFilter extends BaseFilter
                 return null;
             }
 
+            // In an RTL locale (ar, he, fa, ckb) the bidi algorithm reverses
+            // the two dates inside the sentence; isolate the range as
+            // left-to-right text (LRI ... PDI). LTR output stays unchanged.
+            if (__('filament-panels::layout.direction') === 'rtl') {
+                $datesString = "\u{2066}{$datesString}\u{2069}";
+            }
+
             return __('filament-daterangepicker-filter::message.period', [
                 'label' => $this->getLabel(),
                 'column' => $this->column,
-                'period' => $datesString
+                'period' => $datesString,
             ]);
         });
 
