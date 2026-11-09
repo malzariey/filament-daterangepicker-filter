@@ -73,12 +73,41 @@ let instanceCounter = 0;
 // the trap from seeing them. Nothing else changes: the dropdown stays
 // teleported, positioned and stacked exactly as before, and focus outside the
 // dropdown is still trapped by the modal.
+//
+// Stopping the events also hides them from every other listener on document
+// and from @focusin inside the dropdown, so the guard only steps in while a
+// trap is actually there: when the picker that owns the dropdown sits in an
+// open Filament modal or slide-over (the only Filament component that uses
+// x-trap). Everywhere else the events propagate untouched.
 // ─────────────────────────────────────────────────────────────
 
 const DROPDOWN_SELECTOR = '.fi-daterangepicker-dropdown';
+const DROPDOWN_ID_PREFIX = 'fi-daterangepicker-dropdown-';
+const INSTANCE_ATTRIBUTE = 'data-fi-daterangepicker-instance';
+// .fi-modal-open is bound to the modal's isOpen; a click-through modal
+// renders no x-trap.
+const TRAPPING_MODAL_SELECTOR = '.fi-modal.fi-modal-open:not(.fi-modal-click-through)';
 
-const isInsideDropdown = (target) =>
-    target instanceof Element && target.closest(DROPDOWN_SELECTOR) !== null;
+/**
+ * True when the event comes from inside a picker dropdown whose picker field
+ * is inside an open, focus-trapping Filament modal.
+ */
+const isInsideTrappedDropdown = (target) => {
+    if (!(target instanceof Element)) return false;
+
+    const dropdown = target.closest(DROPDOWN_SELECTOR);
+    if (!dropdown || !dropdown.id.startsWith(DROPDOWN_ID_PREFIX)) return false;
+
+    const instance = dropdown.id.slice(DROPDOWN_ID_PREFIX.length);
+
+    for (const field of target.ownerDocument.querySelectorAll(`[${INSTANCE_ATTRIBUTE}]`)) {
+        if (field.getAttribute(INSTANCE_ATTRIBUTE) === instance) {
+            return field.closest(TRAPPING_MODAL_SELECTOR) !== null;
+        }
+    }
+
+    return false;
+};
 
 export function installFocusTrapGuard(win = typeof window !== 'undefined' ? window : null) {
     // Once per window, even if the bundle is evaluated twice.
@@ -86,7 +115,7 @@ export function installFocusTrapGuard(win = typeof window !== 'undefined' ? wind
     win.__fiDaterangepickerFocusTrapGuard = true;
 
     win.addEventListener('focusin', (event) => {
-        if (isInsideDropdown(event.target)) {
+        if (isInsideTrappedDropdown(event.target)) {
             event.stopPropagation();
         }
     }, true);
@@ -94,7 +123,7 @@ export function installFocusTrapGuard(win = typeof window !== 'undefined' ? wind
     win.addEventListener('keydown', (event) => {
         // Let Tab move between the dropdown's own controls instead of the
         // trap sending it back to the first field of the modal.
-        if (event.key === 'Tab' && isInsideDropdown(event.target)) {
+        if (event.key === 'Tab' && isInsideTrappedDropdown(event.target)) {
             event.stopPropagation();
         }
     }, true);
@@ -136,6 +165,12 @@ export default function dateRangeComponent(config) {
         open: false,
         viewDate: dayjs(),
         selection: { start: null, end: null },
+
+        // The preset the user last clicked. Two presets can clamp to the same
+        // range under minDate / maxDate; this keeps the clicked one as the
+        // active one (see activePresetLabel). Forgotten as soon as the range
+        // is changed any other way.
+        selectedPresetLabel: null,
         tempEndDate: null,
         focusedDate: null,
         hoverDate: null,
@@ -254,6 +289,10 @@ export default function dateRangeComponent(config) {
         // ─────────────────────────────────────────────────────────────
 
         init() {
+            // Lets the focus-trap guard find this picker's field from its
+            // teleported dropdown (fi-daterangepicker-dropdown-<instanceId>).
+            this.$el?.setAttribute?.(INSTANCE_ATTRIBUTE, this.instanceId);
+
             // Setup input masking immediately for visual feedback
             if (this.allowManualInput) {
                 this.setupInputMask();
@@ -272,6 +311,7 @@ export default function dateRangeComponent(config) {
             this.$watch('config.state', (value) => {
                 if (this.isSyncing || this.config.dualState) return;
                 this.parseState(value);
+                this.forgetStalePresetLabel();
                 this.updateInputValue();
             });
 
@@ -624,6 +664,7 @@ export default function dateRangeComponent(config) {
 
             if (result.status === 'empty') {
                 this.selection = { start: null, end: null };
+                this.selectedPresetLabel = null;
                 this.syncState();
                 return true;
             }
@@ -638,6 +679,7 @@ export default function dateRangeComponent(config) {
             this.selection.start = result.start;
             this.selection.end = result.end;
             this.viewDate = result.start;
+            this.forgetStalePresetLabel();
 
             return this.syncState();
         },
@@ -886,6 +928,8 @@ export default function dateRangeComponent(config) {
         handleMonthClick(month) {
             if (month.disabled) return;
 
+            this.selectedPresetLabel = null;
+
             const clickedDate = month.date;
 
             if (this.config.singleCalendar) {
@@ -1021,6 +1065,8 @@ export default function dateRangeComponent(config) {
 
         handleYearClick(yearItem) {
             if (yearItem.disabled) return;
+
+            this.selectedPresetLabel = null;
 
             const clickedDate = yearItem.date;
 
@@ -1240,6 +1286,8 @@ export default function dateRangeComponent(config) {
 
         handleDayClick(day) {
             if (day.disabled) return;
+
+            this.selectedPresetLabel = null;
 
             const clickedDate = day.date;
 
@@ -1565,6 +1613,7 @@ export default function dateRangeComponent(config) {
                     this.config.dualStartState,
                     this.config.dualEndState
                 );
+                this.forgetStalePresetLabel();
                 this.updateInputValue();
             });
         },
@@ -1795,6 +1844,8 @@ export default function dateRangeComponent(config) {
          * Updates the display and syncs state when complete range is selected.
          */
         handleTimeChange(isStart = true) {
+            this.selectedPresetLabel = null;
+
             // Update input preview
             this.updateInputValue();
 
@@ -1889,6 +1940,7 @@ export default function dateRangeComponent(config) {
 
         clear() {
             this.selection = { start: null, end: null };
+            this.selectedPresetLabel = null;
             this.syncState();
             this.close();
         },
@@ -1977,6 +2029,7 @@ export default function dateRangeComponent(config) {
                 if (!bounds) return;
 
                 [this.selection.start, this.selection.end] = bounds;
+                this.selectedPresetLabel = label;
                 this.viewDate = this.selection.start;
 
                 if (this.config.timePicker) {
@@ -2032,16 +2085,77 @@ export default function dateRangeComponent(config) {
                 return false;
             }
 
-            const bounds = this.constrainedPresetBounds(range);
-            if (!bounds) {
-                return false;
+            if (this.hasPresetConstraints()) {
+                return this.activePresetLabel() === label;
             }
+
+            return this.presetMatchesSelection(label);
+        },
+
+        /**
+         * True when minDate or maxDate is set, so presets can be clamped and
+         * two of them can land on the same range. Without either, presets
+         * match exactly as they always have.
+         */
+        hasPresetConstraints() {
+            const isValid = (value) => !!value && dayjs(value).isValid();
+
+            return isValid(this.config.minDate) || isValid(this.config.maxDate);
+        },
+
+        /**
+         * True when the preset's bounds equal the current selection: its
+         * clamped bounds by default, its own (unclamped) bounds with
+         * `exact`.
+         */
+        presetMatchesSelection(label, exact = false) {
+            if (!this.selection.start || !this.selection.end) return false;
+
+            const range = this.config.ranges?.[label];
+            if (!range || range.length !== 2) return false;
+
+            const bounds = exact ? this.presetBounds(range) : this.constrainedPresetBounds(range);
+            if (!bounds || !bounds[0].isValid() || !bounds[1].isValid()) return false;
 
             return this.matchesPresetRange(
                 this.selection.start,
                 this.selection.end,
                 ...bounds
             );
+        },
+
+        /**
+         * The one preset that reads as active for the current selection, or
+         * null. In order: the preset the user clicked, while its clamped
+         * bounds still equal the selection; a preset whose own bounds equal
+         * the selection exactly; the first preset that clamps to it.
+         */
+        activePresetLabel() {
+            if (!this.selection.start || !this.selection.end) return null;
+
+            const labels = Object.keys(this.config.ranges || {});
+
+            if (this.selectedPresetLabel !== null
+                && labels.includes(this.selectedPresetLabel)
+                && this.presetMatchesSelection(this.selectedPresetLabel)) {
+                return this.selectedPresetLabel;
+            }
+
+            return labels.find((label) => this.presetMatchesSelection(label, true))
+                ?? labels.find((label) => this.presetMatchesSelection(label))
+                ?? null;
+        },
+
+        /**
+         * Forget the clicked preset once the selection no longer equals its
+         * bounds, e.g. after the server or the user's typing set another
+         * range. The same range echoed back keeps it.
+         */
+        forgetStalePresetLabel() {
+            if (this.selectedPresetLabel !== null
+                && !this.presetMatchesSelection(this.selectedPresetLabel)) {
+                this.selectedPresetLabel = null;
+            }
         },
 
         // ─────────────────────────────────────────────────────────────
@@ -2367,7 +2481,10 @@ export default function dateRangeComponent(config) {
 
         getDisplayValue() {
             // Check for preset label match
-            if (this.config.useRangeLabels && this.selection.start && this.selection.end) {
+            if (this.config.useRangeLabels && this.selection.start && this.selection.end && this.hasPresetConstraints()) {
+                const label = this.activePresetLabel();
+                if (label !== null) return label;
+            } else if (this.config.useRangeLabels && this.selection.start && this.selection.end) {
                 for (const [label, range] of Object.entries(this.config.ranges || {})) {
                     if (range.length === 2) {
                         const bounds = this.constrainedPresetBounds(range);
