@@ -39,6 +39,7 @@
     "scripts": {
         "serve": [
             "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/testbench filament:assets --ansi",
             "@php vendor/bin/testbench serve --ansi"
         ],
         "test": [
