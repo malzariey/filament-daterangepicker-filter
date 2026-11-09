@@ -180,6 +180,47 @@ class DemoPage extends Page
                     ]),
 
                 // ─────────────────────────────────────────────────────
+                // Presets vs Min/Max (#268): out-of-bounds presets are
+                // disabled, partially overlapping ones are clamped.
+                // ─────────────────────────────────────────────────────
+                Section::make($isArabic ? 'النطاقات مع الحدود' : 'Presets vs Min/Max Dates')
+                    ->columns(2)
+                    ->schema([
+                        DateRangePicker::make('preset_bounds_today_only')
+                            ->label($isArabic ? 'اليوم فقط' : 'Only today (Yesterday must be unavailable)')
+                            ->minDate(today())
+                            ->maxDate(today())
+                            ->autoApply()
+                            ->extraInputAttributes(['data-testid' => 'preset-bounds-today-only']),
+
+                        DateRangePicker::make('preset_bounds_yesterday_only')
+                            ->label($isArabic ? 'الأمس فقط' : 'Only yesterday (Today must be unavailable)')
+                            ->minDate(today()->subDay())
+                            ->maxDate(today()->subDay())
+                            ->autoApply()
+                            ->extraInputAttributes(['data-testid' => 'preset-bounds-yesterday-only']),
+
+                        DateRangePicker::make('preset_bounds_min_only')
+                            ->label($isArabic ? 'حد أدنى قبل يومين' : 'Min date 2 days ago (Last 7 days is clamped)')
+                            ->minDate(today()->subDays(2))
+                            ->extraInputAttributes(['data-testid' => 'preset-bounds-min-only']),
+
+                        DateRangePicker::make('preset_bounds_max_time')
+                            ->label($isArabic ? 'حد أقصى أمس مع الوقت' : 'Max date yesterday, time picker')
+                            ->maxDate(today()->subDay())
+                            ->timePicker()
+                            ->timePicker24()
+                            ->extraInputAttributes(['data-testid' => 'preset-bounds-max-time']),
+
+                        DateRangePicker::make('preset_bounds_month')
+                            ->label($isArabic ? 'منتقي شهر من هذا الشهر' : 'Month picker, min date this month')
+                            ->monthPicker()
+                            ->minDate(today()->startOfMonth())
+                            ->autoApply()
+                            ->extraInputAttributes(['data-testid' => 'preset-bounds-month']),
+                    ]),
+
+                // ─────────────────────────────────────────────────────
                 // Display Formats
                 // ─────────────────────────────────────────────────────
                 Section::make($isArabic ? 'تنسيقات العرض' : 'Display Formats')

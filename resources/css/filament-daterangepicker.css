@@ -82,6 +82,13 @@
     @apply hover:bg-primary-600;
 }
 
+/* A preset wholly outside minDate / maxDate (#268) */
+.fi-daterangepicker-range-btn:disabled {
+    @apply opacity-40;
+    @apply cursor-not-allowed;
+    @apply hover:bg-transparent dark:hover:bg-transparent;
+}
+
 /* ─────────────────────────────────────────────────────────────
    Calendars Container
    ───────────────────────────────────────────────────────────── */
@@ -792,7 +799,7 @@
 .fi-daterangepicker-day:active:not(.fi-disabled),
 .fi-daterangepicker-month-cell:active:not(.fi-disabled),
 .fi-daterangepicker-year-cell:active:not(.fi-disabled),
-.fi-daterangepicker-range-btn:active,
+.fi-daterangepicker-range-btn:active:not(:disabled),
 .fi-daterangepicker-nav-btn:active {
     @apply scale-95;
     @apply transition-transform duration-75;
