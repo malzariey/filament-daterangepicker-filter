@@ -58,6 +58,50 @@ import 'dayjs/locale/ku';
 // Global instance counter for unique IDs
 let instanceCounter = 0;
 
+// ─────────────────────────────────────────────────────────────
+// Focus-trap guard (modals and slide-overs, issue #264)
+//
+// The dropdown is teleported to <body>, so inside a Filament modal it sits
+// outside the modal's x-trap container. focus-trap listens for `focusin` and
+// Tab `keydown` in the capture phase on `document` and pulls focus straight
+// back into the modal, so the time picker's <select>s could never keep focus
+// (desktop Chrome still opened them on mousedown; iOS WebKit only opens the
+// native picker for a select that keeps focus).
+//
+// A capture listener on `window` runs before any listener on `document`, so
+// stopping these two events there when they come from inside a dropdown keeps
+// the trap from seeing them. Nothing else changes: the dropdown stays
+// teleported, positioned and stacked exactly as before, and focus outside the
+// dropdown is still trapped by the modal.
+// ─────────────────────────────────────────────────────────────
+
+const DROPDOWN_SELECTOR = '.fi-daterangepicker-dropdown';
+
+const isInsideDropdown = (target) =>
+    target instanceof Element && target.closest(DROPDOWN_SELECTOR) !== null;
+
+export function installFocusTrapGuard(win = typeof window !== 'undefined' ? window : null) {
+    // Once per window, even if the bundle is evaluated twice.
+    if (!win || win.__fiDaterangepickerFocusTrapGuard) return;
+    win.__fiDaterangepickerFocusTrapGuard = true;
+
+    win.addEventListener('focusin', (event) => {
+        if (isInsideDropdown(event.target)) {
+            event.stopPropagation();
+        }
+    }, true);
+
+    win.addEventListener('keydown', (event) => {
+        // Let Tab move between the dropdown's own controls instead of the
+        // trap sending it back to the first field of the modal.
+        if (event.key === 'Tab' && isInsideDropdown(event.target)) {
+            event.stopPropagation();
+        }
+    }, true);
+}
+
+installFocusTrapGuard();
+
 /**
  * DateRangePicker Alpine.js Component
  * A native Alpine.js/Day.js replacement for the jQuery daterangepicker
