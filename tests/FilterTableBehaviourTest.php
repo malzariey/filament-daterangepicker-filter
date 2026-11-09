@@ -13,6 +13,7 @@
  */
 
 use Filament\Actions\ActionsServiceProvider;
+use Filament\Forms\Components\TextInput;
 use Filament\FilamentServiceProvider;
 use Filament\Infolists\InfolistsServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
@@ -24,6 +25,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Livewire\Features\SupportTesting\Testable;
+use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 use Workbench\App\Livewire\BookingsTable;
 use Workbench\App\Models\Booking;
@@ -243,5 +245,55 @@ describe('closures reach the rendered picker', function () {
             ->assertOk()
             ->assertSeeHtml('firstDay: 1')
             ->assertSeeHtml('autoApply: false');
+    });
+});
+
+/**
+ * Issue #267. Filament 5.11.2 builds each filter's form from getFormSchema();
+ * up to 5.11.1 it called getSchemaComponents(). The filter overrode only the
+ * latter (reading a $schema property 5.11.2 renamed to $formSchema), so on
+ * 5.11.2 the filter dropdown opened with no picker in it. These pass on both.
+ */
+describe('the picker renders on every Filament release (#267)', function () {
+    it('renders the picker input inside the table filter form', function () {
+        $component = Livewire::test(BookingsTable::class)->assertOk();
+
+        $field = $component->instance()->getTableFiltersForm()
+            ->getComponent('booked_at')
+            ->getChildSchema()
+            ->getComponent(fn ($component) => $component instanceof DateRangePicker);
+
+        expect($field)->toBeInstanceOf(DateRangePicker::class)
+            ->and($field->getName())->toBe('booked_at');
+
+        $component->assertSeeHtml('dateRangeComponent(')
+            ->assertSeeHtml('fi-fo-date-range-picker-input');
+    });
+
+    it('builds one picker through both the current and the deprecated getter', function () {
+        $filter = DateRangeFilter::make('booked_at');
+
+        expect($filter->getFormSchema())->toHaveCount(1)
+            ->and($filter->getFormSchema()[0])->toBeInstanceOf(DateRangePicker::class)
+            ->and($filter->getSchemaComponents())->toHaveCount(1)
+            ->and($filter->getSchemaComponents()[0])->toBeInstanceOf(DateRangePicker::class)
+            ->and($filter->getFormField())->toBeInstanceOf(DateRangePicker::class);
+    });
+
+    it('still lets ->form() and ->schema() replace the picker', function (string $method) {
+        $filter = DateRangeFilter::make('booked_at')->{$method}([
+            TextInput::make('booked_at'),
+        ]);
+
+        expect($filter->getFormSchema())->toHaveCount(1)
+            ->and($filter->getFormSchema()[0])->toBeInstanceOf(TextInput::class)
+            ->and($filter->getSchemaComponents()[0])->toBeInstanceOf(TextInput::class);
+    })->with(['form', 'schema']);
+
+    it('applies ->modifyFormFieldUsing() to the picker', function () {
+        $filter = DateRangeFilter::make('booked_at')
+            ->modifyFormFieldUsing(fn (DateRangePicker $field) => $field->placeholder('Pick a stay'));
+
+        expect($filter->getFormSchema()[0]->getPlaceholder())->toBe('Pick a stay');
     });
 });

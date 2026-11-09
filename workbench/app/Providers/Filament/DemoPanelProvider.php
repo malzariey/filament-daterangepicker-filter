@@ -22,6 +22,7 @@ class DemoPanelProvider extends PanelProvider
             ->path('demo')
             ->pages([
                 \Workbench\App\Filament\Pages\DemoPage::class,
+                \Workbench\App\Filament\Pages\TableDemoPage::class,
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -59,6 +59,8 @@ The demo page (`workbench/app/Filament/Pages/DemoPage.php`) showcases:
 | **Edge Cases** | No preset ranges, manual keyboard input |
 | **Slide-Over** | Opens a range picker inside a Filament slide-over action |
 
+A second page, **http://localhost:8000/demo/table** (`workbench/app/Filament/Pages/TableDemoPage.php`), puts `DateRangeFilter` in a real table's filter dropdown over sample bookings from the past 60 days, so a filter change can be checked by applying a preset and watching the rows.
+
 There is also an **LTR / RTL toggle** at the top of the page to test right-to-left layouts.
 
 ### Demo Architecture
