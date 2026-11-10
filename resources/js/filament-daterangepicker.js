@@ -1894,7 +1894,10 @@ export default function dateRangeComponent(config) {
             // (a DST gap) cannot make the result invalid.
             const minute = Math.floor(Date.now() / 60000);
 
-            if (this._today?.minute === minute) return this._today.value;
+            // The cached date can predate setLocale() (the first call runs
+            // during init); hand it out in the page locale every time, or
+            // every calendar cell, and so every picked day, carries "en".
+            if (this._today?.minute === minute) return this._today.value.locale(dayjs.locale());
 
             let value;
 
@@ -1919,7 +1922,7 @@ export default function dateRangeComponent(config) {
 
             this._today = { minute, value };
 
-            return value;
+            return value.locale(dayjs.locale());
         },
 
         toWallClockDate(date, timezoneName) {
@@ -3547,10 +3550,14 @@ export default function dateRangeComponent(config) {
                     end = this.applyTime(end, this.endTime);
                 }
 
+                // Written in the page locale whatever locale the dates
+                // carry (calendar cells, presets and read-back states differ).
+                const locale = dayjs.locale();
+
                 if (this.config.singleCalendar) {
-                    return start.format(format);
+                    return start.locale(locale).format(format);
                 }
-                return `${start.format(format)}${this.config.separator}${end.format(format)}`;
+                return `${start.locale(locale).format(format)}${this.config.separator}${end.locale(locale).format(format)}`;
             }
 
             return '';
@@ -3563,7 +3570,7 @@ export default function dateRangeComponent(config) {
                 ? this.applyTime(date, time)
                 : date;
 
-            return value.format(this.config.displayFormat);
+            return value.locale(dayjs.locale()).format(this.config.displayFormat);
         },
 
         get weekDays() {
