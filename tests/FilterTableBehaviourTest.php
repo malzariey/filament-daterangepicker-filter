@@ -94,7 +94,7 @@ function visibleBookingIds(Testable $component): array
     return $ids;
 }
 
-function filterBookings(string $state): Testable
+function filterBookings(?string $state): Testable
 {
     return Livewire::test(BookingsTable::class)
         ->filterTable('booked_at', ['booked_at' => $state])
@@ -185,6 +185,20 @@ describe('month picker', function () {
 
         expect(visibleBookingIds($component))->toBe([2, 3, 4, 5, 6, 7, 8, 9, 10]);
     });
+});
+
+describe('cleared state', function () {
+    // The picker stores null when cleared; before 5.0.12 a keyboard clear
+    // sent an empty string. Neither is a filter.
+    it('shows every row with no indicator', function (?string $state) {
+        $component = filterBookings($state);
+
+        expect(visibleBookingIds($component))->toBe(range(1, 11))
+            ->and($component->instance()->getTable()->getFilterIndicators())->toBe([]);
+    })->with([
+        'null' => [null],
+        'empty string' => [''],
+    ]);
 });
 
 describe('malformed state', function () {

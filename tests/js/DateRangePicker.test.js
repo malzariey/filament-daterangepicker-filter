@@ -1323,7 +1323,7 @@ describe('Input Logic', () => {
 
             expect(component.selection.start).toBeNull();
             expect(component.selection.end).toBeNull();
-            expect(component.config.state).toBe('');
+            expect(component.config.state).toBeNull();
         });
     });
 
