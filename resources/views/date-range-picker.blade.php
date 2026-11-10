@@ -165,8 +165,8 @@
             </div>
         </x-filament::input.wrapper>
 
-        {{-- Dropdown (Teleported to body for modal compatibility) --}}
-        <template x-teleport="body">
+        {{-- Dropdown: teleported to <body> for modal compatibility (the default), or rendered in place, inside this field, with teleport(false) --}}
+        <template @if ($getTeleport()) x-teleport="body" @else x-if="true" @endif>
             <div
                 x-ref="dropdown"
                 x-show="open"
@@ -180,7 +180,11 @@
                 @click.stop
                 @keydown.escape.stop.prevent="cancel()"
                 class="fi-daterangepicker-dropdown"
-                :class="{ 'fi-daterangepicker-presets-only': presetsOnly }"
+                :class="{
+                    'fi-daterangepicker-presets-only': presetsOnly,
+                    'fi-daterangepicker-calendars-hidden': ! calendarsShown && ! presetsOnly,
+                    'fi-daterangepicker-in-place': ! config.teleport,
+                }"
                 :id="`fi-daterangepicker-dropdown-${instanceId}`"
                 :data-drops="config.drops"
                 role="dialog"
@@ -211,12 +215,27 @@
                                             ></button>
                                         </li>
                                     </template>
+
+                                    {{-- alwaysShowCalendar(false): the calendars show once this is chosen --}}
+                                    <template x-if="showsCustomRangeEntry">
+                                        <li>
+                                            <button
+                                                type="button"
+                                                @click="showCustomRange()"
+                                                class="fi-daterangepicker-range-btn fi-daterangepicker-custom-range-btn"
+                                                :class="{ 'fi-active': isCustomRangeActive }"
+                                                :aria-selected="isCustomRangeActive ? 'true' : 'false'"
+                                                role="option"
+                                                x-text="config.labels.customRange"
+                                            ></button>
+                                        </li>
+                                    </template>
                                 </ul>
                             </div>
                         </template>
 
-                        {{-- Calendars Container (none with disableCustomRange(): presets only) --}}
-                        <template x-if="! presetsOnly">
+                        {{-- Calendars Container (none with disableCustomRange(): presets only; with alwaysShowCalendar(false), once Custom is chosen) --}}
+                        <template x-if="calendarsShown">
                         <div class="fi-daterangepicker-calendars" :class="{ 'fi-has-ranges': hasRanges }">
                         {{-- DAY PICKER (default) --}}
                         <template x-if="isDayPicker">
@@ -500,7 +519,7 @@
                     </div> {{-- End of fi-daterangepicker-top --}}
 
                     {{-- Time Picker --}}
-                    <template x-if="config.timePicker && ! presetsOnly">
+                    <template x-if="config.timePicker && calendarsShown">
                         <div class="fi-daterangepicker-time">
                             <div class="fi-daterangepicker-time-row">
                                 {{-- Start Time --}}

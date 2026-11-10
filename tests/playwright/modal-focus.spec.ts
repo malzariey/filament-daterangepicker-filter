@@ -23,6 +23,8 @@ const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR;
 
 const CASES = [
     { trigger: /Open in Modal|فتح في نافذة منبثقة/, field: 'modal_time', where: 'Modal' },
+    // teleport(false): the dropdown renders inside the modal, no focus guard needed.
+    { trigger: /Open in Modal|فتح في نافذة منبثقة/, field: 'modal_time_in_place', where: 'Modal' },
     { trigger: /Open in Slide Over|فتح في نافذة جانبية/, field: 'slideover_time', where: 'Slide-over' },
 ];
 
@@ -56,7 +58,7 @@ for (const variant of VARIANTS) {
                 test.use({ ...variant.use, colorScheme: scheme });
 
                 for (const { trigger, field, where } of CASES) {
-                    test(`${where}: time selects keep focus and the keyboard sets the time`, async ({ page }) => {
+                    test(`${where} (${field}): time selects keep focus and the keyboard sets the time`, async ({ page }) => {
                         await page.goto(`${DEMO_URL}/demo/demo-page?locale=${locale}`);
                         await page.waitForLoadState('networkidle');
 

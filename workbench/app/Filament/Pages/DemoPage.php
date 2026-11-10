@@ -272,6 +272,18 @@ class DemoPage extends Page
                             ->label($isArabic ? 'بدون نطاق مخصص' : 'No Custom Range')
                             ->disableCustomRange()
                             ->placeholder($isArabic ? 'فقط نطاقات محددة مسبقاً' : 'Only presets, no custom calendar'),
+
+                        DateRangePicker::make('calendars_on_custom')
+                            ->label($isArabic ? 'التقويم عند اختيار مخصص' : 'Calendars on Custom')
+                            ->alwaysShowCalendar(false)
+                            ->placeholder($isArabic ? 'النطاقات أولاً ثم مخصص' : 'Presets first, Custom shows the calendars'),
+
+                        DateRangePicker::make('calendars_on_custom_time')
+                            ->label($isArabic ? 'التقويم عند اختيار مخصص مع الوقت' : 'Calendars on Custom, Time Picker')
+                            ->alwaysShowCalendar(false)
+                            ->timePicker()
+                            ->timePicker24()
+                            ->placeholder($isArabic ? 'النطاقات أولاً مع منتقي الوقت' : 'Presets first, with a time picker'),
                     ]),
 
                 // ─────────────────────────────────────────────────────
@@ -328,6 +340,18 @@ class DemoPage extends Page
                             ->drops(DropDirection::UP)
                             ->opens(OpenDirection::CENTER)
                             ->placeholder($isArabic ? 'أعلى - وسط' : 'Up + Center'),
+
+                        DateRangePicker::make('in_place')
+                            ->label($isArabic ? 'بدون نقل إلى الصفحة' : 'Not Teleported')
+                            ->teleport(false)
+                            ->placeholder($isArabic ? 'القائمة داخل الحقل' : 'Dropdown renders inside the field'),
+
+                        DateRangePicker::make('in_place_time')
+                            ->label($isArabic ? 'بدون نقل مع الوقت' : 'Not Teleported, Time Picker')
+                            ->teleport(false)
+                            ->timePicker()
+                            ->timePicker24()
+                            ->placeholder($isArabic ? 'القائمة داخل الحقل مع الوقت' : 'In place, with a time picker'),
                     ]),
             ])
             ->statePath('data');
@@ -373,6 +397,14 @@ class DemoPage extends Page
                     ->timePicker()
                     ->timePicker24()
                     ->placeholder($isArabic ? 'منتقي وقت داخل النافذة المنبثقة' : 'Time picker inside modal'),
+
+                // teleport(false): the dropdown renders inside the modal.
+                DateRangePicker::make('modal_time_in_place')
+                    ->label($isArabic ? 'منتقي الوقت بدون نقل' : 'Time Picker in Modal, Not Teleported')
+                    ->teleport(false)
+                    ->timePicker()
+                    ->timePicker24()
+                    ->placeholder($isArabic ? 'القائمة داخل النافذة المنبثقة' : 'Dropdown renders inside the modal'),
 
                 Actions::make([
                     Action::make('nestedModal')

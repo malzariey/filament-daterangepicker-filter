@@ -57,7 +57,8 @@ The demo page (`workbench/app/Filament/Pages/DemoPage.php`) showcases:
 |---------|----------|
 | **Day Picker** | Default range, single calendar, time picker (24h), auto-apply, week numbers, month/year dropdowns |
 | **Month & Year** | Month picker, year picker |
-| **Edge Cases** | No preset ranges, manual keyboard input |
+| **Ranges & Presets** | Custom presets, range labels, presets only, calendars only on Custom (`alwaysShowCalendar(false)`) |
+| **Edge Cases** | No preset ranges, manual keyboard input, dropdown not teleported (`teleport(false)`) |
 | **Slide-Over** | Opens a range picker inside a Filament slide-over action |
 
 A second page, **http://localhost:8000/demo/table** (`workbench/app/Filament/Pages/TableDemoPage.php`), puts `DateRangeFilter` in a real table's filter dropdown over sample bookings from the past 60 days, so a filter change can be checked by applying a preset and watching the rows.
