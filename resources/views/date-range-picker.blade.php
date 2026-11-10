@@ -223,8 +223,8 @@
                                     <div class="fi-daterangepicker-header">
                                         <button
                                             type="button"
-                                            @click="prevMonth()"
-                                            x-show="offset === 0"
+                                            @click="prevMonth(offset)"
+                                            x-show="offset === 0 || !calendarsLinked"
                                             class="fi-daterangepicker-nav-btn"
                                             aria-label="Previous month"
                                         >
@@ -233,33 +233,33 @@
                                                 class="h-5 w-5"
                                             />
                                         </button>
-                                        <span x-show="offset !== 0" class="w-5"></span>
+                                        <span x-show="offset !== 0 && calendarsLinked" class="w-5"></span>
 
                                         <div class="fi-daterangepicker-month-year">
                                             <template x-if="config.showDropdowns">
                                                 <div class="flex items-center gap-1">
                                                     <select
-                                                        x-model="viewDate.add(offset, 'month').month()"
-                                                        @change="setMonth($event.target.value)"
+                                                        x-model="calendarMonth(offset).month()"
+                                                        @change="setMonth($event.target.value, offset)"
                                                         class="fi-daterangepicker-select"
                                                     >
                                                         <template x-for="m in months" :key="m.value">
                                                             <option
                                                                 :value="m.value"
                                                                 x-text="m.label"
-                                                                :selected="viewDate.add(offset, 'month').month() === m.value"
+                                                                :selected="calendarMonth(offset).month() === m.value"
                                                             ></option>
                                                         </template>
                                                     </select>
                                                     <select
-                                                        @change="setYear($event.target.value)"
+                                                        @change="setYear($event.target.value, offset)"
                                                         class="fi-daterangepicker-select"
                                                     >
                                                         <template x-for="y in years" :key="y">
                                                             <option
                                                                 :value="y"
                                                                 x-text="y"
-                                                                :selected="viewDate.add(offset, 'month').year() === y"
+                                                                :selected="calendarMonth(offset).year() === y"
                                                             ></option>
                                                         </template>
                                                     </select>
@@ -275,8 +275,8 @@
 
                                         <button
                                             type="button"
-                                            @click="nextMonth()"
-                                            x-show="config.singleCalendar ? true : offset === 1"
+                                            @click="nextMonth(offset)"
+                                            x-show="config.singleCalendar || offset === 1 || !calendarsLinked"
                                             class="fi-daterangepicker-nav-btn"
                                             aria-label="Next month"
                                         >
@@ -285,7 +285,7 @@
                                                 class="h-5 w-5"
                                             />
                                         </button>
-                                        <span x-show="!config.singleCalendar && offset === 0" class="w-5"></span>
+                                        <span x-show="!config.singleCalendar && offset === 0 && calendarsLinked" class="w-5"></span>
                                     </div>
 
                                     {{-- Weekday Headers --}}
