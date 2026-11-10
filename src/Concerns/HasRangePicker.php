@@ -5,6 +5,7 @@ namespace Malzariey\FilamentDaterangepickerFilter\Concerns;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Closure;
+use InvalidArgumentException;
 use Filament\Support\Facades\FilamentTimezone;
 use JetBrains\PhpStorm\Deprecated;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
@@ -19,14 +20,28 @@ trait HasRangePicker
      */
     private static array $phpToJsFormatMap = [
         'd' => 'DD', 'D' => 'ddd', 'j' => 'D', 'l' => 'dddd',
-        'N' => 'E', 'S' => 'o', 'w' => 'd', 'z' => 'DDD',
-        'W' => 'W', 'F' => 'MMMM', 'm' => 'MM', 'M' => 'MMM',
+        // "S" is only ever read straight after "j" (assertSupportedPhpFormat()),
+        // so "jS" becomes "Do". N, W, z and T are refused there; "e" is
+        // written as a literal of the zone (convertPhpFormatIn()).
+        'S' => 'o', 'w' => 'd',
+        'F' => 'MMMM', 'm' => 'MM', 'M' => 'MMM',
         'n' => 'M', 't' => '', 'L' => '', 'o' => 'YYYY',
         'Y' => 'YYYY', 'y' => 'YY', 'a' => 'a', 'A' => 'A',
         'B' => '', 'g' => 'h', 'G' => 'H', 'h' => 'hh',
         'H' => 'HH', 'i' => 'mm', 's' => 'ss', 'u' => 'SSS',
-        'e' => 'zz', 'I' => '', 'O' => 'ZZ', 'P' => 'Z',
-        'T' => 'z', 'Z' => '', 'c' => '', 'r' => '', 'U' => 'X',
+        'I' => '', 'O' => 'ZZ', 'P' => 'Z',
+        'Z' => '', 'c' => '', 'r' => '', 'U' => 'X',
+    ];
+
+    /**
+     * PHP format characters the picker cannot write and read back, and why.
+     * format() refuses them rather than show a value nobody can read.
+     */
+    private static array $unsupportedPhpFormatTokens = [
+        'N' => ['ISO weekday number', 'Carbon::createFromFormat() cannot read it'],
+        'W' => ['ISO week number', 'Carbon::createFromFormat() cannot read it'],
+        'z' => ['day of the year', 'Day.js can neither write nor read it'],
+        'T' => ['timezone abbreviation', 'Day.js cannot write it for the picked date; use "e" (timezone identifier) instead'],
     ];
 
     protected CarbonInterface|string|Closure|null $maxDate = null;
@@ -346,6 +361,10 @@ trait HasRangePicker
 
     public function format(string|Closure|null $format, bool $enforceFormat = false): static
     {
+        if (is_string($format)) {
+            self::assertSupportedPhpFormat($format);
+        }
+
         $this->format = $format;
 
         $this->enforceFormat = $enforceFormat;
@@ -575,6 +594,22 @@ trait HasRangePicker
 
     protected function convertPhpToJsFormat(string $format): string
     {
+        return $this->convertPhpFormatIn($format, $this->getTimezone());
+    }
+
+    /**
+     * The Day.js format for a PHP format whose values are in $timezone.
+     *
+     * "e" (timezone identifier) has no Day.js token: the picker's dates are
+     * wall-clock values in a zone the server already knows, so it is written
+     * as a literal of that zone, which Carbon reads back as the same zone.
+     * Screen values are in the display zone, dual-state storage values in
+     * the storage zone (getDualStateStorageFormat()).
+     */
+    private function convertPhpFormatIn(string $format, string $timezone): string
+    {
+        self::assertSupportedPhpFormat($format);
+
         $jsFormat = '';
         $length = strlen($format);
 
@@ -589,10 +624,63 @@ trait HasRangePicker
                 continue;
             }
 
+            if ($char === 'e') {
+                $jsFormat .= '[' . $timezone . ']';
+
+                continue;
+            }
+
             $jsFormat .= self::$phpToJsFormatMap[$char] ?? $char;
         }
 
         return $jsFormat;
+    }
+
+    /**
+     * Refuse a PHP format character the picker cannot write in the browser
+     * and read back on the server (see $unsupportedPhpFormatTokens), and an
+     * "S" that does not follow "j": Day.js writes the ordinal suffix only
+     * together with the day ("jS" → "Do").
+     *
+     * @throws InvalidArgumentException
+     */
+    private static function assertSupportedPhpFormat(string $format): void
+    {
+        $length = strlen($format);
+        $previous = null;
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $format[$i];
+
+            if ($char === '\\') {
+                $i++;
+                $previous = null;
+
+                continue;
+            }
+
+            if ($char === 'S' && $previous !== 'j') {
+                throw new InvalidArgumentException(sprintf(
+                    'The date format "%s" uses "S" (ordinal suffix) without "j" before it. The date range picker writes the suffix only together with the day: use "jS" ("1st"), or escape it ("\\S") to show the letter itself.',
+                    $format,
+                ));
+            }
+
+            if (isset(self::$unsupportedPhpFormatTokens[$char])) {
+                [$name, $reason] = self::$unsupportedPhpFormatTokens[$char];
+
+                throw new InvalidArgumentException(sprintf(
+                    'The date format "%s" uses "%s" (%s), which the date range picker cannot write and read back: %s. Remove it, or escape it ("\\%s") to show the letter itself.',
+                    $format,
+                    $char,
+                    $name,
+                    $reason,
+                    $char,
+                ));
+            }
+
+            $previous = $char;
+        }
     }
 
     public function getTimePicker(): bool

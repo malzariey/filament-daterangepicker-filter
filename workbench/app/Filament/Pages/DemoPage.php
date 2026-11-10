@@ -203,6 +203,23 @@ class DemoPage extends Page
                             ->displayFormat('DD.MM.YYYY')
                             ->defaultLast7Days()
                             ->extraInputAttributes(['data-testid' => 'dual-default-date']),
+
+                        DateRangePicker::make('ordinal_range')
+                            ->label($isArabic ? 'تنسيق jS' : 'PHP jS F Y (ordinal)')
+                            ->format('jS F Y')
+                            ->disableRanges()
+                            ->extraInputAttributes(['data-testid' => 'ordinal-range']),
+
+                        DateRangePicker::make('dual_ordinal_range')
+                            ->label($isArabic ? 'حالة مزدوجة مع jS' : 'Dual state, jS display, zone in storage')
+                            ->useDualState('dual_ordinal_start', 'dual_ordinal_end', relative: true)
+                            ->format('Y-m-d H:i:s e', enforceFormat: true)
+                            ->displayFormat('Do MMM YYYY HH:mm')
+                            ->timezone('Asia/Riyadh')
+                            ->timePicker()
+                            ->timePicker24()
+                            ->disableRanges()
+                            ->extraInputAttributes(['data-testid' => 'dual-ordinal-range']),
                     ]),
 
                 // ─────────────────────────────────────────────────────

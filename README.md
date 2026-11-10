@@ -215,6 +215,11 @@ Both backing values must be present before a range can be applied. If an
 external update provides only a start or end value, the picker preserves that
 value and disables Apply until the range is completed or explicitly cleared.
 
+When the picker shows minutes but no seconds (no `timePickerSecond()`) and the
+storage format keeps seconds, the end is stored through the end of its minute
+(`23:59` is stored as `23:59:59`) and the start at `:00` — the same values the
+server writes for a default range and the filter reads from a typed range.
+
 ---
 
 ## Custom Events
@@ -315,6 +320,21 @@ DateRangePicker::make('created_at')
 DateRangePicker::make('created_at')
     ->format('d M Y')      // Renders as DD MMM YYYY in the browser
 ```
+
+A few PHP tokens have no plain Day.js equivalent:
+
+| Token | Meaning | Support |
+|---|---|---|
+| `S` | ordinal suffix | Only as `jS` ("1st", "2nd"), written in English in every locale, as PHP does. Any other `S` throws. |
+| `e` | timezone identifier | Written as the zone the value is in (the picker `timezone()` on screen, the storage timezone for dual-state values). |
+| `N` | ISO weekday number | Throws: Carbon cannot read it back. |
+| `W` | ISO week number | Throws: Carbon cannot read it back. |
+| `z` | day of the year | Throws: the browser cannot write or read it. |
+| `T` | timezone abbreviation | Throws: the browser cannot write it for the picked date. Use `e`. |
+
+`format()` throws an `InvalidArgumentException` naming the token when it is
+set (or, for a closure, when the field renders). Escape a letter (`\W`) to
+show it literally.
 
 > **Note:** The deprecated `->displayFormat('DD/MM/YYYY')` method still works but is no longer recommended. Use `->format()` with PHP Carbon tokens instead — the JavaScript display format is auto-converted.
 

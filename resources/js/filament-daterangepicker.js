@@ -5,6 +5,7 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import englishOrdinal from './english-ordinal.js';
 import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
 import IMask from 'imask';
 
@@ -15,6 +16,7 @@ dayjs.extend(weekOfYear);
 dayjs.extend(customParseFormat);
 dayjs.extend(timezone);
 dayjs.extend(utc);
+dayjs.extend(englishOrdinal);
 
 // ─────────────────────────────────────────────────────────────
 // Static Day.js Locale Imports
@@ -2060,12 +2062,34 @@ export default function dateRangeComponent(config) {
                     return null;
                 }
 
-                return this
-                    .toWallClockDate(parsed, this.config.storageTimezone)
-                    .format(this.config.storageFormat);
+                let stored = this.toWallClockDate(parsed, this.config.storageTimezone);
+
+                // Without seconds on screen, an end of "23:59" means through
+                // the end of that minute: the server writes 23:59:59 for a
+                // default and DateRangeFilter reads a typed end to
+                // endOfMinute(). The start stays at :00.
+                if (boundary === 'end' && this.dualEndFillsMinute()) {
+                    stored = stored.second(59);
+                }
+
+                return stored.format(this.config.storageFormat);
             } catch {
                 return null;
             }
+        },
+
+        /**
+         * Whether a dual-state end is stored through the end of its minute:
+         * the display shows minutes but no seconds, and the storage format
+         * keeps seconds. Seconds picked on screen are stored as picked.
+         */
+        dualEndFillsMinute() {
+            if (this.config.timePickerSecond) return false;
+
+            const display = this.config.displayFormat.replace(/\[[^\]]*]/g, '');
+            const storage = this.config.storageFormat.replace(/\[[^\]]*]/g, '');
+
+            return /m/.test(display) && !/s/.test(display) && /s/.test(storage);
         },
 
         applyTime(date, time) {
