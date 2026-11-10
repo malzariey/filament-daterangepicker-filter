@@ -81,8 +81,8 @@
             showWeekNumbers: @js($getShowWeekNumbers()),
             showISOWeekNumbers: @js($getShowISOWeekNumbers()),
 
-            minDate: @js($getMinDate()),
-            maxDate: @js($getMaxDate()),
+            minDate: @js($getMinDateForPicker()),
+            maxDate: @js($getMaxDateForPicker()),
             minYear: @js($getMinYear()),
             maxYear: @js($getMaxYear()),
             disabledDates: @js($getDisabledDates()),

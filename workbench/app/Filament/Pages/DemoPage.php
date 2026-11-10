@@ -276,6 +276,20 @@ class DemoPage extends Page
                             ->allowInput()
                             ->extraInputAttributes(['data-testid' => 'min-max-times']),
 
+                        // minDate(now()) is sent as the DISPLAY wall clock:
+                        // shown in New York over a UTC app, the current New
+                        // York time must stay pickable.
+                        DateRangePicker::make('min_now_new_york')
+                            ->label($isArabic ? 'من الآن (نيويورك)' : 'Min/max with times: min now, shown in New York')
+                            ->timezone('America/New_York')
+                            ->minDate(now())
+                            ->maxDate(now()->addDays(2))
+                            ->timePicker()
+                            ->timePicker24()
+                            ->timePickerIncrement(1)
+                            ->allowInput()
+                            ->extraInputAttributes(['data-testid' => 'min-now-new-york']),
+
                         DateRangePicker::make('min_max_times_12h')
                             ->label($isArabic ? 'حد أدنى/أقصى مع الوقت (12 ساعة)' : 'Min/max with times, 12h (today 1:30 PM to +3 days 10:15 AM)')
                             ->minDate(today()->setTime(13, 30))

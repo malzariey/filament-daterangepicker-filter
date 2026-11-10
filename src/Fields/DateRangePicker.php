@@ -443,6 +443,52 @@ class DateRangePicker extends Field implements HasAffixActions
         return $this->evaluate($this->minDate);
     }
 
+    /**
+     * minDate() as the picker reads it: wall-clock time in the DISPLAY
+     * timezone (getTimezone()), which is how the browser compares it.
+     * See boundForPicker().
+     */
+    public function getMinDateForPicker(): ?string
+    {
+        return $this->boundForPicker($this->evaluate($this->minDate));
+    }
+
+    /** maxDate() as the picker reads it. See boundForPicker(). */
+    public function getMaxDateForPicker(): ?string
+    {
+        return $this->boundForPicker($this->evaluate($this->maxDate));
+    }
+
+    /**
+     * A minDate / maxDate value for the browser.
+     *
+     * Since the picker enforces the time of a bound, a Carbon bound with a
+     * time is converted to the display timezone first: minDate(now()) with the
+     * app in UTC and the panel shown in America/New_York at 13:00 New York
+     * would otherwise arrive as "18:00" and block 13:00-18:00 today. A bound
+     * at exactly 00:00:00 (today(), startOfDay(), date casts) is sent as in
+     * 5.0.11, as a whole day, so its day can never shift. Strings are sent
+     * unchanged: they were always read as display wall-clock.
+     */
+    protected function boundForPicker(mixed $bound): ?string
+    {
+        if ($bound === null) {
+            return null;
+        }
+
+        if (! $bound instanceof \DateTimeInterface) {
+            return (string) $bound;
+        }
+
+        $date = $bound instanceof CarbonInterface ? $bound->copy() : Carbon::instance($bound);
+
+        if ($date->format('H:i:s') === '00:00:00') {
+            return (string) $date;
+        }
+
+        return (string) $date->setTimezone($this->getTimezone());
+    }
+
     public function getDisabledDates(): array
     {
         return $this->evaluate($this->disabledDates);
