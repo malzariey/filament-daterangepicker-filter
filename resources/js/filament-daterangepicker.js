@@ -814,6 +814,12 @@ export default function dateRangeComponent(config) {
             const rangeStart = isReversed ? end : start;
             const rangeEnd = isReversed ? start : end;
 
+            // Longer than maxSpan: a day the calendar would not let you click.
+            const spanEnd = this.isDayPicker ? this.calculateMaxSpanEnd(rangeStart) : null;
+            if (spanEnd && rangeEnd.isAfter(spanEnd, 'day')) {
+                return { status: 'invalid' };
+            }
+
             return {
                 status: 'valid',
                 start: this.normalizeSelectionStart(rangeStart),
@@ -1488,6 +1494,9 @@ export default function dateRangeComponent(config) {
         },
 
         isDisabled(date) {
+            // Year bounds (showDropdowns' minYear / maxYear)
+            if (this.isOutsideConfiguredYears(date)) return true;
+
             // Min date check
             if (this.config.minDate) {
                 const min = dayjs(this.config.minDate);
@@ -1520,6 +1529,16 @@ export default function dateRangeComponent(config) {
                 const maxEnd = this.calculateMaxSpanEnd(this.selection.start);
                 if (maxEnd && date.isAfter(maxEnd, 'day')) return true;
             }
+
+            return false;
+        },
+
+        isOutsideConfiguredYears(date) {
+            const minYear = parseInt(this.config.minYear);
+            const maxYear = parseInt(this.config.maxYear);
+
+            if (Number.isFinite(minYear) && date.year() < minYear) return true;
+            if (Number.isFinite(maxYear) && date.year() > maxYear) return true;
 
             return false;
         },
@@ -2079,8 +2098,8 @@ export default function dateRangeComponent(config) {
         },
 
         /**
-         * A preset's bounds limited to minDate / maxDate, or null when the
-         * preset has no day in the allowed range.
+         * A preset's bounds limited to minDate / maxDate and maxSpan, or null
+         * when the preset has no day in the allowed range.
          *
          * The bounds are compared the way the calendar disables its cells
          * (isDisabled, isMonthDisabled, isYearDisabled): per day in the day
@@ -2116,6 +2135,15 @@ export default function dateRangeComponent(config) {
                 end = this.config.timePicker
                     ? max.endOf(unit)
                     : max.endOf(unit).startOf('day');
+            }
+
+            // maxSpan only limits the day picker (isDisabled), so only clamp
+            // there: keep the start, end on the last day a click would allow.
+            const spanEnd = this.isDayPicker ? this.calculateMaxSpanEnd(start) : null;
+            if (spanEnd && end.isAfter(spanEnd, 'day')) {
+                end = this.config.timePicker
+                    ? spanEnd.endOf('day')
+                    : spanEnd.startOf('day');
             }
 
             return [start, end];
@@ -2206,14 +2234,15 @@ export default function dateRangeComponent(config) {
         },
 
         /**
-         * True when minDate or maxDate is set, so presets can be clamped and
-         * two of them can land on the same range. Without either, presets
-         * match exactly as they always have.
+         * True when minDate, maxDate or maxSpan is set, so presets can be
+         * clamped and two of them can land on the same range. Without any,
+         * presets match exactly as they always have.
          */
         hasPresetConstraints() {
             const isValid = (value) => !!value && dayjs(value).isValid();
 
-            return isValid(this.config.minDate) || isValid(this.config.maxDate);
+            return isValid(this.config.minDate) || isValid(this.config.maxDate)
+                || (this.isDayPicker && !!this.config.maxSpan);
         },
 
         /**
@@ -2344,7 +2373,86 @@ export default function dateRangeComponent(config) {
             this.rightViewDate = end && end.isAfter(start, 'month') ? end : null;
         },
 
+        /**
+         * The [left, right] months the day calendars would show after
+         * moving calendar `offset` to `month`, without moving anything.
+         * Mirrors prevMonth / nextMonth / showUnlinkedCalendarMonth.
+         */
+        dayViewAfterMove(offset, month) {
+            const last = this.config.singleCalendar ? 0 : 1;
+
+            if (this.calendarsLinked) {
+                const left = month.subtract(parseInt(offset), 'month');
+
+                return [left, left.add(last, 'month')];
+            }
+
+            if (parseInt(offset) === 1) {
+                return [month.isAfter(this.viewDate, 'month') ? this.viewDate : month.subtract(1, 'month'), month];
+            }
+
+            const right = this.calendarMonth(1);
+
+            return [month, right.isAfter(month, 'month') ? right : month.add(1, 'month')];
+        },
+
+        /**
+         * Whether a day calendar's arrow may move. The arrows stop where the
+         * year dropdown stops (getMinConstraintYear / getMaxConstraintYear),
+         * counting the calendar an unlinked move would push along.
+         */
+        canShowPreviousMonth(offset = 0) {
+            const minYear = this.getMinConstraintYear();
+            if (minYear === null) return true;
+
+            const [left] = this.dayViewAfterMove(offset, this.calendarMonth(offset).subtract(1, 'month'));
+
+            return left.year() >= minYear;
+        },
+
+        canShowNextMonth(offset = 0) {
+            const maxYear = this.getMaxConstraintYear();
+            if (maxYear === null) return true;
+
+            const [, right] = this.dayViewAfterMove(offset, this.calendarMonth(offset).add(1, 'month'));
+
+            return right.year() <= maxYear;
+        },
+
+        /**
+         * Show `month` in day calendar `offset`, kept inside the year bounds:
+         * linked, the pair shifts as one; unlinked, the other side is pushed
+         * along as showUnlinkedCalendarMonth does.
+         */
+        showDayCalendarMonth(month, offset = 0) {
+            let [left, right] = this.dayViewAfterMove(offset, month);
+            const minYear = this.getMinConstraintYear();
+            const maxYear = this.getMaxConstraintYear();
+
+            if (this.calendarsLinked) {
+                const last = right.diff(left, 'month');
+                if (maxYear !== null && right.year() > maxYear) left = right.year(maxYear).month(11).subtract(last, 'month');
+                if (minYear !== null && left.year() < minYear) left = left.year(minYear).month(0);
+
+                this.viewDate = left;
+                return;
+            }
+
+            const rightClamped = maxYear !== null && right.year() > maxYear;
+            if (rightClamped) right = right.year(maxYear).month(11);
+            if (minYear !== null && left.year() < minYear) left = left.year(minYear).month(0);
+            if (!right.isAfter(left, 'month')) {
+                if (rightClamped) left = right.subtract(1, 'month');
+                else right = left.add(1, 'month');
+            }
+
+            this.viewDate = left;
+            this.rightViewDate = right;
+        },
+
         prevMonth(offset = 0) {
+            if (!this.canShowPreviousMonth(offset)) return;
+
             if (this.calendarsLinked) {
                 this.viewDate = this.viewDate.subtract(1, 'month');
                 return;
@@ -2354,6 +2462,8 @@ export default function dateRangeComponent(config) {
         },
 
         nextMonth(offset = 0) {
+            if (!this.canShowNextMonth(offset)) return;
+
             if (this.calendarsLinked) {
                 this.viewDate = this.viewDate.add(1, 'month');
                 return;
@@ -2363,12 +2473,17 @@ export default function dateRangeComponent(config) {
         },
 
         setMonth(month, offset = 0) {
-            if (!this.calendarsLinked && this.isDayPicker) {
-                this.showUnlinkedCalendarMonth(offset, this.calendarMonth(offset).month(parseInt(month)));
+            const monthIndex = parseInt(month);
+            if (!Number.isFinite(monthIndex)) return;
+
+            if (this.isDayPicker) {
+                // Linked, the dropdowns drive the left month (as before).
+                const side = this.calendarsLinked ? 0 : offset;
+                this.showDayCalendarMonth(this.calendarMonth(side).month(monthIndex), side);
                 return;
             }
 
-            this.viewDate = this.viewDate.month(parseInt(month));
+            this.viewDate = this.viewDate.month(monthIndex);
         },
 
         setYear(year, offset = 0) {
@@ -2376,8 +2491,9 @@ export default function dateRangeComponent(config) {
 
             if (constrainedYear === null) return;
 
-            if (!this.calendarsLinked && this.isDayPicker) {
-                this.showUnlinkedCalendarMonth(offset, this.calendarMonth(offset).year(constrainedYear));
+            if (this.isDayPicker) {
+                const side = this.calendarsLinked ? 0 : offset;
+                this.showDayCalendarMonth(this.calendarMonth(side).year(constrainedYear), side);
                 return;
             }
 
