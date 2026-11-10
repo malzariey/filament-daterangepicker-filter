@@ -514,10 +514,11 @@ export default function dateRangeComponent(config) {
                 'cs': 'cs',
                 'da': 'da',
                 'de': 'de',
+                'el': 'el',
                 'es': 'es',
                 'fa': 'fa',
                 'fr': 'fr',
-                'gr': 'el',
+                'gr': 'el', // legacy folder name for Greek
                 'he': 'he',
                 'hu': 'hu',
                 'id': 'id',
@@ -525,8 +526,9 @@ export default function dateRangeComponent(config) {
                 'ko': 'ko',
                 'lt': 'lt',
                 'lv': 'lv',
+                'nb': 'nb',
                 'nl': 'nl',
-                'no': 'nb',
+                'no': 'nb', // legacy folder name for Norwegian Bokmål
                 'pl': 'pl',
                 'pt': 'pt',
                 'pt_BR': 'pt-br',

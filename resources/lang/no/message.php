@@ -1,39 +1,8 @@
 <?php
 
-return [
-    'period' => ':label: Periode :period',
-    'su' => "Sø",
-    'mo' => "Ma",
-    'tu' => "Ti",
-    'we' => "On",
-    'th' => "To",
-    'fr' => "Fr",
-    'sa' => "Lø",
-    'custom' => "Egendefinert",
-    'apply' => "Bruk",
-    'cancel' => "Avbryt",
-    'from' => "Fra",
-    'to' => "Til",
-    'january' => "Januar",
-    'february' => "Februar",
-    'march' => "Mars",
-    'april' => "April",
-    'may' => "Mai",
-    'june' => "Juni",
-    'july' => "Juli",
-    'august' => "August",
-    'september' => "September",
-    'october' => "Oktober",
-    'november' => "November",
-    'december' => "Desember",
-    'today' => "I dag",
-    'yesterday' => "I går",
-    'last_7_days' => "Siste 7 dager",
-    'last_30_days' => "Siste 30 dager",
-    'this_month' => "Denne måneden",
-    'last_month' => "Forrige måned",
-    'this_year' => "Dette året",
-    'last_year' => "Forrige år",
-    'clear' => "Tøm",
-    'weekLabel' => 'U',
-];
+/*
+ * Legacy alias. Laravel and Filament call Norwegian "nb", not "no", so the strings
+ * live in ../nb/message.php. This folder stays so an app whose locale is "no",
+ * or that published it, keeps working.
+ */
+return require __DIR__ . '/../nb/message.php';

@@ -28,7 +28,7 @@ class DemoPage extends Page
     {
         // Handle locale switching from query parameter
         $locale = request()->query('locale', 'en');
-        if (in_array($locale, ['ar', 'en', 'fr', 'de', 'es', 'tr', 'ru', 'ja', 'ko', 'zh_CN', 'zh_TW', 'fa', 'ckb'])) {
+        if (in_array($locale, ['ar', 'en', 'fr', 'de', 'es', 'tr', 'ru', 'ja', 'ko', 'zh_CN', 'zh_TW', 'fa', 'ckb', 'el', 'gr', 'nb', 'no'])) {
             app()->setLocale($locale);
         }
 
