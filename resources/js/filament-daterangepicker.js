@@ -2881,6 +2881,16 @@ export default function dateRangeComponent(config) {
                 }
             }
 
+            // Keys inside the dropdown belong to handleGridKeydown /
+            // handlePresetKeydown and the focused control (a button, a time
+            // <select>). A teleported dropdown never bubbles here; with
+            // teleport(false) it does. Escape still falls through to cancel.
+            // This runs before the closed-picker check below: an Enter /
+            // Space that picks a day with autoApply has already applied and
+            // closed in the grid's capture listener, and reaching that check
+            // would open the picker again.
+            if (event.key !== 'Escape' && this.isInsideDropdown(event.target)) return;
+
             if (!this.open) {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
@@ -2888,12 +2898,6 @@ export default function dateRangeComponent(config) {
                 }
                 return;
             }
-
-            // Keys inside the dropdown belong to handleGridKeydown /
-            // handlePresetKeydown and the focused control (a button, a time
-            // <select>). A teleported dropdown never bubbles here; with
-            // teleport(false) it does. Escape still falls through to cancel.
-            if (event.key !== 'Escape' && this.isInsideDropdown(event.target)) return;
 
             // Presets view (presets-only, or the calendars hidden until
             // Custom): no calendar to drive. Escape still cancels; Enter /

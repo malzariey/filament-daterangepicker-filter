@@ -15,6 +15,12 @@ use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
  * goes the other way and the string comparison happened to hide it.
  *
  * Datetime columns keep the shift: that half is TimezoneSeparationTest.
+ *
+ * What counts as a date column, in order: a timestamp the model manages
+ * (getDates(), deleted_at) is an instant, with no schema query; otherwise the
+ * database's column type decides; only when that lookup fails does a `date`
+ * cast. A `date` cast on a DATETIME column is common for JSON output, and the
+ * column still holds instants.
  */
 class DateColumnRow extends Model
 {
@@ -25,7 +31,7 @@ class DateColumnRow extends Model
     protected $guarded = [];
 }
 
-/** A date stored in a DATETIME column, declared a date by its cast. */
+/** A DATETIME column with a `date` cast (for its JSON form): still instants. */
 class DateCastRow extends Model
 {
     protected $table = 'date_cast_rows';
@@ -51,6 +57,46 @@ class CustomFormatDateCastRow extends DateCastRow
 class DatetimeCastOnDateColumnRow extends DateColumnRow
 {
     protected $casts = ['d' => 'datetime'];
+}
+
+/** A real DATE column with a `date` cast. */
+class DateCastOnDateColumnRow extends DateColumnRow
+{
+    protected $casts = ['d' => 'date'];
+}
+
+/** A `date` cast on a DATETIME column holding real instants. */
+class DateCastInstantRow extends Model
+{
+    protected $table = 'date_column_instant_rows';
+
+    public $timestamps = false;
+
+    protected $guarded = [];
+
+    protected $casts = ['at' => 'date'];
+}
+
+/** Eloquent timestamps, with a `date` cast on created_at for its JSON form. */
+class TimestampedRow extends Model
+{
+    protected $table = 'timestamped_rows';
+
+    protected $guarded = [];
+
+    protected $casts = ['created_at' => 'date'];
+}
+
+/** Eloquent timestamps, no casts of its own. */
+class PlainTimestampedRow extends TimestampedRow
+{
+    protected $casts = [];
+}
+
+/** A `date` cast on a column the schema lookup cannot find. */
+class DateCastUnknownColumnRow extends DateColumnRow
+{
+    protected $casts = ['missing' => 'date'];
 }
 
 class DateColumnInstantRow extends Model
@@ -97,6 +143,13 @@ beforeEach(function () {
         ['id' => 1, 'at' => '2026-06-01 22:30:00'],
         // 23:59 on 1 June in Riyadh.
         ['id' => 2, 'at' => '2026-06-01 20:59:00'],
+    ]);
+
+    DB::statement('drop table if exists timestamped_rows');
+    DB::statement('create table timestamped_rows (id integer primary key, created_at datetime, updated_at datetime)');
+    DB::table('timestamped_rows')->insert([
+        ['id' => 1, 'created_at' => '2026-06-01 22:30:00', 'updated_at' => '2026-06-01 22:30:00'],
+        ['id' => 2, 'created_at' => '2026-06-01 20:59:00', 'updated_at' => '2026-06-01 20:59:00'],
     ]);
 });
 
@@ -153,15 +206,96 @@ it('uses only the dates of a time-picker range on a date column', function (stri
         ->toBe([2, 3]);
 })->with('display timezones');
 
-it('treats a date cast on a datetime column as a calendar date', function (string $model, string $tz) {
+it('shifts a datetime column into the storage timezone despite a date cast', function (string $model) {
+    // 22:30 UTC on 1 June is 01:30 on 2 June in Riyadh. Read as a calendar
+    // date it was filed under 1 June.
+    FilamentTimezone::set('Asia/Riyadh');
+
+    $filter = DateRangeFilter::make('at');
+
+    expect(dateColumnIds($model::query(), $filter, '02/06/2026'))->toBe([1])
+        ->and(dateColumnIds($model::query(), $filter, '01/06/2026'))->toBe([2]);
+})->with([
+    'date' => DateCastInstantRow::class,
+]);
+
+it('compares instants on a datetime column whatever date cast it has', function (string $model, string $tz, array $expected) {
+    // Eloquent writes a `date` cast as midnight; on a DATETIME column that is
+    // midnight in the storage zone, so the picked day shifts like any instant.
     FilamentTimezone::set($tz);
 
-    expect(dateColumnIds($model::query(), DateRangeFilter::make('d'), '01/06/2026'))->toBe([2]);
+    $query = $model::query();
+    DateRangeFilter::make('d')->apply($query, ['d' => '01/06/2026']);
+
+    expect($query->getBindings()[0])->toBeInstanceOf(CarbonInterface::class)
+        ->and(dateColumnIds($model::query(), DateRangeFilter::make('d'), '01/06/2026'))->toBe($expected);
 })->with([
     'date' => DateCastRow::class,
     'immutable_date' => ImmutableDateCastRow::class,
     'date:Y-m-d' => CustomFormatDateCastRow::class,
+])->with([
+    'New York' => ['America/New_York', [3]],
+    'Riyadh' => ['Asia/Riyadh', [2]],
+    'UTC' => ['UTC', [2]],
+]);
+
+it('treats a real date column as a calendar date with or without a date cast', function (string $model, string $tz) {
+    FilamentTimezone::set($tz);
+
+    expect(dateColumnIds($model::query(), DateRangeFilter::make('d'), '01/06/2026'))->toBe([2])
+        ->and(dateColumnIds($model::query(), DateRangeFilter::make('d'), '31/05/2026 - 01/06/2026'))->toBe([1, 2]);
+})->with([
+    'no cast' => DateColumnRow::class,
+    'date cast' => DateCastOnDateColumnRow::class,
 ])->with('display timezones');
+
+it('reads a model timestamp as an instant without a schema query', function (string $model) {
+    FilamentTimezone::set('Asia/Riyadh');
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    DateRangeFilter::make('created_at')->apply($model::query(), ['created_at' => '02/06/2026']);
+    DateRangeFilter::make('updated_at')->apply($model::query(), ['updated_at' => '02/06/2026']);
+    $timestampQueries = count(DB::getQueryLog());
+
+    // The control: any other column does look the type up.
+    DB::flushQueryLog();
+    DateRangeFilter::make('d')->apply(DateColumnRow::query(), ['d' => '02/06/2026']);
+    $columnQueries = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($timestampQueries)->toBe(0)
+        ->and($columnQueries)->toBeGreaterThan(0)
+        ->and(dateColumnIds($model::query(), DateRangeFilter::make('created_at'), '02/06/2026'))->toBe([1])
+        ->and(dateColumnIds($model::query(), DateRangeFilter::make('created_at'), '01/06/2026'))->toBe([2]);
+})->with([
+    'no cast' => PlainTimestampedRow::class,
+    'date cast' => TimestampedRow::class,
+]);
+
+it('looks a column type up once per filter', function () {
+    FilamentTimezone::set('America/New_York');
+
+    $filter = DateRangeFilter::make('d');
+    $filter->apply(DateColumnRow::query(), ['d' => '01/06/2026']);
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $filter->apply(DateColumnRow::query(), ['d' => '01/06/2026']);
+    $queries = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($queries)->toBe(0);
+});
+
+it('falls back to a date cast when the schema lookup fails', function () {
+    FilamentTimezone::set('America/New_York');
+
+    $query = DateCastUnknownColumnRow::query();
+    DateRangeFilter::make('missing')->apply($query, ['missing' => '01/06/2026']);
+
+    expect($query->getBindings())->toBe(['2026-06-01', '2026-06-02']);
+});
 
 it('trusts the column type over a datetime cast', function () {
     FilamentTimezone::set('America/New_York');
