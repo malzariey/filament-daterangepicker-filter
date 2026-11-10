@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'period' => 'دوره',
+    'period' => ':label: دوره :period',
     'su' =>"یک",
     'mo' =>"دو",
     'tu' =>"سه",
