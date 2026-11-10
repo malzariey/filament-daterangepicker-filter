@@ -698,7 +698,7 @@ export default function dateRangeComponent(config) {
         parseManualInput(value) {
             const input = String(value ?? '').trim();
 
-            if (!input) {
+            if (!input || this.isEmptyMaskValue(input)) {
                 return { status: 'empty' };
             }
 
@@ -743,6 +743,20 @@ export default function dateRangeComponent(config) {
                 start: this.normalizeSelectionStart(rangeStart),
                 end: this.normalizeSelectionEnd(rangeEnd),
             };
+        },
+
+        /**
+         * The mask is always on (lazy: false), so an input emptied from the
+         * keyboard still shows its placeholder ("__/____") and never reads
+         * as an empty string. With nothing typed, that is an empty field,
+         * not a partial value, and must clear the state like the clear button.
+         */
+        isEmptyMaskValue(value) {
+            const mask = this.inputMask;
+
+            return !!mask
+                && mask.unmaskedValue === ''
+                && value === String(mask.value ?? '').trim();
         },
 
         getPickerUnit() {
