@@ -33,8 +33,14 @@
     @endif
 
     {{-- Form --}}
-    <form wire:submit.prevent>
+    <form wire:submit="submitForm">
         {{ $this->form }}
+
+        <div style="margin-top: 1.5rem">
+            <x-filament::button type="submit" id="demo-submit-form">
+                Submit form
+            </x-filament::button>
+        </div>
     </form>
 
     <x-filament-actions::modals />
