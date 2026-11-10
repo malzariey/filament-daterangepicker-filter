@@ -444,31 +444,72 @@ class DateRangePicker extends Field implements HasAffixActions
     }
 
     /**
-     * minDate() as the picker reads it: wall-clock time in the DISPLAY
-     * timezone (getTimezone()), which is how the browser compares it.
-     * See boundForPicker().
+     * minDate() as the browser receives it. Without enforceBoundTimes() and
+     * timePicker() this is getMinDate(), exactly as 5.0.11 sent it. See
+     * boundForPicker().
      */
     public function getMinDateForPicker(): ?string
     {
+        if (! $this->convertsBoundsForPicker()) {
+            return $this->getMinDate();
+        }
+
         return $this->boundForPicker($this->evaluate($this->minDate));
     }
 
-    /** maxDate() as the picker reads it. See boundForPicker(). */
+    /** maxDate() as the browser receives it. See getMinDateForPicker(). */
     public function getMaxDateForPicker(): ?string
     {
+        if (! $this->convertsBoundsForPicker()) {
+            return $this->getMaxDate();
+        }
+
         return $this->boundForPicker($this->evaluate($this->maxDate));
     }
 
     /**
-     * A minDate / maxDate value for the browser.
+     * Whether minDate() carries a time of day the picker must keep: true or
+     * false for a date-time bound, null for a string or no bound (the
+     * browser then reads the string: date-only or 00:00:00 is a whole day).
+     * Only sent with enforceBoundTimes() and timePicker().
+     */
+    public function getMinDateHasTimeForPicker(): ?bool
+    {
+        return $this->convertsBoundsForPicker() ? $this->boundHasTime($this->evaluate($this->minDate)) : null;
+    }
+
+    /** See getMinDateHasTimeForPicker(). */
+    public function getMaxDateHasTimeForPicker(): ?bool
+    {
+        return $this->convertsBoundsForPicker() ? $this->boundHasTime($this->evaluate($this->maxDate)) : null;
+    }
+
+    protected function convertsBoundsForPicker(): bool
+    {
+        return $this->getEnforceBoundTimes() && $this->getTimePicker();
+    }
+
+    /** True / false for a date-time bound (microseconds count), null otherwise. */
+    protected function boundHasTime(mixed $bound): ?bool
+    {
+        if (! $bound instanceof \DateTimeInterface) {
+            return null;
+        }
+
+        return $bound->format('H:i:s.u') !== '00:00:00.000000';
+    }
+
+    /**
+     * A minDate / maxDate value for the browser under enforceBoundTimes().
      *
-     * Since the picker enforces the time of a bound, a Carbon bound with a
-     * time is converted to the display timezone first: minDate(now()) with the
-     * app in UTC and the panel shown in America/New_York at 13:00 New York
-     * would otherwise arrive as "18:00" and block 13:00-18:00 today. A bound
-     * at exactly 00:00:00 (today(), startOfDay(), date casts) is sent as in
-     * 5.0.11, as a whole day, so its day can never shift. Strings are sent
-     * unchanged: they were always read as display wall-clock.
+     * The picker reads bounds as wall-clock time in the DISPLAY timezone and
+     * then enforces their time, so a date-time bound with a time is converted
+     * to getTimezone() first: minDate(now()) with the app in UTC and the
+     * panel shown in America/New_York at 13:00 New York would otherwise
+     * arrive as "18:00" and block 13:00-18:00 today. A bound at exactly
+     * midnight (today(), startOfDay(), date casts) is sent as in 5.0.11, a
+     * whole day, so its day can never shift. Strings are sent unchanged:
+     * they were always read as display wall-clock.
      */
     protected function boundForPicker(mixed $bound): ?string
     {
@@ -482,7 +523,7 @@ class DateRangePicker extends Field implements HasAffixActions
 
         $date = $bound instanceof CarbonInterface ? $bound->copy() : Carbon::instance($bound);
 
-        if ($date->format('H:i:s') === '00:00:00') {
+        if (! $this->boundHasTime($date)) {
             return (string) $date;
         }
 

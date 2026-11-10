@@ -83,6 +83,9 @@
 
             minDate: @js($getMinDateForPicker()),
             maxDate: @js($getMaxDateForPicker()),
+            enforceBoundTimes: @js($getEnforceBoundTimes()),
+            minDateHasTime: @js($getMinDateHasTimeForPicker()),
+            maxDateHasTime: @js($getMaxDateHasTimeForPicker()),
             minYear: @js($getMinYear()),
             maxYear: @js($getMaxYear()),
             disabledDates: @js($getDisabledDates()),

@@ -255,6 +255,14 @@ export default function dateRangeComponent(config) {
             // Date constraints
             minDate: config.minDate,
             maxDate: config.maxDate,
+            // enforceBoundTimes(): keep minDate / maxDate's time of day
+            // (timeBounds). Off by default: whole days, as in 5.0.11.
+            enforceBoundTimes: config.enforceBoundTimes ?? false,
+            // From the server for a date-time bound: whether it has a time
+            // (a timed bound can convert to 00:00 in the display timezone).
+            // Null for a string: read from the string itself.
+            minDateHasTime: config.minDateHasTime ?? null,
+            maxDateHasTime: config.maxDateHasTime ?? null,
             minYear: config.minYear,
             maxYear: config.maxYear,
             disabledDates: config.disabledDates || [],
@@ -2298,23 +2306,30 @@ export default function dateRangeComponent(config) {
 
         /**
          * minDate / maxDate as instants whose time of day the time picker
-         * keeps to, or null when there is none: only in the day picker with
-         * timePicker(), and only for a bound that carries a time. A
-         * date-only string ("2026-11-13") or one at exactly 00:00:00 (what
-         * today(), startOfDay() and a date cast send) keeps the whole-day
-         * behaviour of 5.0.11: a maxDate of midnight is never read as "no
-         * later than 00:00" on that day. Like isDisabled, the bounds are
-         * wall-clock strings in the display timezone.
+         * keeps to, or null when there is none. Only with enforceBoundTimes()
+         * (opt-in in 5.0.12), in the day picker with timePicker(); otherwise
+         * the bounds limit whole days exactly as in 5.0.11.
+         *
+         * A bound has a time when the server says so (minDateHasTime /
+         * maxDateHasTime, sent for a date-time bound). For a string, a
+         * date-only value ("2026-11-13") or one at exactly 00:00:00 is a
+         * whole day: a maxDate of midnight is never read as "no later than
+         * 00:00". Like isDisabled, the bounds are wall-clock strings in the
+         * display timezone.
          */
         timeBounds() {
-            if (!this.config.timePicker || !this.isDayPicker) return { min: null, max: null };
+            if (!this.config.enforceBoundTimes || !this.config.timePicker || !this.isDayPicker) {
+                return { min: null, max: null };
+            }
 
-            const read = (value) => {
+            const read = (value, hasTime) => {
                 if (value === null || value === undefined || value === '') return null;
+                if (hasTime === false) return null;
                 if (typeof value === 'string' && /^\s*\d{4}-\d{2}-\d{2}\s*$/.test(value)) return null;
 
                 const date = dayjs(value);
                 if (!date.isValid()) return null;
+                if (hasTime === true) return date;
 
                 const midnight = date.hour() === 0 && date.minute() === 0
                     && date.second() === 0 && date.millisecond() === 0;
@@ -2322,7 +2337,10 @@ export default function dateRangeComponent(config) {
                 return midnight ? null : date;
             };
 
-            return { min: read(this.config.minDate), max: read(this.config.maxDate) };
+            return {
+                min: read(this.config.minDate, this.config.minDateHasTime),
+                max: read(this.config.maxDate, this.config.maxDateHasTime),
+            };
         },
 
         /** The unit time bounds are compared in: what the selects can show. */
@@ -2330,8 +2348,14 @@ export default function dateRangeComponent(config) {
             return this.config.timePickerSecond ? 'second' : 'minute';
         },
 
-        /** Whether `date`, with its time, lies inside timeBounds(). */
+        /**
+         * Whether a typed `date`, with its time, lies inside timeBounds().
+         * A display format without a time types no time (every date reads
+         * as 00:00), so only the day is checked, by isDisabled.
+         */
         isWithinTimeBounds(date) {
+            if (!this.formatHasTimeTokens(this.config.displayFormat)) return true;
+
             const { min, max } = this.timeBounds();
             const unit = this.timeBoundUnit();
 

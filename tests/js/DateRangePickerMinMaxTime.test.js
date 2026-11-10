@@ -11,8 +11,13 @@ import { clickDay, createTestComponent, dayjs, flushPromises } from './setup.js'
 // than maxDate's time, compared at the picker's unit (minute, or second with
 // timePickerSecond). A bound at exactly 00:00:00 (what today() and a date
 // cast send) or without a time keeps the whole-day behaviour of 5.0.11.
+//
+// Opt-in in 5.0.12 (enforceBoundTimes()): by default bounds limit whole days
+// exactly as in 5.0.11, so timePicker()->maxDate(now()) still lets "Today"
+// end at 23:59 instead of the page-load time.
 
 const bounds = {
+    enforceBoundTimes: true,
     timePicker: true,
     timePicker24: true,
     displayFormat: 'DD/MM/YYYY HH:mm',
@@ -368,5 +373,90 @@ describe('the time selects bind the disabled state', () => {
         expect(blade.match(/isTimeOptionDisabled\(true,/g)?.length).toBe(5);
         expect(blade.match(/isTimeOptionDisabled\(false,/g)?.length).toBe(5);
         void dayjs;
+    });
+});
+
+describe('enforceBoundTimes() off (the default): 5.0.11 behaviour', () => {
+    const off = { ...bounds, enforceBoundTimes: false };
+    const ranges = { Today: ['2026-11-13', '2026-11-13'], Week: ['2026-11-01', '2026-11-30'] };
+
+    it('ends a preset at 23:59 with a timed maxDate (maxDate(now()))', async () => {
+        const { component } = await createTestComponent({ ...off, ranges });
+
+        component.selectPreset('Today');
+        expect(component.selection.end.format('YYYY-MM-DD HH:mm')).toBe('2026-11-13 23:59');
+
+        component.selectPreset('Week');
+        expect(component.selection.start.format('YYYY-MM-DD HH:mm')).toBe('2026-11-07 00:00');
+        expect(component.selection.end.format('YYYY-MM-DD HH:mm')).toBe('2026-11-13 23:59');
+    });
+
+    it('does not clamp day clicks or time changes', async () => {
+        const { component } = await createTestComponent(off);
+
+        clickDay(component, '2026-11-07');
+        clickDay(component, '2026-11-13');
+        component.startTime = { ...component.startTime, hour: 5 };
+        component.handleTimeChange(true);
+        component.applySelection();
+        await flushPromises();
+
+        expect(component.config.state).toBe('07/11/2026 05:00 - 13/11/2026 23:59');
+        expect(component.isTimeOptionDisabled(true, 'hour', 0)).toBe(false);
+        expect(component.isTimeOptionDisabled(false, 'hour', 23)).toBe(false);
+    });
+
+    it('accepts typed times outside the bound times', async () => {
+        const { component } = await createTestComponent({ ...off, allowInput: true });
+
+        expect(component.parseManualInput('07/11/2026 00:00 - 13/11/2026 23:59').status).toBe('valid');
+        expect(component.parseManualInput('06/11/2026 12:00 - 13/11/2026 23:59').status).toBe('invalid');
+    });
+
+    it('is off when the option is missing from the config', async () => {
+        const { enforceBoundTimes, ...withoutOption } = bounds;
+        const { component } = await createTestComponent(withoutOption);
+
+        expect(enforceBoundTimes).toBe(true);
+        expect(component.timeBounds()).toEqual({ min: null, max: null });
+    });
+});
+
+describe('enforceBoundTimes() with the server\'s has-time flags', () => {
+    it('treats a timed bound that converted to 00:00 as timed', async () => {
+        const { component } = await createTestComponent({
+            ...bounds,
+            maxDate: '2026-11-13 00:00:00',
+            maxDateHasTime: true,
+        });
+
+        clickDay(component, '2026-11-10');
+        clickDay(component, '2026-11-13');
+
+        expect(time(component.endTime)).toBe('00:00');
+    });
+
+    it('treats a date-time bound at midnight as a whole day', async () => {
+        const { component } = await createTestComponent({
+            ...bounds,
+            maxDate: '2026-11-13 00:00:00',
+            maxDateHasTime: false,
+        });
+
+        clickDay(component, '2026-11-10');
+        clickDay(component, '2026-11-13');
+
+        expect(time(component.endTime)).toBe('23:59');
+    });
+
+    it('does not time-check a typed date when the display format has no time', async () => {
+        const { component } = await createTestComponent({
+            ...bounds,
+            displayFormat: 'DD/MM/YYYY',
+            allowInput: true,
+        });
+
+        expect(component.parseManualInput('07/11/2026 - 13/11/2026').status).toBe('valid');
+        expect(component.parseManualInput('06/11/2026 - 13/11/2026').status).toBe('invalid');
     });
 });

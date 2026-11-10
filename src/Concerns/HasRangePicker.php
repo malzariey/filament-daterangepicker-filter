@@ -69,6 +69,7 @@ trait HasRangePicker
     protected string|Closure|null $format = 'd/m/Y';
     protected int|Closure|null $firstDayOfWeek = 1;
     protected bool|Closure $timePicker = false;
+    protected bool|Closure $enforceBoundTimes = false;
     protected bool|Closure $timePicker24 = false;
     protected bool|Closure $timePickerSecond = false;
     protected int|Closure $timePickerIncrement = 30;
@@ -324,6 +325,24 @@ trait HasRangePicker
         $this->timePicker = $condition;
 
         return $this;
+    }
+
+    /**
+     * Opt in to keeping the time of day of minDate() / maxDate(), under timePicker():
+     * on the bound's day the start can't be earlier than minDate's time and the end
+     * can't be later than maxDate's. Off (the default), bounds limit whole days, as
+     * in 5.0.11. A bound such as now() is fixed when the page renders.
+     */
+    public function enforceBoundTimes(bool|Closure $condition = true): static
+    {
+        $this->enforceBoundTimes = $condition;
+
+        return $this;
+    }
+
+    public function getEnforceBoundTimes(): bool
+    {
+        return (bool) $this->evaluate($this->enforceBoundTimes);
     }
 
     #[Deprecated(since: '2.5.1')]

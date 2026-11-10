@@ -412,6 +412,7 @@ class DateRangeFilter extends BaseFilter
             ->disabledDates($this->disabledDates)
             ->minDate($this->minDate)
             ->maxDate($this->maxDate)
+            ->enforceBoundTimes($this->enforceBoundTimes)
             ->ranges($this->ranges)
             ->maxSpan($this->maxSpan)
             ->useRangeLabels($this->useRangeLabels)

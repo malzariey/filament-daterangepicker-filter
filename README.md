@@ -278,6 +278,25 @@ DateRangePicker::make('created_at')
     ->maxDate(Carbon::now()->addMonth())
 ```
 
+By default the bounds limit whole days: any time can be picked on the first and last allowed day.
+
+#### Enforce the time of the bounds
+
+With `->timePicker()`, `->enforceBoundTimes()` also keeps the time of day of `minDate()` / `maxDate()`: on minDate's day the start can't be earlier than its time, and on maxDate's day the end can't be later. Time options outside the bound are disabled, a time picked outside it moves to the bound, presets are clamped to the exact bound time and a typed value outside it is rejected. A default value is shown as given.
+
+```php
+DateRangePicker::make('starts_at')
+    ->timePicker()
+    ->enforceBoundTimes()
+    ->minDate(today()->setTime(9, 0))
+    ->maxDate(today()->addDays(3)->setTime(17, 0))
+```
+
+- A bound at exactly midnight (`today()`, `startOfDay()`, a date cast) or a date-only string still means the whole day.
+- Carbon bounds with a time are sent in the display timezone (`->timezone()`, else `FilamentTimezone`). Strings are read as display-timezone wall-clock time.
+- A bound such as `now()` is fixed when the page renders. With `->maxDate(now())`, "Today" ends at the page-load time, so a persisted or polled filter keeps leaving out rows created after the page loaded. Without `enforceBoundTimes()` it ends at 23:59.
+- The same option works on `DateRangeFilter`.
+
 ### First Day of Week
 ```php
 DateRangePicker::make('created_at')->firstDayOfWeek(1) // Monday

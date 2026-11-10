@@ -265,13 +265,14 @@ class DemoPage extends Page
                             ->maxDate(Carbon::now()->addDays(30))
                             ->placeholder($isArabic ? '± 30 يوماً' : 'Only ±30 days from today'),
 
-                        // minDate / maxDate with a time: the bound days keep
-                        // to the bound times (selects, presets, typing).
+                        // enforceBoundTimes(): the bound days keep to the bound
+                        // times (selects, presets, typing).
                         DateRangePicker::make('min_max_times')
                             ->label($isArabic ? 'حد أدنى/أقصى مع الوقت' : 'Min/max with times (today 09:00 to +3 days 17:00)')
                             ->minDate(today()->setTime(9, 0))
                             ->maxDate(today()->addDays(3)->setTime(17, 0))
                             ->timePicker()
+                            ->enforceBoundTimes()
                             ->timePicker24()
                             ->allowInput()
                             ->extraInputAttributes(['data-testid' => 'min-max-times']),
@@ -285,6 +286,7 @@ class DemoPage extends Page
                             ->minDate(now())
                             ->maxDate(now()->addDays(2))
                             ->timePicker()
+                            ->enforceBoundTimes()
                             ->timePicker24()
                             ->timePickerIncrement(1)
                             ->allowInput()
@@ -295,6 +297,7 @@ class DemoPage extends Page
                             ->minDate(today()->setTime(13, 30))
                             ->maxDate(today()->addDays(3)->setTime(10, 15))
                             ->timePicker()
+                            ->enforceBoundTimes()
                             ->timePickerIncrement(15)
                             ->extraInputAttributes(['data-testid' => 'min-max-times-12h']),
 
