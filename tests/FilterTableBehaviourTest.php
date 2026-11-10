@@ -188,8 +188,8 @@ describe('month picker', function () {
 });
 
 describe('cleared state', function () {
-    // The picker stores null when cleared; before 5.0.12 a keyboard clear
-    // sent an empty string. Neither is a filter.
+    // The Clear action stores null, the picker in the browser '' (as in
+    // 5.0.11; one value is planned for 6.0). Neither is a filter.
     it('shows every row with no indicator', function (?string $state) {
         $component = filterBookings($state);
 

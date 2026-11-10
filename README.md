@@ -136,6 +136,8 @@ DateRangePicker::make('dates')
 
 When `allowInput()` is enabled, pressing Enter while focused inside the input parses and applies the typed value first. Invalid partial input does not overwrite the previous valid selection unless the user clears the field.
 
+A field cleared in the browser (deleting the text, or the picker's own clear) stores an empty string `''`; the Clear action stores `null`. Both mean "no range": the filter ignores either, and `required()` fails on either. **6.0 will store `null` for every clear**, so a `string $state` type in `afterStateUpdated()` or a `NOT NULL` string column should accept `null` by then.
+
 ### Modal & Slide-Over Compatibility
 The dropdown teleports to `<body>` by default to avoid z-index issues:
 
@@ -325,28 +327,29 @@ A few PHP tokens have no plain Day.js equivalent:
 
 | Token | Meaning | Support |
 |---|---|---|
-| `S` | ordinal suffix | Only as `jS` ("1st", "2nd"), written in English in every locale, as PHP does. Any other `S` is reported and shown as the letter `o`, as before. |
+| `S` | ordinal suffix | Only as `jS` ("1st", "2nd"), written in English in every locale, as PHP does. Any other `S` is logged as a warning and shown as the letter `o`, as before. |
 | `e` | timezone identifier | Written as the zone the value is in (the picker `timezone()` on screen, the storage timezone for dual-state values). |
-| `N` | ISO weekday number | Reported; shown as the letter `E`, as before (Carbon cannot read it back). Use `D` or `l`. |
-| `W` | ISO week number | Reported; shown as the letter `W`, as before (Carbon cannot read it back). |
-| `z` | day of the year | Reported; written as Day.js `DDD` (day of month twice), as before. The browser cannot write or read a day of the year. |
-| `T` | timezone abbreviation | Reported; shown as the letter `z`, as before (the browser cannot write it for the picked date). Use `e`. |
-| `t` `L` `B` `I` `Z` | days in month, leap year, Swatch time, DST flag, offset in seconds | Reported; left out, as before (the browser cannot write them, Carbon cannot read them). |
-| `c` `r` | ISO 8601, RFC 2822 date | Reported; left out, as before. Spell the parts out (`Y-m-d\TH:i:s`, `D, d M Y H:i:s`) and use `e` for the zone. |
+| `N` | ISO weekday number | Logged as a warning; shown as the letter `E`, as before (Carbon cannot read it back). Use `D` or `l`. |
+| `W` | ISO week number | Logged as a warning; shown as the letter `W`, as before (Carbon cannot read it back). |
+| `z` | day of the year | Logged as a warning; written as Day.js `DDD` (day of month twice), as before. The browser cannot write or read a day of the year. |
+| `T` | timezone abbreviation | Logged as a warning; shown as the letter `z`, as before (the browser cannot write it for the picked date). Use `e`. |
+| `t` `L` `B` `I` `Z` | days in month, leap year, Swatch time, DST flag, offset in seconds | Logged as a warning; left out, as before (the browser cannot write them, Carbon cannot read them). |
+| `c` `r` | ISO 8601, RFC 2822 date | Logged as a warning; left out, as before. Spell the parts out (`Y-m-d\TH:i:s`, `D, d M Y H:i:s`) and use `e` for the zone. |
 
 An unsupported token never breaks the page in 5.x: the field renders with the
-same output as before, and the package reports an
-`Malzariey\FilamentDaterangepickerFilter\Exceptions\UnsupportedDateFormatToken`
-through Laravel's `report()` once per format per request. The message names the
-token, the format and what to use instead. **In 6.0 these tokens will throw.**
-To log it at a lower level, or not at all, in `bootstrap/app.php`:
+same output as before, and the package logs a **warning** on your default log
+channel (`Log::warning()`; it no longer goes through `report()` and your
+exception handler, so an error tracker does not get an error per request). The message names the token, the format and what to use instead, with
+`format` and `token` in the log context. It is logged once per format and token:
+once per PHP process, and once a day across processes through your cache
+(`Cache::add('fdr-unsupported-token:…')`; if the cache fails, once per process).
+**In 6.0 these tokens will throw**
+`Malzariey\FilamentDaterangepickerFilter\Exceptions\UnsupportedDateFormatToken`.
 
-```php
-->withExceptions(function (Exceptions $exceptions) {
-    $exceptions->level(UnsupportedDateFormatToken::class, LogLevel::WARNING);
-    // or: $exceptions->dontReport(UnsupportedDateFormatToken::class);
-})
-```
+To silence it, fix the format, or log less: set your default channel's `level`
+above `warning` (for example `LOG_LEVEL=error`), or point `LOG_CHANNEL` (the
+default channel) at a stack that drops warnings. The warning goes to the
+default channel only.
 
 Escape a letter (`\W`) to show it literally.
 

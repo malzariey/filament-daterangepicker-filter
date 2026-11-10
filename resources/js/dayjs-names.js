@@ -122,7 +122,10 @@ export function dayjsNameTables(dayjs, locale) {
 
 const ENGLISH_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const NAME_TABLES = { MMMM: 'months', MMM: 'monthsShort', dddd: 'weekdays', ddd: 'weekdaysShort' };
+const NAME_TABLES = { MMMM: 'months', MMM: 'monthsShort', dddd: 'weekdays', ddd: 'weekdaysShort', dd: 'weekdaysMin', Do: 'ordinals' };
+
+/** Tokens Day.js's parser cannot read (d, dd) or reads with a locale table (A, a, Do, names). */
+const READER_TOKENS = new Set([...Object.keys(NAME_TABLES), 'A', 'a', 'd']);
 
 const FORMAT_TOKENS = /\[[^\]]*\]|YYYY|YY|MMMM|MMM|MM|M|Do|DD|D|dddd|ddd|dd|d|HH|H|hh|h|mm|m|ss|s|SSS|SS|S|A|a|ZZ|Z|Q|X|x|ww|w/g;
 
@@ -131,9 +134,26 @@ const tableCache = new WeakMap();
 function cachedTables(dayjs, locale) {
     if (!tableCache.has(dayjs)) tableCache.set(dayjs, new Map());
     const byLocale = tableCache.get(dayjs);
-    if (!byLocale.has(locale)) byLocale.set(locale, dayjsNameTables(dayjs, locale));
+    if (!byLocale.has(locale)) byLocale.set(locale, readerTables(dayjs, locale));
 
     return byLocale.get(locale);
+}
+
+/**
+ * dayjsNameTables() plus the two lists only the browser reads: weekdaysMin
+ * ("dd") and the day-of-month ordinals ("Do", English in every locale through
+ * english-ordinal.js). Kept out of dayjsNameTables(), which the server's
+ * table (resources/dayjs-locale-names.json) is exported from.
+ */
+function readerTables(dayjs, locale) {
+    const tables = dayjsNameTables(dayjs, locale);
+    const base = dayjs('2026-01-01T00:00:00').locale(locale);
+
+    // 2026-01-04 is a Sunday; 2026-01 has 31 days.
+    tables.weekdaysMin = Array.from({ length: 7 }, (_, i) => unique([between(base.date(4 + i), '[<]dd[>]')]));
+    tables.ordinals = Array.from({ length: 31 }, (_, i) => unique([between(base.date(i + 1), '[<]Do[>]')]));
+
+    return tables;
 }
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -149,6 +169,7 @@ function tokenize(format) {
 
         if (token.startsWith('[')) segments.push(['literal', token.slice(1, -1)]);
         else if (token in NAME_TABLES || token === 'A' || token === 'a') segments.push(['name', token]);
+        else if (token === 'd') segments.push(['weekday', token]);
         else segments.push(['value', token]);
 
         last = match.index + token.length;
@@ -161,20 +182,27 @@ function tokenize(format) {
 
 const lower = (text) => text.toLocaleLowerCase();
 
+/** Whether Day.js's own parser cannot be trusted with `format`: see readLocalizedDate(). */
+export function formatNeedsReader(format) {
+    return tokenize(format).some(([, token]) => READER_TOKENS.has(token));
+}
+
 /**
  * `text` written by Day.js with `format` in `locale`, read as a Day.js date
- * (strict), or null when the format has no names or the text does not have
- * its shape, so the caller can fall back to Day.js's own parser.
+ * (strict), or null when the format has no names, meridiem, ordinal or
+ * weekday, or the text does not have its shape, so the caller can fall back
+ * to Day.js's own parser.
  *
- * Swaps every name for the English one and parses that in "en"; a weekday is
- * taken out and checked against the date instead (Day.js cannot parse one).
+ * Swaps every name for the English one and parses that in "en"; the
+ * meridiem is read from the per-hour table, an ordinal ("Do") as its day
+ * number; a weekday ("dddd", "ddd", "dd", "d") is taken out and checked
+ * against the date instead (Day.js cannot parse one).
  */
 export function readLocalizedDate(dayjs, text, format, locale) {
     if (!dayjs.Ls[locale]) return null;
 
     const segments = tokenize(format);
-    if (!segments.some(([type]) => type === 'name')) return null;
-    if (segments.some(([type, token]) => type === 'value' && (token === 'dd' || token === 'd' || token === 'Do'))) return null;
+    if (!segments.some(([type]) => type === 'name' || type === 'weekday')) return null;
 
     const names = cachedTables(dayjs, locale);
     const candidates = (token) => {
@@ -189,6 +217,7 @@ export function readLocalizedDate(dayjs, text, format, locale) {
     const pattern = segments.map(([type, value]) => {
         if (type === 'literal') return escapeRegExp(value);
         if (type === 'value') return '(.*?)';
+        if (type === 'weekday') return '([0-6])';
         return `(${candidates(value)})`;
     }).join('');
 
@@ -223,6 +252,13 @@ export function readLocalizedDate(dayjs, text, format, locale) {
             continue;
         }
 
+        if (type === 'weekday') {
+            const number = Number(captured);
+            if (weekday !== null && weekday !== number) return null;
+            weekday = number;
+            continue;
+        }
+
         if (token === 'A' || token === 'a') {
             const key = Object.keys(names.meridiem[token]).find((name) => lower(name) === lower(captured));
             let meaning = names.meridiem[token][key];
@@ -237,9 +273,15 @@ export function readLocalizedDate(dayjs, text, format, locale) {
         const index12 = names[NAME_TABLES[token]].findIndex((variants) => variants.some((variant) => lower(variant) === lower(captured)));
         if (index12 === -1) return null;
 
-        if (token === 'dddd' || token === 'ddd') {
+        if (token === 'dddd' || token === 'ddd' || token === 'dd') {
             if (weekday !== null && weekday !== index12) return null;
             weekday = index12;
+            continue;
+        }
+
+        if (token === 'Do') {
+            englishText += String(index12 + 1);
+            englishFormat += 'D';
             continue;
         }
 
@@ -254,4 +296,52 @@ export function readLocalizedDate(dayjs, text, format, locale) {
     }
 
     return date.locale(locale);
+}
+
+/**
+ * `text` written with `format`, read strictly in the first of `locales` that
+ * reads it, as a Day.js date in that locale; an invalid date when none does.
+ *
+ * The one parser for display and stored strings: readLocalizedDate() first,
+ * then Day.js's own strict parser, which is safe for a format without names
+ * and, being strict, refuses a meridiem it misreads instead of returning the
+ * wrong half of the day.
+ */
+export function parseFormattedDate(dayjs, text, format, locales) {
+    const value = String(text);
+
+    for (const locale of locales) {
+        const localized = readLocalizedDate(dayjs, value, format, locale);
+        if (localized?.isValid()) return localized;
+    }
+
+    let first = null;
+
+    for (const locale of locales) {
+        const date = dayjs(value, format, locale, true);
+        if (date.isValid()) return date;
+        first ??= date;
+    }
+
+    return first ?? dayjs(NaN);
+}
+
+/**
+ * `text` written with `format` as wall-clock time in `timezone`: what
+ * dayjs.tz(text, format, timezone) returns, read with parseFormattedDate()
+ * when the format has a name, meridiem, ordinal or weekday. Formats without
+ * one keep Day.js's own (lenient) path exactly, so the caller's round-trip
+ * check still decides. The result is in the locale that read the text.
+ */
+export function parseFormattedDateInZone(dayjs, text, format, locales, timezone) {
+    if (!formatNeedsReader(format)) {
+        return dayjs.tz(text, format, timezone);
+    }
+
+    const wallClock = parseFormattedDate(dayjs, text, format, locales);
+    if (!wallClock.isValid()) return wallClock;
+
+    return dayjs
+        .tz(wallClock.format('YYYY-MM-DD HH:mm:ss.SSS'), 'YYYY-MM-DD HH:mm:ss.SSS', timezone)
+        .locale(wallClock.locale());
 }

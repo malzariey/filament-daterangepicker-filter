@@ -8,11 +8,9 @@ use InvalidArgumentException;
  * A PHP date format character the date range picker cannot write in the
  * browser and read back on the server.
  *
- * In 5.x it is reported, not thrown: the field still renders, and the token
- * keeps the output it had before (see the README table). 6.0 will throw it.
- * An app can lower or silence it in its exception handler:
- * ->level(UnsupportedDateFormatToken::class, LogLevel::WARNING) or
- * ->dontReport(UnsupportedDateFormatToken::class).
+ * Not thrown or reported in 5.x: the field still renders, the token keeps
+ * the output it had before (see the README table), and the same message is
+ * logged as a warning once (Support\ReportedFormatTokens). 6.0 will throw it.
  */
 class UnsupportedDateFormatToken extends InvalidArgumentException
 {

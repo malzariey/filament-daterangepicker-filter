@@ -10,7 +10,6 @@ use JetBrains\PhpStorm\Deprecated;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\PickerType;
-use Malzariey\FilamentDaterangepickerFilter\Exceptions\UnsupportedDateFormatToken;
 use Malzariey\FilamentDaterangepickerFilter\Support\ReportedFormatTokens;
 
 trait HasRangePicker
@@ -37,9 +36,10 @@ trait HasRangePicker
     /**
      * PHP format characters the picker cannot write in the browser and read
      * back on the server: [meaning, why, what to use instead, the Day.js
-     * output 5.0.11 gave it]. They are reported once per format per request
-     * (UnsupportedDateFormatToken) and keep that output, so a page that
-     * rendered before renders the same. 6.0 will throw instead.
+     * output 5.0.11 gave it]. They are logged as a warning once
+     * (ReportedFormatTokens::warnOnce()) and keep that output, so a page that
+     * rendered before renders the same. 6.0 will throw
+     * UnsupportedDateFormatToken instead.
      *
      * @var array<string, array{string, string, string, string}>
      */
@@ -674,18 +674,14 @@ trait HasRangePicker
     }
 
     /**
-     * Report an unsupported format token once per format per request, so a
-     * table with a filter in every column, or a field re-rendered by
-     * Livewire, does not flood the log. report() never throws: the app's
-     * exception handler logs it (and sends it to an error tracker).
+     * Log an unsupported format token as a warning, once per process and once
+     * a day across processes (ReportedFormatTokens). Not report(): every
+     * Livewire round-trip sent a new error-level event to the app's error
+     * tracker. UnsupportedDateFormatToken stays for 6.0, which will throw it.
      */
     private static function reportUnsupportedPhpFormatToken(string $format, string $token, string $message): void
     {
-        if (! app(ReportedFormatTokens::class)->first($format, $token)) {
-            return;
-        }
-
-        report(new UnsupportedDateFormatToken($format, $token, $message));
+        ReportedFormatTokens::warnOnce($format, $token, $message);
     }
 
     public function getTimePicker(): bool

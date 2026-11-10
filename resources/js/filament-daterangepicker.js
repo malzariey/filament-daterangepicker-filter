@@ -8,7 +8,7 @@ import utc from 'dayjs/plugin/utc';
 import englishOrdinal from './english-ordinal.js';
 import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
 import IMask from 'imask';
-import { applyDayjsLocaleFixes, readLocalizedDate } from './dayjs-names.js';
+import { applyDayjsLocaleFixes, parseFormattedDate, parseFormattedDateInZone } from './dayjs-names.js';
 
 // Initialize Day.js plugins
 dayjs.extend(isBetween);
@@ -702,11 +702,9 @@ export default function dateRangeComponent(config) {
                 },
                 format: (date) => dayjs(date).format(format),
                 // The localized reader: Day.js reads "12:30 م" (ar) or
-                // "01:30 дня" (ru) as AM, so the mask refused them.
-                parse: (str) => {
-                    const date = this.parseDisplayDate(str, format);
-                    return (date.isValid() ? date : dayjs(str, format)).toDate();
-                },
+                // "01:30 дня" (ru) as AM, so the mask refused them. No
+                // lenient Day.js fallback: it misreads the same meridiems.
+                parse: (str) => this.parseDisplayDate(str, format).toDate(),
             };
         },
 
@@ -1727,7 +1725,7 @@ export default function dateRangeComponent(config) {
                 const format = this.config.displayFormat;
                 const isDisabled = this.config.disabledDates.some(d => {
                     // Try parsing with custom format first
-                    let disabledDate = dayjs(d, format, true);
+                    let disabledDate = this.parseDisplayDate(d, format);
                     if (!disabledDate.isValid()) {
                         // Fallback to standard parsing
                         disabledDate = dayjs(d);
@@ -1821,8 +1819,10 @@ export default function dateRangeComponent(config) {
                 this.endTime = this.extractTime(this.selection.end);
             }
 
-            // Empty is null, as the server sets it for a missing half.
-            this.config.state = this.getDisplayValue() || null;
+            // Empty is '', as in 5.0.11 (the server's Clear action sets null).
+            // Unifying every clear to null is planned for 6.0: a patch must
+            // not hand null to string-typed app callbacks or columns.
+            this.config.state = this.getDisplayValue();
         },
 
         parseDualDate(state) {
@@ -1831,19 +1831,25 @@ export default function dateRangeComponent(config) {
             try {
                 const value = String(state);
 
+                // Stored values come from this picker (page locale) or the
+                // server (Carbon writes English names and AM / PM).
+                const locales = this.parseLocales();
+
                 if (!this.formatHasTimeTokens(this.config.storageFormat)) {
-                    const parsed = dayjs(value, this.config.storageFormat, true);
+                    const parsed = parseFormattedDate(dayjs, value, this.config.storageFormat, locales);
 
                     if (!parsed.isValid() || parsed.format(this.config.storageFormat) !== value) {
                         return null;
                     }
 
-                    return parsed;
+                    return parsed.locale(dayjs.locale());
                 }
 
-                const parsed = dayjs.tz(
+                const parsed = parseFormattedDateInZone(
+                    dayjs,
                     value,
                     this.config.storageFormat,
+                    locales,
                     this.config.storageTimezone
                 );
 
@@ -2020,25 +2026,16 @@ export default function dateRangeComponent(config) {
          * and most non-English meridiems); everything else through Day.js.
          */
         parseDisplayDate(text, format) {
+            const date = parseFormattedDate(dayjs, text, format, this.parseLocales());
+
+            return date.isValid() ? date.locale(dayjs.locale()) : date;
+        },
+
+        /** The page locale, then English (what the server and Carbon write). */
+        parseLocales() {
             const locale = dayjs.locale();
 
-            for (const candidate of locale === 'en' ? ['en'] : [locale, 'en']) {
-                const localized = readLocalizedDate(dayjs, text, format, candidate);
-
-                if (localized?.isValid()) {
-                    return localized.locale(locale);
-                }
-            }
-
-            const date = dayjs(text, format, true);
-
-            if (date.isValid() || locale === 'en') {
-                return date;
-            }
-
-            const english = dayjs(text, format, 'en', true);
-
-            return english.isValid() ? english.locale(locale) : date;
+            return locale === 'en' ? ['en'] : [locale, 'en'];
         },
 
         /**
@@ -2075,9 +2072,11 @@ export default function dateRangeComponent(config) {
             }
 
             const format = this.config.displayFormat;
-            // An empty field is null: what the Clear action stores, and what
-            // Filament and the dual-state backing fields expect.
-            let value = null;
+            // An empty field stores '' (keyboard clear, clear()), as in
+            // 5.0.11; the server's Clear action stores null. Unifying every
+            // clear to null is planned for 6.0: null can throw in app code
+            // typed `string $state` and fails NOT NULL string columns.
+            let value = '';
             let start = null;
             let end = null;
 
@@ -2152,16 +2151,21 @@ export default function dateRangeComponent(config) {
             try {
                 if (!this.formatHasTimeTokens(this.config.storageFormat)) {
                     const serialized = date.format(this.config.storageFormat);
-                    const parsed = dayjs(serialized, this.config.storageFormat, true);
+                    const parsed = parseFormattedDate(dayjs, serialized, this.config.storageFormat, [dayjs.locale()]);
 
                     return parsed.isValid() && parsed.format(this.config.storageFormat) === serialized
                         ? serialized
                         : null;
                 }
 
-                const parsed = dayjs.tz(
+                // Read with the locale's own meridiem table: Day.js's parser
+                // took ar "م" at 12:30 (and ru "дня", ko "오후"...) as AM, the
+                // round trip below refused it and Apply stored nothing.
+                const parsed = parseFormattedDateInZone(
+                    dayjs,
                     display,
                     this.config.displayFormat,
+                    [dayjs.locale()],
                     this.config.timezone
                 );
 
