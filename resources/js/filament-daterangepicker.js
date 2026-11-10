@@ -1835,10 +1835,17 @@ export default function dateRangeComponent(config) {
                 // server (Carbon writes English names and AM / PM).
                 const locales = this.parseLocales();
 
+                // Written in English since 5.0.12; older versions wrote the
+                // page locale, so accept either spelling of the same value.
+                const roundTrips = (parsed) => parsed.isValid() && [
+                    parsed.locale('en').format(this.config.storageFormat),
+                    parsed.locale(dayjs.locale()).format(this.config.storageFormat),
+                ].includes(value);
+
                 if (!this.formatHasTimeTokens(this.config.storageFormat)) {
                     const parsed = parseFormattedDate(dayjs, value, this.config.storageFormat, locales);
 
-                    if (!parsed.isValid() || parsed.format(this.config.storageFormat) !== value) {
+                    if (!roundTrips(parsed)) {
                         return null;
                     }
 
@@ -1853,7 +1860,7 @@ export default function dateRangeComponent(config) {
                     this.config.storageTimezone
                 );
 
-                if (!parsed.isValid() || parsed.format(this.config.storageFormat) !== value) {
+                if (!roundTrips(parsed)) {
                     return null;
                 }
 
@@ -2149,11 +2156,14 @@ export default function dateRangeComponent(config) {
             }
 
             try {
+                // Storage values are written in English whatever the page
+                // locale: the server, Carbon and the database read them back,
+                // and Carbon cannot parse "م" or "نوفمبر".
                 if (!this.formatHasTimeTokens(this.config.storageFormat)) {
-                    const serialized = date.format(this.config.storageFormat);
-                    const parsed = parseFormattedDate(dayjs, serialized, this.config.storageFormat, [dayjs.locale()]);
+                    const serialized = date.locale('en').format(this.config.storageFormat);
+                    const parsed = parseFormattedDate(dayjs, serialized, this.config.storageFormat, ['en']);
 
-                    return parsed.isValid() && parsed.format(this.config.storageFormat) === serialized
+                    return parsed.isValid() && parsed.locale('en').format(this.config.storageFormat) === serialized
                         ? serialized
                         : null;
                 }
@@ -2191,7 +2201,7 @@ export default function dateRangeComponent(config) {
                     stored = stored.second(59);
                 }
 
-                return stored.format(this.config.storageFormat);
+                return stored.locale('en').format(this.config.storageFormat);
             } catch {
                 return null;
             }
