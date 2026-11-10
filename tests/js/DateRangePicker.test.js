@@ -835,6 +835,7 @@ describe('Advanced Features', () => {
         it('should initialize with default time values', async () => {
             const { component } = await createTestComponent({
                 timePicker: true,
+                timePicker24: true,
             });
 
             expect(component.startTime).toBeDefined();

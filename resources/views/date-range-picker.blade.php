@@ -506,7 +506,7 @@
                                 {{-- Start Time --}}
                                 <div class="fi-daterangepicker-time-col">
                                     <label class="fi-daterangepicker-time-label" x-text="config.labels.from"></label>
-                                    <div class="fi-daterangepicker-time-inputs">
+                                    <div class="fi-daterangepicker-time-inputs" dir="ltr">
                                         <select x-model="startTime.hour" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-time">
                                             <template x-for="h in hourOptions" :key="h.value">
                                                 <option :value="h.value" :selected="Number(startTime.hour) === h.value" x-text="h.label"></option>
@@ -541,7 +541,7 @@
                                 <template x-if="!config.singleCalendar">
                                     <div class="fi-daterangepicker-time-col">
                                         <label class="fi-daterangepicker-time-label" x-text="config.labels.to"></label>
-                                        <div class="fi-daterangepicker-time-inputs">
+                                        <div class="fi-daterangepicker-time-inputs" dir="ltr">
                                             <select x-model="endTime.hour" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-time">
                                                 <template x-for="h in hourOptions" :key="h.value">
                                                     <option :value="h.value" :selected="Number(endTime.hour) === h.value" x-text="h.label"></option>

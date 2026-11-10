@@ -306,13 +306,21 @@ export default function dateRangeComponent(config) {
             // teleported dropdown (fi-daterangepicker-dropdown-<instanceId>).
             this.$el?.setAttribute?.(INSTANCE_ATTRIBUTE, this.instanceId);
 
+            // Set Day.js locale (all locales are statically imported).
+            // Before the mask: its AM/PM block takes the locale's meridiem.
+            this.setLocale(this.config.locale);
+
+            // The 1-12 hour select has no 0 or 23: start the 12h picker at
+            // 12:00 AM and 11:59 PM, the same instants as 00:00 and 23:59.
+            if (!this.config.timePicker24) {
+                this.startTime = this.extractTime(dayjs().startOf('day'));
+                this.endTime = this.extractTime(dayjs().endOf('day'));
+            }
+
             // Setup input masking immediately for visual feedback
             if (this.allowManualInput) {
                 this.setupInputMask();
             }
-
-            // Set Day.js locale (all locales are statically imported)
-            this.setLocale(this.config.locale);
 
             // Parse initial state
             this.parseConfiguredState();
@@ -579,9 +587,38 @@ export default function dateRangeComponent(config) {
                     hh: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2 },
                     mm: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2 },
                     ss: { mask: IMask.MaskedRange, from: 0, to: 59, maxLength: 2 },
+                    A: this.createMeridiemMaskOptions(false),
+                    a: this.createMeridiemMaskOptions(true),
                 },
                 format: (date) => dayjs(date).format(format),
                 parse: (str) => dayjs(str, format).toDate(),
+            };
+        },
+
+        /**
+         * The AM/PM block of a 12h display format ("hh:mm A"). Without it the
+         * mask kept "A" as a fixed letter, so the value could never parse and
+         * the last time digit was refused. Takes the locale's meridiem (ص/م in
+         * Arabic) and also "a"/"p" from a Latin keyboard.
+         */
+        createMeridiemMaskOptions(lowerCase) {
+            const meridiem = (hour) => dayjs().hour(hour).minute(0).format(lowerCase ? 'a' : 'A');
+            const am = meridiem(0);
+            const pm = meridiem(13);
+            const values = [...new Set(
+                Array.from({ length: 24 }, (_, hour) => meridiem(hour))
+            )];
+
+            return {
+                mask: IMask.MaskedEnum,
+                enum: values,
+                matchValue: (value, typed, matchFrom) => {
+                    const text = typed.slice(matchFrom);
+                    if (value.toLowerCase().startsWith(text.toLowerCase())) return true;
+
+                    const alias = { a: am, p: pm }[text.toLowerCase()];
+                    return alias === value;
+                },
             };
         },
 
@@ -750,6 +787,14 @@ export default function dateRangeComponent(config) {
             this.selection.end = result.end;
             this.viewDate = result.start;
             this.showSelectionInUnlinkedCalendars();
+
+            // syncState() applies startTime/endTime to the selection: take
+            // them from what was typed, or the selects' defaults win.
+            if (this.config.timePicker) {
+                this.startTime = this.extractTime(result.start);
+                this.endTime = this.extractTime(result.end);
+            }
+
             if (typedPreset !== null) this.selectedPresetLabel = typedPreset;
             this.forgetStalePresetLabel();
 
