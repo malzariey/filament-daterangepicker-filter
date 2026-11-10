@@ -322,7 +322,7 @@
                                         <template x-if="config.showWeekNumbers || config.showISOWeekNumbers">
                                             <span class="fi-daterangepicker-week-label" x-text="config.labels.weekLabel"></span>
                                         </template>
-                                        <template x-for="day in weekDays" :key="day">
+                                        <template x-for="(day, index) in weekDays" :key="index">
                                             <span class="fi-daterangepicker-weekday" x-text="day"></span>
                                         </template>
                                     </div>

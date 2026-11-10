@@ -7,7 +7,7 @@ return [
     'tu' =>"A",
     'we' =>"T",
     'th' =>"K",
-    'fr' =>"P",
+    'fr' =>"Pn",
     'sa' =>"Š",
     'custom' =>"Pasirinkti laikotarpį",
     'apply' =>"Patvirtinti",

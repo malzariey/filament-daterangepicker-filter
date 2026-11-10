@@ -39,3 +39,15 @@ it('has no empty translation in :dataset', function (string $locale) use ($langP
         expect($empty)->toBe([], basename(dirname($localeFile)) . ' has empty: ' . implode(', ', $empty));
     }
 })->with($locales);
+
+/*
+ * The seven weekday labels are distinct. ru and uk shipped "Пт" (Friday)
+ * for Monday and lt shipped "P" twice, so Monday's column carried Friday's
+ * label and the header row lost a cell.
+ */
+it('has seven distinct weekday labels in every locale: :dataset', function (string $locale) {
+    $strings = require __DIR__ . "/../resources/lang/{$locale}/message.php";
+    $days = array_map(fn (string $key) => $strings[$key], ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa']);
+
+    expect(array_unique($days))->toHaveCount(7, "{$locale}: " . implode(', ', $days));
+})->with(array_map('basename', glob(__DIR__ . '/../resources/lang/*', GLOB_ONLYDIR)));
