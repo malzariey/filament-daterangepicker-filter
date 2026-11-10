@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'period' => 'ماوە',
+    'period' => ':label: ماوە :period',
     'su' =>"یەک",
     'mo' =>"دوو",
     'tu' =>"سێ",
