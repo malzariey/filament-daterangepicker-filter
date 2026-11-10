@@ -402,6 +402,28 @@ DateRangeFilter::make('created_at')
     )
 ```
 
+The `$startDate` and `$endDate` a callback receives are instants in the storage
+timezone (`config('app.timezone')`, or `->systemTimezone()`): the picked day,
+read in the display timezone, converted for a datetime column. To compare a
+date-only column yourself, convert them back first, for example
+`$startDate->copy()->timezone(FilamentTimezone::get())->toDateString()`.
+
+### Date Columns
+
+A `date` column has no time of day, so there is nothing to convert between
+timezones. Without a callback, the filter compares the calendar dates the user
+picked, with no timezone shift, when either:
+
+- the model casts the column as `date`, `immutable_date`, `date:<format>` or `immutable_date:<format>`, or
+- the database reports the column type as `date`.
+
+With the time picker on a date column only the dates count. Month and year
+pickers cover every day of the picked month or year. Every other column is
+compared as an instant, converted from the display timezone to the storage
+timezone, as before. When the cast does not say `date`, the column type is
+read from the schema once per filter instance (one query per request while the
+filter is active).
+
 ### Filter Indicator
 ```php
 DateRangeFilter::make('created_at')->withIndicator()
