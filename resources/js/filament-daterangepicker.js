@@ -271,6 +271,9 @@ export default function dateRangeComponent(config) {
             // Picker type: 'day' (default), 'month', or 'year'
             pickerType: config.pickerType || 'day',
             readOnly: config.readOnly ?? false,
+            // Whether placeholder() was set on the field (from the view);
+            // undefined from a view published before 5.0.12.
+            hasPlaceholder: config.hasPlaceholder,
 
             // Labels (localized from PHP)
             labels: {
@@ -553,9 +556,15 @@ export default function dateRangeComponent(config) {
             // A placeholder() set on the field is rendered on the input. Keep
             // it, and hold the mask guide back until the input is focused, so
             // an empty field shows that placeholder rather than "__/__/____".
-            // The format placeholder below is ours, not the user's.
+            // The view says whether placeholder() was set, so one that reads
+            // the same as the format hint ("mm/yyyy") still counts. A view
+            // published before 5.0.12 sends no flag: there, a placeholder
+            // equal to the format hint is taken for ours, as before.
             const renderedPlaceholder = (input.getAttribute('placeholder') ?? '').trim();
-            this._userPlaceholder = renderedPlaceholder !== '' && renderedPlaceholder !== rangePlaceholder
+            const setOnField = typeof this.config.hasPlaceholder === 'boolean'
+                ? this.config.hasPlaceholder
+                : renderedPlaceholder !== rangePlaceholder;
+            this._userPlaceholder = setOnField && renderedPlaceholder !== ''
                 ? renderedPlaceholder
                 : null;
 
@@ -1494,11 +1503,64 @@ export default function dateRangeComponent(config) {
             this.viewDate = this.viewDate.add(1, 'year');
         },
 
+        /**
+         * Whether a decade arrow may move: the decade it brings into view
+         * must hold an allowed year (getMinConstraintYear /
+         * getMaxConstraintYear). The padding cells either side of a decade
+         * are not counted, as each is a full cell of the decade next to it.
+         */
+        canShowPreviousDecade() {
+            const minYear = this.getMinConstraintYear();
+            if (minYear === null) return true;
+
+            // The new left decade ends one year before the current one starts.
+            return this.generateYearGrid(0).decadeStart - 1 >= minYear;
+        },
+
+        canShowNextDecade() {
+            const maxYear = this.getMaxConstraintYear();
+            if (maxYear === null) return true;
+
+            const lastOffset = this.config.singleCalendar ? 0 : 1;
+
+            // The new right decade starts one year after the current one ends.
+            return this.generateYearGrid(lastOffset).decadeEnd + 1 <= maxYear;
+        },
+
+        /**
+         * Keep the year picker on decades that hold an allowed year: the
+         * left one no later than maxYear's (the right one, with two
+         * calendars), and never before minYear's.
+         */
+        constrainYearPickerViewDate(date) {
+            if (!date) return date;
+
+            const minYear = this.getMinConstraintYear();
+            const maxYear = this.getMaxConstraintYear();
+            const decadeOf = (year) => Math.floor(year / 10) * 10;
+            let decade = decadeOf(date.year());
+
+            if (maxYear !== null) {
+                const lastOffset = this.config.singleCalendar ? 0 : 1;
+                decade = Math.min(decade, decadeOf(maxYear) - lastOffset * 10);
+            }
+
+            if (minYear !== null) {
+                decade = Math.max(decade, decadeOf(minYear));
+            }
+
+            return decade === decadeOf(date.year()) ? date : date.year(decade + (date.year() % 10));
+        },
+
         prevDecade() {
+            if (!this.canShowPreviousDecade()) return;
+
             this.viewDate = this.viewDate.subtract(10, 'year');
         },
 
         nextDecade() {
+            if (!this.canShowNextDecade()) return;
+
             this.viewDate = this.viewDate.add(10, 'year');
         },
 
@@ -2159,6 +2221,10 @@ export default function dateRangeComponent(config) {
 
             if (this.isMonthPicker) {
                 this.viewDate = this.constrainMonthPickerViewDate(this.viewDate);
+            }
+
+            if (this.isYearPicker) {
+                this.viewDate = this.constrainYearPickerViewDate(this.viewDate);
             }
 
             // Dispatch show event for Livewire/external listeners

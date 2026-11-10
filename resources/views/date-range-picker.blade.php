@@ -21,11 +21,12 @@
     $hasErrors = $errors->has($statePath)
         || ($dualStartStatePath && $errors->has($dualStartStatePath))
         || ($dualEndStatePath && $errors->has($dualEndStatePath));
+    $placeholder = $getPlaceholder();
     $inputAttributes = [
         'id' => $getId(),
         'name' => $name,
         'disabled' => $isDisabled,
-        'placeholder' => $getPlaceholder(),
+        'placeholder' => $placeholder,
         'required' => $isRequired(),
         'readonly' => $isReadOnly,
         'type' => 'text',
@@ -102,6 +103,7 @@
             drops: @js($getDrops()),
             teleport: @js($getTeleport()),
             allowInput: @js($getAllowInput()),
+            hasPlaceholder: @js(filled($placeholder)),
             readOnly: @js($isFieldReadOnly),
             pickerType: @js($getPickerTypeValue()),
 
@@ -378,6 +380,7 @@
                                         <button
                                             type="button"
                                             @click="prevYear()"
+                                            :disabled="!canShowPreviousMonthPickerYear()"
                                             x-show="offset === 0"
                                             class="fi-daterangepicker-nav-btn"
                                             aria-label="Previous year"
@@ -408,6 +411,7 @@
                                         <button
                                             type="button"
                                             @click="nextYear()"
+                                            :disabled="!canShowNextMonthPickerYear()"
                                             x-show="config.singleCalendar ? true : offset === 1"
                                             class="fi-daterangepicker-nav-btn"
                                             aria-label="Next year"
@@ -459,6 +463,7 @@
                                         <button
                                             type="button"
                                             @click="prevDecade()"
+                                            :disabled="!canShowPreviousDecade()"
                                             x-show="offset === 0"
                                             class="fi-daterangepicker-nav-btn"
                                             aria-label="Previous decade"
@@ -478,6 +483,7 @@
                                         <button
                                             type="button"
                                             @click="nextDecade()"
+                                            :disabled="!canShowNextDecade()"
                                             x-show="config.singleCalendar ? true : offset === 1"
                                             class="fi-daterangepicker-nav-btn"
                                             aria-label="Next decade"
