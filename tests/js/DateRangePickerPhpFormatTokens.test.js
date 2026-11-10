@@ -167,4 +167,22 @@ describe("PHP format tokens in the browser", () => {
         expect(component.config.dualStartState).toBe("2026-06-15 07:13:00 UTC");
         expect(component.config.dualEndState).toBe("2026-06-16 15:47:59 UTC");
     });
+
+    /**
+     * Unsupported PHP tokens keep the Day.js format 5.0.11 sent, and the
+     * page shows what it showed then. A misplaced "S" ("dS") is sent as
+     * "[o]" instead of "o": Day.js writes both as the letter, but "DDo"
+     * would now reach the English ordinal plugin as "D" + "Do".
+     */
+    it("writes the unsupported tokens' 5.0.11 formats as 5.0.11 did", async () => {
+        await createTestComponent();
+
+        const date = dayjs("2026-06-05 14:07:09");
+
+        expect(date.format("DD[o] MMMM YYYY")).toBe("05o June 2026");
+        expect(date.format("DD/MM/YYYY E")).toBe("05/06/2026 E");
+        expect(date.format("YYYY-MM-DD [W]W")).toBe("2026-06-05 WW");
+        expect(date.format("YYYY DDD")).toBe("2026 055");
+        expect(date.format("YYYY-MM-DD HH:mm z")).toBe("2026-06-05 14:07 z");
+    });
 });

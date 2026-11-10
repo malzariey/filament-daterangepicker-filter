@@ -1,7 +1,15 @@
 <?php
 
 use Carbon\Carbon;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Schema;
 use Filament\Support\Facades\FilamentTimezone;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Js;
+use Livewire\Component;
+use Livewire\Livewire;
+use Malzariey\FilamentDaterangepickerFilter\Exceptions\UnsupportedDateFormatToken;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
@@ -90,11 +98,25 @@ it('filters a jS range an Arabic page wrote', function () {
         ->and($to?->format('Y-m-d'))->toBe('2026-11-23');
 });
 
-it('refuses S anywhere but straight after j', function (string $format) {
-    DateRangePicker::make('test')->format($format);
-})->throws(InvalidArgumentException::class, '"S"')->with([
-    'after d' => ['dS F Y'],
-    'alone' => ['j S F Y'],
+it('reports an S anywhere but straight after j and renders it as before', function (string $format, string $expected) {
+    Exceptions::fake();
+
+    $field = DateRangePicker::make('test')->format($format);
+
+    // 5.0.11 wrote a bare "o", which Day.js writes literally; "[o]" writes
+    // the same and keeps the English ordinal plugin from reading "DDo" as
+    // "D" + "Do".
+    expect($field->getDisplayFormat())->toBe($expected);
+
+    Exceptions::assertReportedCount(1);
+    Exceptions::assertReported(fn (UnsupportedDateFormatToken $e) => $e->token === 'S'
+        && $e->format === $format
+        && str_contains($e->getMessage(), '"S"')
+        && str_contains($e->getMessage(), '"jS"')
+        && str_contains($e->getMessage(), '6.0'));
+})->with([
+    'after d' => ['dS F Y', 'DD[o] MMMM YYYY'],
+    'alone' => ['j S F Y', 'D [o] MMMM YYYY'],
 ]);
 
 it('keeps an escaped S literal', function () {
@@ -147,30 +169,154 @@ it('filters an e range the browser wrote', function () {
         ->and($to->toIso8601String())->toBe('2026-06-02T23:59:59+02:00');
 });
 
-// ── N W z T ──────────────────────────────────────────────────────────
+// ── N W z T t L B I Z c r ────────────────────────────────────────
 
-it('refuses a token that cannot round-trip', function (string $format, string $token) {
-    expect(fn () => DateRangePicker::make('test')->format($format))
-        ->toThrow(InvalidArgumentException::class, "\"{$token}\"");
+it('reports a token that cannot round-trip and renders it as 5.0.11 did', function (string $format, string $token, string $expected) {
+    Exceptions::fake();
+
+    $field = DateRangePicker::make('test')->format($format);
+
+    // 5.0.11 convertPhpToJsFormat() output for the same format.
+    expect($field->getDisplayFormat())->toBe($expected);
+
+    Exceptions::assertReportedCount(1);
+    Exceptions::assertReported(fn (UnsupportedDateFormatToken $e) => $e->token === $token
+        && $e->format === $format
+        && $e->context() === ['format' => $format, 'token' => $token]
+        && str_contains($e->getMessage(), "\"{$format}\"")
+        && str_contains($e->getMessage(), "\"{$token}\"")
+        && str_contains($e->getMessage(), 'Instead,')
+        && str_contains($e->getMessage(), 'will throw in 6.0'));
 })->with([
-    'N (ISO weekday)' => ['d/m/Y N', 'N'],
-    'W (ISO week)' => ['Y-m-d \WW', 'W'],
-    'z (day of year)' => ['Y z', 'z'],
-    'T (zone abbreviation)' => ['Y-m-d H:i T', 'T'],
+    'N (ISO weekday)' => ['d/m/Y N', 'N', 'DD/MM/YYYY E'],
+    'W (ISO week)' => ['Y-m-d \WW', 'W', 'YYYY-MM-DD [W]W'],
+    'z (day of year)' => ['Y z', 'z', 'YYYY DDD'],
+    'T (zone abbreviation)' => ['Y-m-d H:i T', 'T', 'YYYY-MM-DD HH:mm z'],
+    't (days in month)' => ['Y-m (t)', 't', 'YYYY-MM ()'],
+    'L (leap year)' => ['Y L', 'L', 'YYYY '],
+    'B (Swatch time)' => ['d/m/Y B', 'B', 'DD/MM/YYYY '],
+    'I (DST flag)' => ['d/m/Y I', 'I', 'DD/MM/YYYY '],
+    'Z (offset seconds)' => ['d/m/Y Z', 'Z', 'DD/MM/YYYY '],
+    'c (ISO 8601)' => ['c', 'c', ''],
+    'r (RFC 2822)' => ['r', 'r', ''],
 ]);
 
-it('refuses those tokens on a filter too', function () {
-    DateRangeFilter::make('at')->format('o-\WW');
-})->throws(InvalidArgumentException::class, '"W"');
+it('does not throw when such a format is set', function () {
+    Exceptions::fake();
 
-it('refuses a token returned by a format closure when the format is converted', function () {
-    $field = DateRangePicker::make('test')->format(fn () => 'Y-m-d (N)');
+    DateRangePicker::make('test')->format('d/m/Y N');
+    DateRangeFilter::make('at')->format('o-\WW');
+
+    // Reported when converted for the browser, not when set.
+    Exceptions::assertNothingReported();
+});
+
+it('reports a token once per format per request', function () {
+    Exceptions::fake();
+
+    $field = DateRangePicker::make('test')
+        ->useDualState('start_at', 'end_at')
+        ->format('Y-m-d N', enforceFormat: true);
 
     $field->getDisplayFormat();
-})->throws(InvalidArgumentException::class, '"N"');
+    $field->getDisplayFormat();
+    $field->getDualStateStorageFormat();
+    DateRangePicker::make('other')->format('Y-m-d N', enforceFormat: true)->getDisplayFormat();
+
+    Exceptions::assertReportedCount(1);
+
+    // Another format with the same token, and a second token, are new.
+    DateRangePicker::make('third')->format('d/m/Y N')->getDisplayFormat();
+    DateRangePicker::make('fourth')->format('Y-m-d N W', enforceFormat: true)->getDisplayFormat();
+
+    Exceptions::assertReportedCount(4);
+});
+
+it('reports a token returned by a format closure when the format is converted', function () {
+    Exceptions::fake();
+
+    $field = DateRangePicker::make('test')->format(fn () => 'Y-m-d (N)');
+
+    expect($field->getDisplayFormat())->toBe('YYYY-MM-DD (E)');
+
+    Exceptions::assertReported(fn (UnsupportedDateFormatToken $e) => $e->token === 'N');
+});
+
+it('reports those tokens on a filter too', function () {
+    Exceptions::fake();
+
+    $field = DateRangeFilter::make('at')->format('o-\WW')->getFormField();
+
+    expect($field->getDisplayFormat())->toBe('YYYY-[W]W');
+
+    Exceptions::assertReported(fn (UnsupportedDateFormatToken $e) => $e->token === 'W');
+});
 
 it('accepts those letters escaped as literals', function () {
-    $field = DateRangePicker::make('test')->format('d/m/Y \N\W\z\T');
+    Exceptions::fake();
 
-    expect($field->getDisplayFormat())->toBe('DD/MM/YYYY [N][W][z][T]');
+    $field = DateRangePicker::make('test')->format('d/m/Y \N\W\z\T\S\t\c');
+
+    expect($field->getDisplayFormat())->toBe('DD/MM/YYYY [N][W][z][T][S][t][c]');
+
+    Exceptions::assertNothingReported();
+});
+
+// ── A page with such a format still renders ──────────────────────────
+
+final class UnsupportedTokenFormComponent extends Component implements HasSchemas
+{
+    use InteractsWithSchemas;
+
+    public ?array $data = [];
+
+    public function mount(): void
+    {
+        $this->form->fill();
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->statePath('data')
+            ->components([
+                DateRangePicker::make('range')
+                    ->format('d/m/Y (N) \WW')
+                    ->defaultLast7Days(),
+                DateRangePicker::make('dual')
+                    ->useDualState('dual_start', 'dual_end')
+                    ->format('Y-m-d H:i:s T', enforceFormat: true)
+                    ->timePicker()
+                    ->defaultToday(),
+            ]);
+    }
+
+    public function render(): string
+    {
+        return <<<'HTML'
+            <div>{{ $this->form }}</div>
+            HTML;
+    }
+}
+
+it('renders a Livewire form whose formats use unsupported tokens', function () {
+    Exceptions::fake();
+
+    $html = Livewire::test(UnsupportedTokenFormComponent::class)
+        ->assertOk()
+        ->html();
+
+    expect($html)->toContain('displayFormat: '.Js::from('DD/MM/YYYY (E) [W]W'))
+        ->and($html)->toContain('storageFormat: '.Js::from('YYYY-MM-DD HH:mm:ss z'));
+
+    // Once per format and token, however often the request converts it.
+    Exceptions::assertReportedCount(3);
+});
+
+it('renders it through the real exception handler, which only logs', function () {
+    config(['logging.default' => 'null']);
+
+    Livewire::test(UnsupportedTokenFormComponent::class)
+        ->assertOk()
+        ->assertSee('displayFormat: '.Js::from('DD/MM/YYYY (E) [W]W'), escape: false);
 });

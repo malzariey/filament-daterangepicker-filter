@@ -5,43 +5,56 @@ namespace Malzariey\FilamentDaterangepickerFilter\Concerns;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Closure;
-use InvalidArgumentException;
 use Filament\Support\Facades\FilamentTimezone;
 use JetBrains\PhpStorm\Deprecated;
 use Malzariey\FilamentDaterangepickerFilter\Enums\DropDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\OpenDirection;
 use Malzariey\FilamentDaterangepickerFilter\Enums\PickerType;
+use Malzariey\FilamentDaterangepickerFilter\Exceptions\UnsupportedDateFormatToken;
+use Malzariey\FilamentDaterangepickerFilter\Support\ReportedFormatTokens;
 
 trait HasRangePicker
 {
     /**
      * PHP date format → Day.js format token mapping.
      * Static to avoid rebuilding on every convertPhpToJsFormat() call.
+     *
+     * "S" is converted only straight after "j" ("jS" → "Do"), "e" is written
+     * as a literal of the zone (convertPhpFormatIn()), and the tokens in
+     * $unsupportedPhpFormatTokens are reported.
      */
     private static array $phpToJsFormatMap = [
         'd' => 'DD', 'D' => 'ddd', 'j' => 'D', 'l' => 'dddd',
-        // "S" is only ever read straight after "j" (assertSupportedPhpFormat()),
-        // so "jS" becomes "Do". N, W, z and T are refused there; "e" is
-        // written as a literal of the zone (convertPhpFormatIn()).
         'S' => 'o', 'w' => 'd',
         'F' => 'MMMM', 'm' => 'MM', 'M' => 'MMM',
-        'n' => 'M', 't' => '', 'L' => '', 'o' => 'YYYY',
+        'n' => 'M', 'o' => 'YYYY',
         'Y' => 'YYYY', 'y' => 'YY', 'a' => 'a', 'A' => 'A',
-        'B' => '', 'g' => 'h', 'G' => 'H', 'h' => 'hh',
+        'g' => 'h', 'G' => 'H', 'h' => 'hh',
         'H' => 'HH', 'i' => 'mm', 's' => 'ss', 'u' => 'SSS',
-        'I' => '', 'O' => 'ZZ', 'P' => 'Z',
-        'Z' => '', 'c' => '', 'r' => '', 'U' => 'X',
+        'O' => 'ZZ', 'P' => 'Z', 'U' => 'X',
     ];
 
     /**
-     * PHP format characters the picker cannot write and read back, and why.
-     * format() refuses them rather than show a value nobody can read.
+     * PHP format characters the picker cannot write in the browser and read
+     * back on the server: [meaning, why, what to use instead, the Day.js
+     * output 5.0.11 gave it]. They are reported once per format per request
+     * (UnsupportedDateFormatToken) and keep that output, so a page that
+     * rendered before renders the same. 6.0 will throw instead.
+     *
+     * @var array<string, array{string, string, string, string}>
      */
     private static array $unsupportedPhpFormatTokens = [
-        'N' => ['ISO weekday number', 'Carbon::createFromFormat() cannot read it'],
-        'W' => ['ISO week number', 'Carbon::createFromFormat() cannot read it'],
-        'z' => ['day of the year', 'Day.js can neither write nor read it'],
-        'T' => ['timezone abbreviation', 'Day.js cannot write it for the picked date; use "e" (timezone identifier) instead'],
+        'N' => ['ISO weekday number', 'Carbon::createFromFormat() cannot read it', 'use "D" or "l" (weekday name)', 'E'],
+        'W' => ['ISO week number', 'Carbon::createFromFormat() cannot read it', 'remove it; showISOWeekNumbers() shows week numbers in the calendar', 'W'],
+        'z' => ['day of the year', 'Day.js can neither write nor read it', 'use a day and month such as "d/m"', 'DDD'],
+        'T' => ['timezone abbreviation', 'Day.js cannot write it for the picked date', 'use "e" (timezone identifier)', 'z'],
+        't' => ['days in the month', 'Day.js cannot write it and Carbon::createFromFormat() cannot read it', 'remove it', ''],
+        'L' => ['leap year flag', 'Day.js cannot write it and Carbon::createFromFormat() cannot read it', 'remove it', ''],
+        'B' => ['Swatch Internet time', 'Day.js cannot write it and Carbon::createFromFormat() cannot read it', 'use "H:i"', ''],
+        'I' => ['daylight saving time flag', 'Day.js cannot write it and Carbon::createFromFormat() cannot read it', 'use "e" (timezone identifier)', ''],
+        'Z' => ['timezone offset in seconds', 'Day.js cannot write it and Carbon::createFromFormat() cannot read it', 'use "e" (timezone identifier)', ''],
+        'c' => ['ISO 8601 date', 'the browser writes the offset of the visitor\'s clock, not of the picker timezone', 'use "Y-m-d\\TH:i:s", with "e" for the zone', ''],
+        'r' => ['RFC 2822 date', 'Carbon::createFromFormat() cannot read it', 'use "D, d M Y H:i:s", with "e" for the zone', ''],
     ];
 
     protected CarbonInterface|string|Closure|null $maxDate = null;
@@ -359,12 +372,13 @@ trait HasRangePicker
         return $this;
     }
 
+    /**
+     * The PHP date format of the state. A token the picker cannot write and
+     * read back (README, "PHP format tokens") is reported when the format is
+     * converted for the browser, not thrown; 6.0 will throw.
+     */
     public function format(string|Closure|null $format, bool $enforceFormat = false): static
     {
-        if (is_string($format)) {
-            self::assertSupportedPhpFormat($format);
-        }
-
         $this->format = $format;
 
         $this->enforceFormat = $enforceFormat;
@@ -608,10 +622,9 @@ trait HasRangePicker
      */
     private function convertPhpFormatIn(string $format, string $timezone): string
     {
-        self::assertSupportedPhpFormat($format);
-
         $jsFormat = '';
         $length = strlen($format);
+        $previous = null;
 
         for ($i = 0; $i < $length; $i++) {
             $char = $format[$i];
@@ -621,66 +634,58 @@ trait HasRangePicker
                 if ($i < $length) {
                     $jsFormat .= '[' . $format[$i] . ']';
                 }
+                $previous = null;
                 continue;
             }
 
             if ($char === 'e') {
                 $jsFormat .= '[' . $timezone . ']';
+            } elseif ($char === 'S' && $previous !== 'j') {
+                // Day.js has no suffix-only token. 5.0.11 wrote "o", a
+                // literal for Day.js; bracketed so the "Do" of the English
+                // ordinal plugin cannot pick it up after a "D" ("dS").
+                self::reportUnsupportedPhpFormatToken($format, 'S', sprintf(
+                    'The date format "%s" uses "S" (ordinal suffix) without "j" before it. The date range picker writes the suffix only together with the day, so this "S" is shown as the letter "o", as before; this will throw in 6.0. Use "jS" ("1st"), or escape it ("\\S") to show the letter itself.',
+                    $format,
+                ));
+                $jsFormat .= '[o]';
+            } elseif (isset(self::$unsupportedPhpFormatTokens[$char])) {
+                [$name, $reason, $instead, $output] = self::$unsupportedPhpFormatTokens[$char];
 
-                continue;
+                self::reportUnsupportedPhpFormatToken($format, $char, sprintf(
+                    'The date format "%s" uses "%s" (%s), which the date range picker cannot write and read back: %s. It is %s, as before; this will throw in 6.0. Instead, %s, or escape it ("\\%s") to show the letter itself.',
+                    $format,
+                    $char,
+                    $name,
+                    $reason,
+                    $output === '' ? 'left out of the picker format' : sprintf('written as Day.js "%s"', $output),
+                    $instead,
+                    $char,
+                ));
+                $jsFormat .= $output;
+            } else {
+                $jsFormat .= self::$phpToJsFormatMap[$char] ?? $char;
             }
 
-            $jsFormat .= self::$phpToJsFormatMap[$char] ?? $char;
+            $previous = $char;
         }
 
         return $jsFormat;
     }
 
     /**
-     * Refuse a PHP format character the picker cannot write in the browser
-     * and read back on the server (see $unsupportedPhpFormatTokens), and an
-     * "S" that does not follow "j": Day.js writes the ordinal suffix only
-     * together with the day ("jS" → "Do").
-     *
-     * @throws InvalidArgumentException
+     * Report an unsupported format token once per format per request, so a
+     * table with a filter in every column, or a field re-rendered by
+     * Livewire, does not flood the log. report() never throws: the app's
+     * exception handler logs it (and sends it to an error tracker).
      */
-    private static function assertSupportedPhpFormat(string $format): void
+    private static function reportUnsupportedPhpFormatToken(string $format, string $token, string $message): void
     {
-        $length = strlen($format);
-        $previous = null;
-
-        for ($i = 0; $i < $length; $i++) {
-            $char = $format[$i];
-
-            if ($char === '\\') {
-                $i++;
-                $previous = null;
-
-                continue;
-            }
-
-            if ($char === 'S' && $previous !== 'j') {
-                throw new InvalidArgumentException(sprintf(
-                    'The date format "%s" uses "S" (ordinal suffix) without "j" before it. The date range picker writes the suffix only together with the day: use "jS" ("1st"), or escape it ("\\S") to show the letter itself.',
-                    $format,
-                ));
-            }
-
-            if (isset(self::$unsupportedPhpFormatTokens[$char])) {
-                [$name, $reason] = self::$unsupportedPhpFormatTokens[$char];
-
-                throw new InvalidArgumentException(sprintf(
-                    'The date format "%s" uses "%s" (%s), which the date range picker cannot write and read back: %s. Remove it, or escape it ("\\%s") to show the letter itself.',
-                    $format,
-                    $char,
-                    $name,
-                    $reason,
-                    $char,
-                ));
-            }
-
-            $previous = $char;
+        if (! app(ReportedFormatTokens::class)->first($format, $token)) {
+            return;
         }
+
+        report(new UnsupportedDateFormatToken($format, $token, $message));
     }
 
     public function getTimePicker(): bool
