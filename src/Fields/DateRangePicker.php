@@ -63,13 +63,131 @@ class DateRangePicker extends Field implements HasAffixActions
                 );
             }
 
-            if ($component->enforceIfNull && $operation === 'edit' && $component->getState() === null) {
+            if (! $component->enforceIfNull || $operation !== 'edit') {
+                return;
+            }
+
+            if ($component->isDualState()) {
+                // Only when nothing is stored: a stored half of a range is
+                // kept as it is, never completed from the default.
+                $values = $component->fillDualStateFromDefault($component->buildDefaultValue());
+
+                if ($values !== null) {
+                    $component->state($values[0] . $component->getRangeSeparator() . $values[1]);
+                }
+
+                return;
+            }
+
+            if ($component->getState() === null) {
                 $default = $component->buildDefaultValue();
                 if ($default !== null) {
                     $component->state($default);
                 }
             }
         });
+    }
+
+    /**
+     * Filament applies defaults only when the form is filled without data
+     * (a create form). A dual-state field keeps its value in the backing
+     * fields, and the hydration hook rebuilds the picker state from them, so
+     * the default has to reach the backing fields here or it is lost.
+     *
+     * @param  array<string, mixed> | null  $hydratedDefaultState
+     */
+    public function hydrateDefaultState(?array &$hydratedDefaultState): void
+    {
+        parent::hydrateDefaultState($hydratedDefaultState);
+
+        if ($hydratedDefaultState === null || ! $this->isDualState() || ! $this->hasDefaultState()) {
+            return;
+        }
+
+        $values = $this->fillDualStateFromDefault($this->getDefaultState());
+
+        if ($values === null) {
+            return;
+        }
+
+        // Backing fields that are real Filament fields and hydrate after the
+        // picker skip their own (empty) default for a path already filled.
+        Arr::set($hydratedDefaultState, $this->getDualStartStatePath(), $values[0]); /** @phpstan-ignore parameterByRef.type */
+        Arr::set($hydratedDefaultState, $this->getDualEndStatePath(), $values[1]); /** @phpstan-ignore parameterByRef.type */
+    }
+
+    /**
+     * Write a default range into both backing fields when neither holds a
+     * value yet. Returns the storage values written, or null when nothing was
+     * written (a value is already there, or there is no usable default).
+     *
+     * @return array{0: string, 1: string} | null
+     */
+    protected function fillDualStateFromDefault(mixed $default): ?array
+    {
+        $startStatePath = $this->getDualStartStatePath();
+        $endStatePath = $this->getDualEndStatePath();
+        $livewire = $this->getLivewire();
+
+        if (filled(data_get($livewire, $startStatePath)) || filled(data_get($livewire, $endStatePath))) {
+            return null;
+        }
+
+        $values = $this->toDualStateValues($default);
+
+        if ($values === null) {
+            return null;
+        }
+
+        $set = $this->makeSetUtility();
+        $set($startStatePath, $values[0], isAbsolute: true);
+        $set($endStatePath, $values[1], isAbsolute: true);
+
+        return $values;
+    }
+
+    /**
+     * Turn a picker value — format() in the display timezone, as default()
+     * and the default*() helpers produce it — into the start and end storage
+     * values the browser writes for the same range (serializeDualDate() in
+     * resources/js/filament-daterangepicker.js): a storage format with a time
+     * is converted into the storage timezone, a date-only one is a calendar
+     * value and is not shifted.
+     *
+     * @return array{0: string, 1: string} | null
+     */
+    protected function toDualStateValues(mixed $state): ?array
+    {
+        if (! is_string($state) || trim($state) === '') {
+            return null;
+        }
+
+        $format = $this->getFormat();
+        $parts = explode($this->getRangeSeparator(), $state, 2);
+        $start = $this->toDefaultDate($parts[0], $format);
+        $end = $this->toDefaultDate($parts[1] ?? $parts[0], $format);
+
+        if ($start === null || $end === null) {
+            return null;
+        }
+
+        if ($this->dualStateStorageFormatHasTime()) {
+            $start = $start->copy()->setTimezone($this->getDualStateStorageTimezone());
+            $end = $end->copy()->setTimezone($this->getDualStateStorageTimezone());
+        }
+
+        return [$start->format($format), $end->format($format)];
+    }
+
+    /**
+     * The same test as formatHasTimeTokens() in the browser, on the same
+     * converted storage format, so both sides agree on when to shift.
+     */
+    protected function dualStateStorageFormatHasTime(): bool
+    {
+        $format = preg_replace('/\[[^\]]*]/', '', $this->getDualStateStorageFormat());
+
+        return (bool) preg_match('/[HhkmsSaAXxZz]/', $format);
     }
 
     public function getDualStartStatePath(): ?string

@@ -32,14 +32,26 @@ class DemoPage extends Page
             app()->setLocale($locale);
         }
 
-        $this->form->fill([
+        // Seed the dual-state backing values, then fill() without data so the
+        // page behaves like a create form: Filament applies default() and the
+        // default*() helpers only when fill() gets null, and fill([...]) would
+        // leave every default field below empty.
+        $this->data = [
             'dual_start_utc' => '2026-08-04 08:17:00',
             'dual_end_utc' => '2026-08-05 14:43:00',
             'dual_date_start' => '2026-08-04',
             'dual_date_end' => '2026-08-05',
             'dual_partial_start' => '2026-08-04',
             'dual_partial_end' => null,
-        ]);
+        ];
+
+        $this->form->fill();
+    }
+
+    /** Echo the main form's dehydrated state, so the demo shows the dual-state backing values. */
+    public function submitForm(): void
+    {
+        $this->recordSubmitted('Form', $this->form->getState());
     }
 
     public function form(Schema $schema): Schema
@@ -154,6 +166,25 @@ class DemoPage extends Page
                             ->timezone('Europe/Berlin')
                             ->disableRanges()
                             ->extraInputAttributes(['data-testid' => 'dual-partial-range']),
+
+                        DateRangePicker::make('dual_default_datetime')
+                            ->label($isArabic ? 'افتراضي: أمس (UTC)' : 'Default: Yesterday, UTC start / end')
+                            ->useDualState('dual_default_start_utc', 'dual_default_end_utc', relative: true)
+                            ->format('Y-m-d H:i:s', enforceFormat: true)
+                            ->displayFormat('DD.MM.YYYY HH:mm')
+                            ->timezone('Europe/Berlin')
+                            ->timePicker()
+                            ->timePicker24()
+                            ->defaultYesterday()
+                            ->extraInputAttributes(['data-testid' => 'dual-default-datetime']),
+
+                        DateRangePicker::make('dual_default_date')
+                            ->label($isArabic ? 'افتراضي: آخر 7 أيام' : 'Default: Last 7 Days, date-only start / end')
+                            ->useDualState('dual_default_date_start', 'dual_default_date_end', relative: true)
+                            ->format('Y-m-d', enforceFormat: true)
+                            ->displayFormat('DD.MM.YYYY')
+                            ->defaultLast7Days()
+                            ->extraInputAttributes(['data-testid' => 'dual-default-date']),
                     ]),
 
                 // ─────────────────────────────────────────────────────
