@@ -23,6 +23,8 @@ const blur = (component) => component.$refs.input.dispatchEvent(new Event('blur'
 const withPlaceholder = (config = {}) => createTestComponent({
     allowInput: true,
     displayFormat: 'DD/MM/YYYY',
+    // The view sends hasPlaceholder whenever placeholder() was called.
+    hasPlaceholder: true,
     inputAttributes: { placeholder: 'Pick a period' },
     ...config,
 });
@@ -137,6 +139,53 @@ describe('placeholder() with allowInput()', () => {
         typeIntoInput(component, '03/2026 - 05/2026');
         await flushPromises();
         expect(component.config.state).toBe('03/2026 - 05/2026');
+    });
+
+    it('shows an explicit placeholder that matches the format hint', async () => {
+        // month_picker_manual_single: format('m/Y')->placeholder('mm/yyyy').
+        // The text equals the auto-generated hint, but the developer set it,
+        // so it shows while the field is empty and unfocused.
+        const { component } = await createTestComponent({
+            allowInput: true,
+            pickerType: 'month',
+            singleCalendar: true,
+            displayFormat: 'MM/YYYY',
+            hasPlaceholder: true,
+            inputAttributes: { placeholder: 'mm/yyyy' },
+        });
+        const input = component.$refs.input;
+
+        expect(component._userPlaceholder).toBe('mm/yyyy');
+        expect(input.value).toBe('');
+        expect(input.getAttribute('placeholder')).toBe('mm/yyyy');
+
+        focus(component);
+        expect(input.value).toBe('__/____');
+        blur(component);
+        expect(input.value).toBe('');
+    });
+
+    it('keeps the eager mask when the view reports no placeholder()', async () => {
+        const { component } = await createTestComponent({
+            allowInput: true,
+            displayFormat: 'DD/MM/YYYY',
+            hasPlaceholder: false,
+        });
+
+        expect(component._userPlaceholder).toBe(null);
+        expect(component.$refs.input.value).toBe('__/__/____ - __/__/____');
+    });
+
+    it('falls back to comparing with the format hint for a published view without the flag', async () => {
+        const { component } = await createTestComponent({
+            allowInput: true,
+            displayFormat: 'DD/MM/YYYY',
+            singleCalendar: true,
+            inputAttributes: { placeholder: 'dd/mm/yyyy' },
+        });
+
+        expect(component._userPlaceholder).toBe(null);
+        expect(component.$refs.input.value).toBe('__/__/____');
     });
 
     it('keeps the always-on mask guide when no placeholder is set', async () => {
