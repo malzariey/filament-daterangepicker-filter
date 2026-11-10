@@ -2766,6 +2766,21 @@ export default function dateRangeComponent(config) {
                     return;
                 }
 
+                // With allowInput the input is a text field: Space is a
+                // character for the mask (the separator, the gap before
+                // AM/PM), not "select the focused day" or "open". Only keys
+                // from the grid select days. ArrowDown opens the closed
+                // picker instead, since focus alone does not open it here.
+                if (this.allowManualInput) {
+                    if (event.key === ' ') return;
+
+                    if (!this.open && event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        this.openPicker();
+                        return;
+                    }
+                }
+
                 // Arrow Key Navigation: Jump between date blocks with padding
                 if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
                     const input = this.$refs.input;
