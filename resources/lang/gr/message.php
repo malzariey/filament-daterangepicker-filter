@@ -1,8 +1,43 @@
 <?php
 
-/*
- * Legacy alias. Laravel and Filament call Greek "el", not "gr", so the strings
- * live in ../el/message.php. This folder stays so an app whose locale is "gr",
- * or that published it, keeps working.
- */
-return require __DIR__ . '/../el/message.php';
+// Same strings as ../el/message.php (Laravel and Filament use "el" for Greek).
+// Kept as a full copy so publishing this folder on its own works;
+// tests/TranslationTest.php checks the two stay identical.
+
+return [
+    'period' => ':label: Περίοδος :period',
+    'su' =>"Κυ",
+    'mo' =>"Δε",
+    'tu' =>"Τρ",
+    'we' =>"Τε",
+    'th' =>"Πε",
+    'fr' =>"Πα",
+    'sa' =>"Σα",
+    'custom' =>"Ειδική Επιλογή",
+    'apply' =>"Εφαρμογή",
+    'cancel' =>"Ακύρωση",
+    'from' =>"Από",
+    'to' =>"Έως",
+    'january' =>"Ιανουάριος",
+    'february' =>"Φεβρουάριος",
+    'march' =>"Μάρτιος",
+    'april' =>"Απρίλιος",
+    'may' =>"Μάιος",
+    'june' =>"Ιούνιος",
+    'july' =>"Ιούλιος",
+    'august' =>"Αύγουστος",
+    'september' =>"Σεπτέμβριος",
+    'october' =>"Οκτώβριος",
+    'november' =>"Νοέμβριος",
+    'december' =>"Δεκέμβριος",
+    'today' => "Σήμερα",
+    'yesterday' =>"Εχθές",
+    'last_7_days' =>"Τελευταίες 7 Ημέρες",
+    'last_30_days' =>"Τελευταίες 30 Ημέρες",
+    'this_month' =>"Αυτόν τον Μήνα",
+    'last_month' =>"Προηγούμενος Μήνας",
+    'this_year' =>"Φέτος",
+    'last_year' =>"Προηγούμενο Έτος",
+    'clear' => "Καθαρισμός",
+    'weekLabel' => 'Ε',
+];

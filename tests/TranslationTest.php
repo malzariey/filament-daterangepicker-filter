@@ -50,3 +50,15 @@ it('loads the :dataset strings for the locale Laravel uses and its legacy alias'
     'Greek' => ['el', 'gr', ['apply' => 'Εφαρμογή', 'cancel' => 'Ακύρωση', 'today' => 'Σήμερα', 'october' => 'Οκτώβριος']],
     'Norwegian' => ['nb', 'no', ['apply' => 'Bruk', 'cancel' => 'Avbryt', 'today' => 'I dag', 'october' => 'Oktober']],
 ]);
+
+/*
+ * Every translation file stands alone. An app may publish a single locale
+ * folder into lang/vendor; a file that requires a sibling folder then
+ * resolves inside the app's folder and fails ("Failed to open stream"),
+ * which 5.0.12's first "gr"/"no" aliases did.
+ */
+it('keeps every translation file free of requires: :dataset', function (string $locale) {
+    $source = file_get_contents(__DIR__ . "/../resources/lang/{$locale}/message.php");
+
+    expect($source)->not->toMatch('/\b(require|include)(_once)?\b/');
+})->with($locales);
