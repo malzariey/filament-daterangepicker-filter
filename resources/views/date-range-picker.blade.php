@@ -561,8 +561,8 @@
                                         </template>
                                         <template x-if="!config.timePicker24">
                                             <select x-model="startTime.ampm" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-ampm">
-                                                <option value="AM">AM</option>
-                                                <option value="PM">PM</option>
+                                                <option value="AM" x-text="meridiemLabel(startTime, 'AM')"></option>
+                                                <option value="PM" x-text="meridiemLabel(startTime, 'PM')"></option>
                                             </select>
                                         </template>
                                     </div>
@@ -596,8 +596,8 @@
                                             </template>
                                             <template x-if="!config.timePicker24">
                                                 <select x-model="endTime.ampm" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-ampm">
-                                                    <option value="AM">AM</option>
-                                                    <option value="PM">PM</option>
+                                                    <option value="AM" x-text="meridiemLabel(endTime, 'AM')"></option>
+                                                    <option value="PM" x-text="meridiemLabel(endTime, 'PM')"></option>
                                                 </select>
                                             </template>
                                         </div>

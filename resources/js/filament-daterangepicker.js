@@ -7,6 +7,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
 import IMask from 'imask';
+import { applyDayjsLocaleFixes, readLocalizedDate } from './dayjs-names.js';
 
 // Initialize Day.js plugins
 dayjs.extend(isBetween);
@@ -54,6 +55,9 @@ import 'dayjs/locale/vi';
 import 'dayjs/locale/zh-cn';
 import 'dayjs/locale/zh-tw';
 import 'dayjs/locale/ku';
+
+// Day.js "ar" writes noon as "12:00 ص" (AM); see dayjs-names.js.
+applyDayjsLocaleFixes(dayjs);
 
 // Global instance counter for unique IDs
 let instanceCounter = 0;
@@ -693,7 +697,12 @@ export default function dateRangeComponent(config) {
                     a: this.createMeridiemMaskOptions(true),
                 },
                 format: (date) => dayjs(date).format(format),
-                parse: (str) => dayjs(str, format).toDate(),
+                // The localized reader: Day.js reads "12:30 م" (ar) or
+                // "01:30 дня" (ru) as AM, so the mask refused them.
+                parse: (str) => {
+                    const date = this.parseDisplayDate(str, format);
+                    return (date.isValid() ? date : dayjs(str, format)).toDate();
+                },
             };
         },
 
@@ -929,7 +938,7 @@ export default function dateRangeComponent(config) {
             const separator = this.config.separator;
 
             if (this.config.singleCalendar) {
-                const date = dayjs(input, format, true);
+                const date = this.parseDisplayDate(input, format);
 
                 if (!date.isValid() || !this.isDateAllowedForPicker(date)) {
                     return { status: 'invalid' };
@@ -948,8 +957,8 @@ export default function dateRangeComponent(config) {
                 return { status: 'invalid' };
             }
 
-            const start = dayjs(parts[0].trim(), format, true);
-            const end = dayjs(parts[1].trim(), format, true);
+            const start = this.parseDisplayDate(parts[0].trim(), format);
+            const end = this.parseDisplayDate(parts[1].trim(), format);
 
             if (!start.isValid() || !end.isValid() ||
                 !this.isDateAllowedForPicker(start) || !this.isDateAllowedForPicker(end)) {
@@ -2001,17 +2010,42 @@ export default function dateRangeComponent(config) {
          * formats with PHP) carries English names, and the server reads both.
          * Read English as well, so an Arabic page shows that default instead of
          * an empty box over an active filter.
+         *
+         * Names go through readLocalizedDate(), the same Day.js tables the
+         * server reads (Day.js's own parser misses names with a space, weekdays
+         * and most non-English meridiems); everything else through Day.js.
          */
         parseDisplayDate(text, format) {
+            const locale = dayjs.locale();
+
+            for (const candidate of locale === 'en' ? ['en'] : [locale, 'en']) {
+                const localized = readLocalizedDate(dayjs, text, format, candidate);
+
+                if (localized?.isValid()) {
+                    return localized.locale(locale);
+                }
+            }
+
             const date = dayjs(text, format, true);
 
-            if (date.isValid() || dayjs.locale() === 'en') {
+            if (date.isValid() || locale === 'en') {
                 return date;
             }
 
             const english = dayjs(text, format, 'en', true);
 
-            return english.isValid() ? english.locale(dayjs.locale()) : date;
+            return english.isValid() ? english.locale(locale) : date;
+        },
+
+        /**
+         * The text of an AM/PM select option: the locale's meridiem for the
+         * selected hour in that half of the day (ar ص/م, ru утра/вечера).
+         * The option values stay "AM"/"PM".
+         */
+        meridiemLabel(time, half) {
+            const hour = (Number(time?.hour) % 12 || 0) + (half === 'PM' ? 12 : 0);
+
+            return dayjs().hour(hour).minute(Number(time?.minute) || 0).format('A');
         },
 
         extractTime(date) {

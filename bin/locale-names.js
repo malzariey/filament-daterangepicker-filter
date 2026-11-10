@@ -14,6 +14,7 @@ import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { applyDayjsLocaleFixes, dayjsNameTables } from '../resources/js/dayjs-names.js';
 
 const require = createRequire(import.meta.url);
 const dayjs = require('dayjs');
@@ -27,6 +28,7 @@ export function bundledDayjsLocales() {
     const locales = [...source.matchAll(/^import 'dayjs\/locale\/([a-z-]+)';$/gm)].map((m) => m[1]);
 
     locales.forEach((locale) => require(`dayjs/locale/${locale}`));
+    applyDayjsLocaleFixes(dayjs);
 
     return locales.sort();
 }
@@ -56,94 +58,6 @@ export function resolveDayjsLocale(phpLocale, available, map = componentLocaleMa
     return available.includes(language) && candidate.includes('-') ? language : 'en';
 }
 
-function unique(values) {
-    return [...new Set(values.filter((value) => typeof value === 'string' && value !== ''))];
-}
-
-/** Text Day.js writes between two literal markers, so context rules still run. */
-function between(date, format) {
-    const out = date.format(format);
-
-    return out.slice(out.indexOf('<') + 1, out.indexOf('>'));
-}
-
-function namesFor(locale) {
-    const base = dayjs('2026-01-01T00:00:00').locale(locale);
-    const data = dayjs.Ls[locale];
-    const table = (part, i) => {
-        const value = data[part];
-        if (Array.isArray(value)) return [value[i]];
-        // ru, uk, pl, lt: a function choosing format / standalone forms.
-        if (typeof value === 'function') return [value.s?.[i], value.f?.[i]];
-        return [];
-    };
-
-    const months = [];
-    const monthsShort = [];
-
-    for (let i = 0; i < 12; i++) {
-        const date = base.month(i).date(1);
-        // Standalone, after a day number (genitive in ru/uk/pl), before one (lt).
-        months.push(unique([
-            ...table('months', i),
-            between(date, '[<]MMMM[>]'),
-            between(date, 'D [<]MMMM[>]'),
-            between(date, 'DD [<]MMMM[>]'),
-            between(date, '[<]MMMM[>] D'),
-        ]));
-        monthsShort.push(unique([
-            ...table('monthsShort', i),
-            between(date, '[<]MMM[>]'),
-            between(date, 'D [<]MMM[>]'),
-            between(date, 'DD [<]MMM[>]'),
-            between(date, '[<]MMM[>] D'),
-        ]));
-    }
-
-    const weekdays = [];
-    const weekdaysShort = [];
-
-    // 2026-01-04 is a Sunday; index 0 = Sunday, as in Day.js and PHP 'w'.
-    for (let i = 0; i < 7; i++) {
-        const date = base.date(4 + i);
-        weekdays.push(unique([between(date, '[<]dddd[>]')]));
-        weekdaysShort.push(unique([between(date, '[<]ddd[>]')]));
-    }
-
-    // meridiem[token][text] = "AM" | "PM", or {h: "AM"|"PM"} keyed by the
-    // 12-hour number when the text alone is ambiguous (zh-cn "中午" covers
-    // 11:00-12:59, which is 11 AM and 12 PM).
-    //
-    // When even text and hour together are ambiguous, AM wins: Day.js "ar"
-    // writes "ص" for every hour up to 12 (hour > 12 ? 'م' : 'ص'), so
-    // midnight and noon are both "12:00 ص". Day.js's own parser reads that as
-    // midnight, the usual start-of-day boundary, so the server does too.
-    const meridiem = {};
-
-    for (const token of ['A', 'a']) {
-        const byText = {};
-
-        for (let hour = 0; hour < 24; hour++) {
-            for (let minute = 0; minute < 60; minute++) {
-                const date = base.hour(hour).minute(minute);
-                const text = between(date, `[<]${token}[>]`);
-                const h12 = date.format('h');
-                byText[text] ??= {};
-                byText[text][h12] ??= hour < 12 ? 'AM' : 'PM';
-            }
-        }
-
-        meridiem[token] = Object.fromEntries(
-            Object.entries(byText).map(([text, hours]) => {
-                const values = unique(Object.values(hours));
-                return [text, values.length === 1 ? values[0] : hours];
-            }),
-        );
-    }
-
-    return { months, monthsShort, weekdays, weekdaysShort, meridiem };
-}
-
 export function buildLocaleNames() {
     const available = bundledDayjsLocales();
     const langDirs = fs.readdirSync(path.join(root, 'resources/lang')).sort();
@@ -152,7 +66,7 @@ export function buildLocaleNames() {
     const names = {};
 
     for (const locale of available) {
-        names[locale] = namesFor(locale);
+        names[locale] = dayjsNameTables(dayjs, locale);
     }
 
     return {
@@ -203,8 +117,8 @@ export function buildRoundTripFixture() {
             strings[locale][phpFormat] = samples.map((sample) => dayjs(sample).locale(locale).format(jsFormat));
 
             // Samples whose text Day.js also writes for the instant 12 hours
-            // earlier (ar: noon and midnight are both "12:00 ص"); the server
-            // reads those as the AM one.
+            // earlier; the server reads those as the AM one. Empty since
+            // applyDayjsLocaleFixes() (Day.js "ar" wrote noon as "12:00 ص").
             samples.forEach((sample, i) => {
                 const date = dayjs(sample).locale(locale);
                 if (/[hH]/.test(jsFormat) && date.hour() >= 12 && date.subtract(12, 'hour').format(jsFormat) === strings[locale][phpFormat][i]) {

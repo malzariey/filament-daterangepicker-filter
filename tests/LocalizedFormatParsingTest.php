@@ -147,6 +147,27 @@ it('reads a localized 12-hour meridiem', function () {
         ->toBe(['2026-10-06 15:30:00', '2026-11-09 11:00:59']);
 });
 
+it('reads Arabic noon as the picker writes it (12:30 م is PM)', function () {
+    app()->setLocale('ar');
+
+    // The picker writes noon as "م" since 5.0.12 (Day.js "ar" wrote "ص", so
+    // noon and midnight were both "12:30 ص"); midnight stays "ص".
+    $filter = DateRangeFilter::make('at')->format('d/m/Y h:i A', true)->timePicker();
+
+    expect(localizedBounds($filter, '06/10/2026 12:30 م - 06/10/2026 12:45 م'))
+        ->toBe(['2026-10-06 12:30:00', '2026-10-06 12:45:59'])
+        ->and(localizedBounds($filter, '06/10/2026 12:30 ص - 06/10/2026 12:45 ص'))
+        ->toBe(['2026-10-06 00:30:00', '2026-10-06 00:45:59']);
+});
+
+it('has no string the picker writes for both an AM and a PM instant', function () {
+    $fixture = json_decode(file_get_contents(__DIR__ . '/fixtures/dayjs-round-trip.json'), true);
+    $noon = array_search('2026-01-13 12:24', $fixture['samples'], true);
+
+    expect($fixture['ambiguous'])->toBe([])
+        ->and($fixture['strings']['ar']['d/m/Y h:i A'][$noon])->toBe('13/01/2026 12:24 م');
+});
+
 it('shows the indicator for a localized range it applies', function () {
     app()->setLocale('ar');
 
