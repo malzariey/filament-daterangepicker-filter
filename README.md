@@ -419,18 +419,26 @@ date-only column yourself, convert them back first, for example
 ### Date Columns
 
 A `date` column has no time of day, so there is nothing to convert between
-timezones. Without a callback, the filter compares the calendar dates the user
-picked, with no timezone shift, when either:
+timezones. Without a callback, the filter decides what the column holds, in
+this order:
 
-- the model casts the column as `date`, `immutable_date`, `date:<format>` or `immutable_date:<format>`, or
-- the database reports the column type as `date`.
+1. A timestamp the model manages (`created_at`, `updated_at`, the soft-delete
+   column) is an instant. No schema query is made for it.
+2. Otherwise the database's column type decides: `date` is a calendar date;
+   `datetime`, `timestamp` and every other type are instants, whatever the
+   model casts the column as. A `date` cast on a `DATETIME` column (often there
+   for its JSON form) still stores instants.
+3. If the column type cannot be read (an unknown column, a view, a table name
+   the schema builder cannot resolve), the cast decides: `date`,
+   `immutable_date`, `date:<format>` and `immutable_date:<format>` are calendar
+   dates, anything else is an instant.
 
-With the time picker on a date column only the dates count. Month and year
-pickers cover every day of the picked month or year. Every other column is
-compared as an instant, converted from the display timezone to the storage
-timezone, as before. When the cast does not say `date`, the column type is
-read from the schema once per filter instance (one query per request while the
-filter is active).
+A calendar date is compared as the dates the user picked, with no timezone
+shift. With the time picker only the dates count; month and year pickers cover
+every day of the picked month or year. An instant is converted from the
+display timezone to the storage timezone, as before. The column type is read
+from the schema once per filter instance (one query per request while the
+filter is active, none for model timestamps).
 
 ### Filter Indicator
 ```php

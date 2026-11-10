@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { createTestComponent } from './setup.js';
+import { createTestComponent, flushPromises, dayjs } from './setup.js';
 import { installFocusTrapGuard } from '../../resources/js/filament-daterangepicker.js';
 
 const presets = {
@@ -109,6 +109,118 @@ describe('teleport(false): dropdown rendered in place', () => {
             const event = press(dropdown.querySelector('.fi-daterangepicker-range-btn'), 'ArrowDown');
 
             expect(event.defaultPrevented).toBe(true);
+            component.destroy();
+        });
+    });
+
+    // The grid's capture listener applies and closes on Enter / Space with
+    // autoApply. Teleported, that was the end of it; in place the keydown
+    // then bubbled to the root's handleKeydown, which saw a closed picker
+    // and an Enter / Space and opened it again.
+    describe('keyboard pick with autoApply', () => {
+        // A day button per date, the way the blade renders them, plus the
+        // focused one focused.
+        const addDays = (component, dropdown, dates) => dates.map((date) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'fi-daterangepicker-day';
+            button.dataset.date = date;
+            dropdown.prepend(button);
+
+            return button;
+        });
+
+        const pick = (component, button, key) => {
+            component.focusedDate = dayjs(button.dataset.date);
+            button.focus();
+
+            return press(button, key);
+        };
+
+        it.each(['Enter', ' '])('closes and stays closed after %j on the end day', async (key) => {
+            const { component, dropdown } = await mountInPlace({ autoApply: true });
+            await component.openPicker();
+            const [start, end] = addDays(component, dropdown, ['2026-11-10', '2026-11-12']);
+            const reopen = vi.spyOn(component, 'openPicker');
+
+            pick(component, start, key);
+            expect(component.open).toBe(true);
+
+            const event = pick(component, end, key);
+            await flushPromises();
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(reopen).not.toHaveBeenCalled();
+            expect(component.open).toBe(false);
+            expect(component.selection.start.format('YYYY-MM-DD')).toBe('2026-11-10');
+            expect(component.selection.end.format('YYYY-MM-DD')).toBe('2026-11-12');
+            component.destroy();
+        });
+
+        it.each(['Enter', ' '])('closes and stays closed after %j with singleCalendar', async (key) => {
+            const { component, dropdown } = await mountInPlace({ autoApply: true, singleCalendar: true });
+            await component.openPicker();
+            const [day] = addDays(component, dropdown, ['2026-11-10']);
+            const reopen = vi.spyOn(component, 'openPicker');
+
+            pick(component, day, key);
+            await flushPromises();
+
+            expect(reopen).not.toHaveBeenCalled();
+            expect(component.open).toBe(false);
+            expect(component.selection.start.format('YYYY-MM-DD')).toBe('2026-11-10');
+            component.destroy();
+        });
+
+        it('closes and stays closed after Enter on a preset', async () => {
+            const { component, dropdown } = await mountInPlace({ autoApply: true, ranges: presets });
+            await component.openPicker();
+            const preset = dropdown.querySelector('.fi-daterangepicker-range-btn');
+            preset.addEventListener('click', () => component.selectPreset('Today'));
+            const reopen = vi.spyOn(component, 'openPicker');
+
+            // A button's Enter: the keydown, then the browser's click.
+            preset.focus();
+            const event = press(preset, 'Enter');
+            if (!event.defaultPrevented) preset.click();
+            await flushPromises();
+
+            expect(reopen).not.toHaveBeenCalled();
+            expect(component.open).toBe(false);
+            expect(component.selection.start.format('YYYY-MM-DD')).toBe('2026-11-09');
+            component.destroy();
+        });
+
+        it('still opens on Enter / Space from the input', async () => {
+            const { component, input } = await mountInPlace({ autoApply: true });
+
+            const event = press(input, 'Enter');
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(component.open).toBe(true);
+            component.destroy();
+        });
+
+        it('is unchanged when teleported', async () => {
+            const { component } = await createTestComponent({ autoApply: true, singleCalendar: true });
+            const root = document.createElement('div');
+            root.appendChild(component.$refs.trigger);
+            document.body.prepend(root);
+            component.$el = root;
+            root.addEventListener('keydown', (event) => component.handleKeydown(event));
+            const dropdown = component.$refs.dropdown;
+            dropdown.className = 'fi-daterangepicker-dropdown';
+            await component.openPicker();
+            const [day] = addDays(component, dropdown, ['2026-11-10']);
+            const reopen = vi.spyOn(component, 'openPicker');
+
+            const event = pick(component, day, 'Enter');
+            await flushPromises();
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(reopen).not.toHaveBeenCalled();
+            expect(component.open).toBe(false);
+            expect(component.selection.start.format('YYYY-MM-DD')).toBe('2026-11-10');
             component.destroy();
         });
     });

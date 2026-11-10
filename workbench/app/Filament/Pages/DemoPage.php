@@ -448,6 +448,25 @@ class DemoPage extends Page
                             ->timePicker()
                             ->timePicker24()
                             ->placeholder($isArabic ? 'القائمة داخل الحقل مع الوقت' : 'In place, with a time picker'),
+
+                        // Enter / Space on a day applies and closes; in place
+                        // the keydown bubbles to the field and must not reopen it.
+                        DateRangePicker::make('in_place_auto_apply')
+                            ->label($isArabic ? 'بدون نقل مع تطبيق تلقائي' : 'Not Teleported, Auto Apply')
+                            ->teleport(false)
+                            ->autoApply()
+                            ->ranges([
+                                'Today' => [now(), now()],
+                                'Yesterday' => [now()->subDay(), now()->subDay()],
+                            ])
+                            ->placeholder($isArabic ? 'اختر بلوحة المفاتيح' : 'Pick with the keyboard'),
+
+                        DateRangePicker::make('in_place_single_auto_apply')
+                            ->label($isArabic ? 'بدون نقل، تاريخ واحد، تطبيق تلقائي' : 'Not Teleported, Single Date, Auto Apply')
+                            ->teleport(false)
+                            ->singleCalendar()
+                            ->autoApply()
+                            ->placeholder($isArabic ? 'اختر بلوحة المفاتيح' : 'Pick with the keyboard'),
                     ]),
             ])
             ->statePath('data');

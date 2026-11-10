@@ -6,6 +6,7 @@ use Closure;
 use Filament\Forms\Components\Field;
 use Filament\Tables\Filters\BaseFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Concerns\HasRangePicker;
 use Malzariey\FilamentDaterangepickerFilter\Enums\PickerType;
@@ -113,10 +114,23 @@ class DateRangeFilter extends BaseFilter
     /**
      * Whether the filtered column stores a calendar date with no time of day.
      *
-     * True when the model casts the column as a date (`date`, `immutable_date`,
-     * `date:<format>`, `immutable_date:<format>`) or when the database reports
-     * the column type as `date`. Anything else, or a column that cannot be
-     * looked up, keeps the instant comparison.
+     * In order:
+     *
+     * 1. A timestamp the model manages (`getDates()`: created_at / updated_at,
+     *    and a soft-delete column) is an instant. No schema query: these are
+     *    the most commonly filtered columns.
+     * 2. Otherwise the database's column type decides: `date` is a calendar
+     *    date; datetime, timestamp and the rest are instants, whatever the
+     *    model casts them as. A `date` cast on a DATETIME column (common for
+     *    its JSON form) still stores instants, and comparing them as calendar
+     *    dates filed rows in the first hours of a local day east of the
+     *    storage zone under the day before.
+     * 3. If the lookup fails (an unknown column, a view, a table name the
+     *    schema builder cannot read), the model's cast: `date`,
+     *    `immutable_date`, `date:<format>` or `immutable_date:<format>` is a
+     *    calendar date, anything else an instant.
+     *
+     * The answer is cached per filter instance.
      */
     protected function isDateColumn(Builder $query): bool
     {
@@ -129,24 +143,40 @@ class DateRangeFilter extends BaseFilter
             $column = substr($column, $dot + 1);
         }
 
-        if ($table === $model->getTable()) {
-            $cast = $model->getCasts()[$column] ?? null;
+        $ownTable = $table === $model->getTable();
 
-            if (is_string($cast) && preg_match('/^(immutable_)?date(:|$)/', $cast) === 1) {
-                return true;
-            }
+        if ($ownTable && in_array($column, $this->modelTimestampColumns($model), true)) {
+            return false;
         }
 
         $connection = $query->getQuery()->getConnection();
         $key = $connection->getName() . '|' . $table . '|' . $column;
 
-        return $this->dateColumnCache[$key] ??= (function () use ($connection, $table, $column): bool {
+        return $this->dateColumnCache[$key] ??= (function () use ($connection, $model, $ownTable, $table, $column): bool {
             try {
                 return strtolower($connection->getSchemaBuilder()->getColumnType($table, $column)) === 'date';
             } catch (Throwable) {
-                return false;
+                $cast = $ownTable ? ($model->getCasts()[$column] ?? null) : null;
+
+                return is_string($cast) && preg_match('/^(immutable_)?date(:|$)/', $cast) === 1;
             }
         })();
+    }
+
+    /**
+     * The timestamp columns Eloquent manages on this model.
+     *
+     * @return list<string>
+     */
+    protected function modelTimestampColumns(Model $model): array
+    {
+        $columns = $model->getDates();
+
+        if (method_exists($model, 'getDeletedAtColumn')) {
+            $columns[] = $model->getDeletedAtColumn();
+        }
+
+        return array_values(array_filter($columns, 'is_string'));
     }
 
     /**
