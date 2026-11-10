@@ -104,6 +104,23 @@ class DemoPage extends Page
                             ->timePickerSecond()
                             ->allowInput(),
 
+                        // A stored or default time off the 30-minute increment
+                        // (08:45, 17:15) must show and save as is.
+                        DateRangePicker::make('time_off_increment')
+                            ->label($isArabic ? 'وقت خارج الفاصل (24 ساعة)' : 'Off-increment time (24h, 30 min)')
+                            ->timePicker()
+                            ->timePicker24()
+                            ->timePickerIncrement(30)
+                            ->defaultCustom('2026-11-10 08:45:00', '2026-11-12 17:15:00')
+                            ->extraInputAttributes(['data-testid' => 'time-off-increment']),
+
+                        DateRangePicker::make('time_off_increment_12h')
+                            ->label($isArabic ? 'وقت خارج الفاصل (12 ساعة)' : 'Off-increment time (12h, 30 min)')
+                            ->timePicker()
+                            ->timePickerIncrement(30)
+                            ->defaultCustom('2026-11-10 08:45:00', '2026-11-12 17:15:00')
+                            ->extraInputAttributes(['data-testid' => 'time-off-increment-12h']),
+
                         DateRangePicker::make('auto_apply')
                             ->label($isArabic ? 'تطبيق تلقائي' : 'Auto Apply')
                             ->autoApply()

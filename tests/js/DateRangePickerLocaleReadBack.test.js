@@ -201,9 +201,10 @@ describe('reads back what the formatter writes', () => {
             }
         }
 
-        // 31 non-English shipped locales x 10 formats x 24 instants.
+        // 33 non-English shipped locales (el and nb joined gr and no in
+        // 5.0.12) x 10 formats x 24 instants.
         expect(failures).toEqual([]);
-        expect(checked).toBe(31 * 10 * 24);
+        expect(checked).toBe(33 * 10 * 24);
     }, 30000);
 
     it('writes no text that two instants share (no ambiguous read-back)', async () => {
