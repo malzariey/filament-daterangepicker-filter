@@ -178,6 +178,15 @@ export default function dateRangeComponent(config) {
         focusedDate: null,
         hoverDate: null,
         isSyncing: false,
+        // True while updateInputValue() writes to the mask, so its `accept`
+        // event is not taken for typing.
+        _writingInputMask: false,
+        // Whether the user has typed since the picker last wrote the mask.
+        _inputMaskEditedByUser: false,
+        // Presets-only keyboard: hand focus back to the input on close, and
+        // keep that focus from reopening the picker.
+        _returnFocusOnClose: false,
+        _focusingInput: false,
         dualStateParseQueued: false,
         dualStateSnapshot: {
             start: { raw: null, display: null },
@@ -355,6 +364,12 @@ export default function dateRangeComponent(config) {
                 this.cancel();
             };
             document.addEventListener('focusin', this._documentFocusInHandler);
+
+            // Presets-only keys inside the dropdown. It is teleported out of
+            // this component, so its keydowns never reach handleKeydown;
+            // capture runs before the dropdown's own Escape handler.
+            this._presetKeyHandler = (event) => this.handlePresetKeydown(event);
+            document.addEventListener('keydown', this._presetKeyHandler, true);
         },
 
         /**
@@ -410,6 +425,10 @@ export default function dateRangeComponent(config) {
             if (this._documentFocusInHandler) {
                 document.removeEventListener('focusin', this._documentFocusInHandler);
                 this._documentFocusInHandler = null;
+            }
+            if (this._presetKeyHandler) {
+                document.removeEventListener('keydown', this._presetKeyHandler, true);
+                this._presetKeyHandler = null;
             }
             if (this._syncDebounceTimer) {
                 clearTimeout(this._syncDebounceTimer);
@@ -516,7 +535,15 @@ export default function dateRangeComponent(config) {
                 });
             }
 
+            // IMask fires `accept` for the picker's own writes to the mask
+            // (updateInputValue) as well as for typing. Only typing is input:
+            // a calendar click that leaves half a range writes the empty
+            // placeholder, which would otherwise read as the user emptying
+            // the field and clear the state.
             this.inputMask.on('accept', () => {
+                if (this._writingInputMask) return;
+
+                this._inputMaskEditedByUser = true;
                 this.handleManualInput(this.inputMask.value);
             });
 
@@ -733,6 +760,14 @@ export default function dateRangeComponent(config) {
             if (!this.allowManualInput) return false;
 
             const value = this.inputMask?.value ?? this.$refs.input?.value ?? this.inputValue;
+
+            // An empty mask the picker wrote itself (half a range picked on
+            // the calendar) is not the user clearing the field.
+            if (this.inputMask && !this._inputMaskEditedByUser
+                && this.isEmptyMaskValue(String(value ?? '').trim())) {
+                return false;
+            }
+
             return this.handleManualInput(value, { revertOnInvalid: true });
         },
 
@@ -833,7 +868,13 @@ export default function dateRangeComponent(config) {
         updateInputValue() {
             this.inputValue = this.getDisplayValue();
             if (this.inputMask && this.inputMask.value !== this.inputValue) {
-                this.inputMask.value = this.inputValue;
+                this._writingInputMask = true;
+                try {
+                    this.inputMask.value = this.inputValue;
+                } finally {
+                    this._writingInputMask = false;
+                }
+                this._inputMaskEditedByUser = false;
             }
         },
 
@@ -1931,6 +1972,10 @@ export default function dateRangeComponent(config) {
         },
 
         async openPicker() {
+            // Focus handed back to a field that opens on focus.
+            if (this._focusingInput) return;
+
+            this._returnFocusOnClose = false;
             this.open = true;
             await this.$nextTick();
             this.setupPositioning();
@@ -1957,6 +2002,11 @@ export default function dateRangeComponent(config) {
             if (this.cleanupAutoUpdate) {
                 this.cleanupAutoUpdate();
                 this.cleanupAutoUpdate = null;
+            }
+
+            if (this._returnFocusOnClose) {
+                this._returnFocusOnClose = false;
+                if (wasOpen) this.focusInputWithoutOpening();
             }
 
             // Dispatch hide event for Livewire/external listeners
@@ -2521,6 +2571,14 @@ export default function dateRangeComponent(config) {
                     }
                 }
 
+                // Presets-only: Up / Down step from the input into the list.
+                // Home / End stay native here, for the caret.
+                if (this.open && this.presetsOnly
+                    && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+                    if (this.focusPreset(event.key)) event.preventDefault();
+                    return;
+                }
+
                 // Allow other navigation keys
                 const nativeKeys = ['ArrowUp', 'ArrowDown', 'Home', 'End'];
                 if (nativeKeys.includes(event.key)) {
@@ -2538,7 +2596,13 @@ export default function dateRangeComponent(config) {
 
             // Presets-only: no calendar to drive. Escape still cancels;
             // Enter / Space stay native so they press the focused preset.
+            // Keys inside the dropdown belong to handlePresetKeydown.
             if (this.presetsOnly && event.key !== 'Escape') {
+                if (!this.isInsideDropdown(event.target)
+                    && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
+                    && this.focusPreset(event.key)) {
+                    event.preventDefault();
+                }
                 return;
             }
 
@@ -2620,11 +2684,118 @@ export default function dateRangeComponent(config) {
             }
         },
 
+        getDropdownElement() {
+            return document.getElementById(`fi-daterangepicker-dropdown-${this.instanceId}`)
+                ?? this.$refs.dropdown
+                ?? null;
+        },
+
+        isInsideDropdown(target) {
+            const dropdown = this.getDropdownElement();
+
+            return !!dropdown && target instanceof Node && dropdown.contains(target);
+        },
+
+        /**
+         * Presets-only keys from inside the dropdown: Up / Down / Home / End
+         * move focus along the presets (the list is vertical, so RTL needs
+         * no swap). Enter and Space stay the native button press; they, and
+         * Escape, hand focus back to the input once the picker closes. Tab
+         * cancels and hands focus back first, so it moves on from the field.
+         */
+        handlePresetKeydown(event) {
+            if (!this.open || !this.presetsOnly || !this.isInsideDropdown(event.target)) return;
+
+            switch (event.key) {
+                case 'ArrowDown':
+                case 'ArrowUp':
+                case 'Home':
+                case 'End':
+                    if (this.focusPreset(event.key)) event.preventDefault();
+                    break;
+
+                case 'Enter':
+                case ' ':
+                case 'Escape':
+                    this._returnFocusOnClose = true;
+                    break;
+
+                // Tab leaves the list, as from a listbox. The dropdown is the
+                // last thing in <body>, so a native Tab off it would land on
+                // nothing and leave the picker open. Cancel and put focus back
+                // in the input; the browser's Tab then carries on from there.
+                case 'Tab':
+                    this._returnFocusOnClose = true;
+                    this.cancel();
+                    break;
+            }
+        },
+
+        /**
+         * Move focus to the next / previous / first / last enabled preset
+         * button. From outside the list, Down starts at the applied preset
+         * (else the first) and Up at the applied preset (else the last).
+         * Stops at the ends. False when there is no enabled preset to focus.
+         */
+        focusPreset(key) {
+            const dropdown = this.getDropdownElement();
+            if (!dropdown) return false;
+
+            const all = [...dropdown.querySelectorAll('.fi-daterangepicker-range-btn')];
+            const enabled = all.filter((button) => !button.disabled);
+            if (enabled.length === 0) return false;
+
+            const current = enabled.indexOf(document.activeElement);
+            let index;
+
+            if (key === 'Home') {
+                index = 0;
+            } else if (key === 'End') {
+                index = enabled.length - 1;
+            } else if (current !== -1) {
+                index = key === 'ArrowDown'
+                    ? Math.min(current + 1, enabled.length - 1)
+                    : Math.max(current - 1, 0);
+            } else {
+                // The buttons are rendered in config.ranges order.
+                const labels = Object.keys(this.config.ranges || {});
+                const active = labels.length === all.length
+                    ? enabled.findIndex((button) => this.isActiveRange(labels[all.indexOf(button)]))
+                    : -1;
+
+                index = active !== -1
+                    ? active
+                    : (key === 'ArrowDown' ? 0 : enabled.length - 1);
+            }
+
+            enabled[index].focus();
+
+            return true;
+        },
+
+        /**
+         * Put focus back in the input after the keyboard closed the picker
+         * from inside the dropdown, without the input's focus handler
+         * opening it again.
+         */
+        focusInputWithoutOpening() {
+            const input = this.$refs.input;
+            if (!input) return;
+
+            this._focusingInput = true;
+            try {
+                input.focus();
+            } finally {
+                this._focusingInput = false;
+            }
+        },
+
         ensureFocusedDateVisible() {
             if (!this.focusedDate) return;
 
-            if (!this.calendarsLinked) {
-                // Unlinked: scroll only the side the focus walked off.
+            if (!this.calendarsLinked && this.isDayPicker) {
+                // Unlinked: scroll only the side the focus walked off. The
+                // month and year pickers page as one view either way.
                 const right = this.calendarMonth(1);
                 if (this.focusedDate.isBefore(this.viewDate, 'month')) {
                     this.showUnlinkedCalendarMonth(0, this.focusedDate.startOf('month'));

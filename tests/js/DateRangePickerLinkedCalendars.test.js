@@ -165,6 +165,28 @@ describe('linkedCalendars(false)', () => {
         expect(shown(component)).toEqual(['2025-12', '2026-04']);
     });
 
+    it.each(['month', 'year'])('lets the %s picker follow keyboard focus as when linked', async (pickerType) => {
+        // linkedCalendars only splits the two day calendars; the month and
+        // year pickers page as one view, so arrow keys must still move
+        // viewDate to the focused month.
+        const component = await unlinked({ pickerType });
+        await component.openPicker();
+        component.viewDate = dayjs('2026-01-15');
+        component.focusedDate = dayjs('2026-01-15');
+
+        // Shift+PageDown: focus one year on.
+        component.handleKeydown({
+            key: 'PageDown',
+            shiftKey: true,
+            target: null,
+            preventDefault() {},
+            stopPropagation() {},
+        });
+
+        expect(component.viewDate.format('YYYY-MM')).toBe('2027-01');
+        expect(component.rightViewDate ?? null).toBeNull();
+    });
+
     it('leaves single-calendar navigation alone', async () => {
         const component = await unlinked({ singleCalendar: true });
 

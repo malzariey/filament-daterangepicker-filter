@@ -205,6 +205,7 @@
                                                 }"
                                                 :disabled="isPresetDisabled(label)"
                                                 :aria-disabled="isPresetDisabled(label)"
+                                                :aria-selected="isActiveRange(label) ? 'true' : 'false'"
                                                 role="option"
                                                 x-text="label"
                                             ></button>
