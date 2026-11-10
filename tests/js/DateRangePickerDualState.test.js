@@ -234,7 +234,7 @@ describe("Dual State Mode", () => {
 
         expect(component.config.dualStartState).toBeNull();
         expect(component.config.dualEndState).toBeNull();
-        expect(component.config.state).toBe("");
+        expect(component.config.state).toBeNull();
     });
 
     it("preserves a start-only state until an end is selected", async () => {

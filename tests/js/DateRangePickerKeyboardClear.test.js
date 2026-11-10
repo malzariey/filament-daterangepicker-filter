@@ -75,7 +75,7 @@ describe('Clearing manual input from the keyboard', () => {
 
             expect(component.selection.start).toBeNull();
             expect(component.selection.end).toBeNull();
-            expect(component.config.state).toBe('');
+            expect(component.config.state).toBeNull();
         });
 
         it('clears the state when Enter is pressed on the empty mask', async () => {
@@ -93,7 +93,7 @@ describe('Clearing manual input from the keyboard', () => {
             });
             await flushPromises();
 
-            expect(component.config.state).toBe('');
+            expect(component.config.state).toBeNull();
         });
 
         it('keeps the previous state while the input holds a partial value', async () => {
@@ -121,7 +121,7 @@ describe('Clearing manual input from the keyboard', () => {
 
         typeIntoInput(component, '');
         await flushPromises();
-        expect(component.config.state).toBe('');
+        expect(component.config.state).toBeNull();
 
         typeIntoInput(component, '07/2027');
         await flushPromises();
@@ -144,8 +144,39 @@ describe('Clearing manual input from the keyboard', () => {
         typeIntoInput(component, '');
         await flushPromises();
 
-        expect(component.config.state).toBe('');
+        expect(component.config.state).toBeNull();
         expect(component.config.dualStartState).toBeNull();
         expect(component.config.dualEndState).toBeNull();
+    });
+
+    // The Clear action (DateRangePicker::clear() on the server) sets null,
+    // and so does the picker's own clear(): every way of emptying the field
+    // stores the same value.
+    describe.each(fields)('$name: one empty value for every clear', ({ config, state }) => {
+        it('stores null from the keyboard, clear() and the Clear action alike', async () => {
+            const keyboard = await createTestComponent({ ...config, allowInput: true, initialState: state });
+            typeIntoInput(keyboard.component, '');
+            await flushPromises();
+
+            const button = await createTestComponent({ ...config, allowInput: true, initialState: state });
+            button.component.clear();
+            await flushPromises();
+
+            expect(keyboard.component.config.state).toBeNull();
+            expect(button.component.config.state).toBeNull();
+        });
+
+        it('leaves an empty field null when the picker is cancelled', async () => {
+            const { component } = await createTestComponent({ ...config, allowInput: true, initialState: state });
+            typeIntoInput(component, '');
+            await flushPromises();
+
+            component.open = true;
+            component.cancel();
+            await flushPromises();
+
+            expect(component.config.state).toBeNull();
+            expect(component.selection.start).toBeNull();
+        });
     });
 });

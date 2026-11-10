@@ -68,11 +68,11 @@ describe('placeholder() with allowInput()', () => {
 
         typeIntoInput(component, '');
         await flushPromises();
-        expect(component.config.state).toBe('');
+        expect(component.config.state).toBeNull();
 
         blur(component);
         expect(component.$refs.input.value).toBe('');
-        expect(component.config.state).toBe('');
+        expect(component.config.state).toBeNull();
     });
 
     it('does not take focus or blur on an untouched field for user input', async () => {

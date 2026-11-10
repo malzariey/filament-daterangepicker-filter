@@ -362,6 +362,11 @@ export default function dateRangeComponent(config) {
             };
             document.addEventListener('keydown', this._documentKeyHandler);
 
+            // Inside a Filament dropdown (the table's Filters panel) Escape
+            // never reaches this picker: see handleDropdownEscape().
+            this._dropdownEscapeHandler = (event) => this.handleDropdownEscape(event);
+            document.addEventListener('dropdown-escape', this._dropdownEscapeHandler, true);
+
             this._documentClickHandler = (event) => {
                 if (!this.open) return;
                 if (this.isEventInsidePicker(event)) return;
@@ -455,6 +460,10 @@ export default function dateRangeComponent(config) {
             if (this._documentKeyHandler) {
                 document.removeEventListener('keydown', this._documentKeyHandler);
                 this._documentKeyHandler = null;
+            }
+            if (this._dropdownEscapeHandler) {
+                document.removeEventListener('dropdown-escape', this._dropdownEscapeHandler, true);
+                this._dropdownEscapeHandler = null;
             }
             if (this._documentClickHandler) {
                 document.removeEventListener('click', this._documentClickHandler);
@@ -1737,7 +1746,8 @@ export default function dateRangeComponent(config) {
                 this.endTime = this.extractTime(this.selection.end);
             }
 
-            this.config.state = this.getDisplayValue();
+            // Empty is null, as the server sets it for a missing half.
+            this.config.state = this.getDisplayValue() || null;
         },
 
         parseDualDate(state) {
@@ -1965,7 +1975,9 @@ export default function dateRangeComponent(config) {
             }
 
             const format = this.config.displayFormat;
-            let value = '';
+            // An empty field is null: what the Clear action stores, and what
+            // Filament and the dual-state backing fields expect.
+            let value = null;
             let start = null;
             let end = null;
 
@@ -3000,6 +3012,24 @@ export default function dateRangeComponent(config) {
             const dropdown = this.getDropdownElement();
 
             return !!dropdown && target instanceof Node && dropdown.contains(target);
+        },
+
+        /**
+         * Escape inside an open Filament dropdown, such as the table's
+         * Filters panel. Filament handles it on `window` in the capture
+         * phase, before the keydown reaches this picker, and stops it there:
+         * it dispatches a cancelable `dropdown-escape` on the target and
+         * closes the panel unless that is cancelled. An open picker cancels
+         * it and closes itself, so the first Escape closes only the picker
+         * (cancelling, focus back in the input) and the next one the panel.
+         * A closed picker leaves it alone.
+         */
+        handleDropdownEscape(event) {
+            if (!this.open || !this.isEventInsidePicker(event)) return;
+
+            event.preventDefault();
+            this._returnFocusOnClose = true;
+            this.cancel();
         },
 
         /**
