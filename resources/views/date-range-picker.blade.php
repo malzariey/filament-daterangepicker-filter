@@ -13,7 +13,8 @@
     $suffixLabel = $getSuffixLabel();
     $locale = app()->getLocale();
     $isDisabled = $isDisabled();
-    $isReadOnly = ! $getAllowInput();
+    $isFieldReadOnly = $isReadOnly();
+    $isReadOnly = $isFieldReadOnly || ! $getAllowInput();
     $isDualState = $isDualState();
     $dualStartStatePath = $isDualState ? $getDualStartStatePath() : null;
     $dualEndStatePath = $isDualState ? $getDualEndStatePath() : null;
@@ -101,6 +102,7 @@
             drops: @js($getDrops()),
             teleport: @js($getTeleport()),
             allowInput: @js($getAllowInput()),
+            readOnly: @js($isFieldReadOnly),
             pickerType: @js($getPickerTypeValue()),
 
             applyLabel: @js(__('filament-daterangepicker-filter::message.apply')),

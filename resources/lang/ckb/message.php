@@ -35,5 +35,5 @@ return [
     'this_year' =>"ئەمساڵ",
     'last_year' =>"ساڵی پێشوو",
     'clear' => "سڕینەوە",
-
+    'weekLabel' => 'هەف',
 ];

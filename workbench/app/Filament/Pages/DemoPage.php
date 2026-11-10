@@ -28,7 +28,7 @@ class DemoPage extends Page
     {
         // Handle locale switching from query parameter
         $locale = request()->query('locale', 'en');
-        if (in_array($locale, ['ar', 'en', 'fr', 'de', 'es', 'tr', 'ru', 'ja', 'ko', 'zh_CN'])) {
+        if (in_array($locale, ['ar', 'en', 'fr', 'de', 'es', 'tr', 'ru', 'ja', 'ko', 'zh_CN', 'zh_TW', 'fa', 'ckb'])) {
             app()->setLocale($locale);
         }
 
@@ -316,6 +316,22 @@ class DemoPage extends Page
                             ->label($isArabic ? 'إدخال يدوي' : 'Manual Input')
                             ->allowInput()
                             ->placeholder($isArabic ? 'اكتب تاريخاً' : 'Type a date'),
+
+                        DateRangePicker::make('read_only')
+                            ->label($isArabic ? 'للقراءة فقط' : 'Read Only')
+                            ->defaultLast7Days()
+                            ->disableClear(false)
+                            ->readOnly(),
+
+                        DateRangePicker::make('icon_after_disable_clear')
+                            ->label($isArabic ? 'أيقونة بعد تعطيل المسح' : 'icon() after disableClear()')
+                            ->disableClear()
+                            ->icon('heroicon-o-clock'),
+
+                        DateRangePicker::make('icon_after_clear_action')
+                            ->label($isArabic ? 'أيقونة بعد زر المسح' : 'icon() after disableClear(false)')
+                            ->disableClear(false)
+                            ->icon('heroicon-o-clock'),
 
                         DateRangePicker::make('timezone_utc')
                             ->label($isArabic ? 'منطقة زمنية UTC' : 'Timezone: UTC')
