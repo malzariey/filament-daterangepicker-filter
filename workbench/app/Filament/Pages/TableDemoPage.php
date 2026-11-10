@@ -75,6 +75,14 @@ class TableDemoPage extends Page implements HasTable
             ->defaultSort('booked_at', 'desc')
             ->filters([
                 DateRangeFilter::make('booked_at')->autoApply(),
+                // Month names in the state: the browser writes them in the
+                // page locale ("أكتوبر 2026" on ?locale=ar).
+                DateRangeFilter::make('booked_month')
+                    ->label('Booked month')
+                    ->useColumn('booked_at')
+                    ->monthPicker()
+                    ->format('F Y')
+                    ->autoApply(),
             ])
             ->paginated(false);
     }
