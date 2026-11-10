@@ -1975,9 +1975,14 @@ export default function dateRangeComponent(config) {
 
                 // Apply time if timePicker is enabled
                 if (this.config.timePicker) {
+                    if (!this.timesAreValid) return false;
+
                     start = this.applyTime(start, this.startTime);
                     end = this.applyTime(end, this.endTime);
                 }
+
+                // Never store "Invalid Date".
+                if (!start.isValid() || !end.isValid()) return false;
 
                 if (this.config.singleCalendar) {
                     value = start.format(format);
@@ -2068,16 +2073,54 @@ export default function dateRangeComponent(config) {
             }
         },
 
-        applyTime(date, time) {
-            let hour = parseInt(time.hour);
+        /**
+         * The 24h hour, minute and second a time select row holds, or null
+         * when one of them is not a time: a select set to a value it has no
+         * option for reads back as "", which x-model writes into the time.
+         */
+        readTime(time) {
+            const toInt = (value) => (
+                typeof value === 'number' || /^\d+$/.test(String(value ?? '').trim())
+                    ? Number(value)
+                    : NaN
+            );
 
-            if (!this.config.timePicker24) {
+            let hour = toInt(time?.hour);
+            const minute = toInt(time?.minute);
+            const second = this.config.timePickerSecond ? toInt(time?.second) : 0;
+
+            if (this.config.timePicker24) {
+                if (!(hour >= 0 && hour <= 23)) return null;
+            } else {
+                // 0 is read as 12 AM, as before; the select itself offers 1-12.
+                if (!(hour >= 0 && hour <= 12) || !['AM', 'PM'].includes(time?.ampm)) return null;
                 if (time.ampm === 'PM' && hour < 12) hour += 12;
                 else if (time.ampm === 'AM' && hour === 12) hour = 0;
             }
 
-            const minute = parseInt(time.minute);
-            const second = this.config.timePickerSecond ? parseInt(time.second) : 0;
+            if (!Number.isInteger(minute) || minute < 0 || minute > 59) return null;
+            if (!Number.isInteger(second) || second < 0 || second > 59) return null;
+
+            return { hour, minute, second };
+        },
+
+        /** Both time rows hold a real time (always true without timePicker). */
+        get timesAreValid() {
+            return !this.config.timePicker
+                || (this.readTime(this.startTime) !== null && this.readTime(this.endTime) !== null);
+        },
+
+        /**
+         * The date at the given time. A time that is not one (see readTime)
+         * leaves the date as it is, so it never becomes Invalid Date; Apply
+         * stays disabled until the row holds a real time again.
+         */
+        applyTime(date, time) {
+            const parts = this.readTime(time);
+
+            if (!parts || !date?.isValid()) return date;
+
+            const { hour, minute, second } = parts;
 
             if (
                 date.hour() === hour &&
@@ -2120,7 +2163,10 @@ export default function dateRangeComponent(config) {
 
             // If both dates are selected, update selection with new time values
             // This mimics the legacy behavior where time changes immediately reflect
-            if (this.selection.start && this.selection.end) {
+            // A time that is not one keeps the selection at its last real
+            // time (applyTime would leave the start of the day otherwise).
+            if (this.selection.start && this.selection.end
+                && this.readTime(isStart ? this.startTime : this.endTime)) {
                 if (isStart) {
                     this.selection.start = this.applyTime(
                         this.selection.start.startOf('day'),
@@ -3447,6 +3493,9 @@ export default function dateRangeComponent(config) {
         },
 
         get canApplySelection() {
+            if (!this.timesAreValid) return false;
+            if (this.selection.start?.isValid() === false || this.selection.end?.isValid() === false) return false;
+
             return !this.config.dualState || this.dualStateStatus === 'complete';
         },
 
