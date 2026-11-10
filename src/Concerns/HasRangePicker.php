@@ -2,6 +2,7 @@
 
 namespace Malzariey\FilamentDaterangepickerFilter\Concerns;
 
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Closure;
 use Filament\Support\Facades\FilamentTimezone;
@@ -372,13 +373,42 @@ trait HasRangePicker
 
     public function defaultToday($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->startOfDay();
-        $this->endDate = $this->now()->endOfDay();
+        return $this->defaultRange(
+            fn (CarbonInterface $now) => $now->startOfDay(),
+            fn (CarbonInterface $now) => $now->endOfDay(),
+            $enforceIfNull,
+        );
+    }
+
+    /**
+     * Set a default range that is worked out when the field reads it.
+     *
+     * Lazy, so the range uses the timezone and the time picker the field ends
+     * up with whatever order they were configured in, and "now" is the time
+     * of the request, the same as the built-in presets in getRanges().
+     *
+     * Under timePicker() the range runs from the start of its first day to the
+     * end of its last, which is what the same-named preset selects in the
+     * browser (presetBounds() reads a date-only preset as whole days). Without
+     * the time picker the dates are exactly what they always were.
+     */
+    protected function defaultRange(Closure $start, Closure $end, $enforceIfNull): static
+    {
+        $this->startDate = fn (): CarbonInterface => $this->wholeDayUnderTimePicker($start($this->now()), atEnd: false);
+        $this->endDate = fn (): CarbonInterface => $this->wholeDayUnderTimePicker($end($this->now()), atEnd: true);
 
         $this->enforceIfNull = $enforceIfNull;
 
-
         return $this;
+    }
+
+    protected function wholeDayUnderTimePicker(CarbonInterface $date, bool $atEnd): CarbonInterface
+    {
+        if (! $this->getTimePicker()) {
+            return $date;
+        }
+
+        return $atEnd ? $date->endOfDay() : $date->startOfDay();
     }
 
     public function now(): CarbonInterface|string|Closure
@@ -439,82 +469,90 @@ trait HasRangePicker
 
     public function defaultYesterday($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->subDay();
-        $this->endDate = $this->now()->subDay();
-
-        $this->enforceIfNull = $enforceIfNull;
-
-        return $this;
+        return $this->defaultRange(
+            fn (CarbonInterface $now) => $now->subDay(),
+            fn (CarbonInterface $now) => $now->subDay(),
+            $enforceIfNull,
+        );
     }
 
     public function defaultLast7Days($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->subDays(6);
-        $this->endDate = $this->now();
-
-        $this->enforceIfNull = $enforceIfNull;
-
-        return $this;
+        return $this->defaultRange(
+            fn (CarbonInterface $now) => $now->subDays(6),
+            fn (CarbonInterface $now) => $now,
+            $enforceIfNull,
+        );
     }
 
     public function defaultLast30Days($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->subDays(29);
-        $this->endDate = $this->now();
-
-        $this->enforceIfNull = $enforceIfNull;
-
-        return $this;
+        return $this->defaultRange(
+            fn (CarbonInterface $now) => $now->subDays(29),
+            fn (CarbonInterface $now) => $now,
+            $enforceIfNull,
+        );
     }
 
     public function defaultThisMonth($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->startOfMonth();
-        $this->endDate = $this->now()->endOfMonth();
-
-        $this->enforceIfNull = $enforceIfNull;
-
-        return $this;
+        return $this->defaultRange(
+            fn (CarbonInterface $now) => $now->startOfMonth(),
+            fn (CarbonInterface $now) => $now->endOfMonth(),
+            $enforceIfNull,
+        );
     }
 
     public function defaultLastMonth($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->subMonthNoOverflow()->startOfMonth();
-        $this->endDate = $this->now()->subMonthNoOverflow()->endOfMonth();
-
-        $this->enforceIfNull = $enforceIfNull;
-
-        return $this;
+        return $this->defaultRange(
+            fn (CarbonInterface $now) => $now->subMonthNoOverflow()->startOfMonth(),
+            fn (CarbonInterface $now) => $now->subMonthNoOverflow()->endOfMonth(),
+            $enforceIfNull,
+        );
     }
 
     public function defaultThisYear($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->startOfYear();
-        $this->endDate = $this->now()->endOfYear();
-
-        $this->enforceIfNull = $enforceIfNull;
-
-        return $this;
+        return $this->defaultRange(
+            fn (CarbonInterface $now) => $now->startOfYear(),
+            fn (CarbonInterface $now) => $now->endOfYear(),
+            $enforceIfNull,
+        );
     }
 
     public function defaultLastYear($enforceIfNull = false): static
     {
-        $this->startDate = $this->now()->subYear()->startOfYear();
-        $this->endDate = $this->now()->subYear()->endOfYear();
+        return $this->defaultRange(
+            fn (CarbonInterface $now) => $now->subYear()->startOfYear(),
+            fn (CarbonInterface $now) => $now->subYear()->endOfYear(),
+            $enforceIfNull,
+        );
+    }
+
+    /**
+     * The start and end are kept as given, times included. The one exception
+     * is a date-only "Y-m-d" string under timePicker(): it carries no time of
+     * day, so it means that whole day — 00:00 for the start, the end of the
+     * day for the end — the same way the browser reads a date-only preset.
+     */
+    public function defaultCustom(CarbonInterface|string $start, CarbonInterface|string $end, $enforceIfNull = false): static
+    {
+        $this->startDate = fn (): CarbonInterface|string => $this->dateOnlyAsWholeDay($start, atEnd: false);
+        $this->endDate = fn (): CarbonInterface|string => $this->dateOnlyAsWholeDay($end, atEnd: true);
 
         $this->enforceIfNull = $enforceIfNull;
 
         return $this;
     }
 
-    public function defaultCustom(CarbonInterface|string $start, CarbonInterface|string $end, $enforceIfNull = false): static
+    protected function dateOnlyAsWholeDay(CarbonInterface|string $date, bool $atEnd): CarbonInterface|string
     {
-        $this->startDate = $start;
-        $this->endDate = $end;
+        if (! is_string($date) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($date)) || ! $this->getTimePicker()) {
+            return $date;
+        }
 
-        $this->enforceIfNull = $enforceIfNull;
-
-        return $this;
+        return $this->wholeDayUnderTimePicker(Carbon::parse(trim($date), $this->getTimezone()), $atEnd);
     }
 
     public function getDisplayFormat(): string

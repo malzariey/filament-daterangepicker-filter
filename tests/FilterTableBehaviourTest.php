@@ -309,3 +309,71 @@ describe('the picker renders on every Filament release (#267)', function () {
         expect($filter->getFormSchema()[0]->getPlaceholder())->toBe('Pick a stay');
     });
 });
+
+/**
+ * default*() under timePicker(): the default must be the range its same-named
+ * preset selects, start of the first day to end of the last. It kept the clock
+ * time instead, so "Yesterday" at 15:00 was 15:00 - 15:00 and matched nothing.
+ */
+describe('default ranges with the time picker', function () {
+    beforeEach(function () {
+        // 10 June 15:00 in Riyadh.
+        Carbon::setTestNow(Carbon::parse('2026-06-10 12:00:00', 'UTC'));
+    });
+
+    function bookingsWithDefault(Closure $configure): Testable
+    {
+        BookingsTable::$configureFilter = fn (DateRangeFilter $filter) => $configure($filter->timezone('Asia/Riyadh'));
+
+        return Livewire::test(BookingsTable::class)->assertOk()->assertHasNoErrors();
+    }
+
+    function defaultFilterState(Testable $component): ?string
+    {
+        return data_get($component->instance()->tableFilters, 'booked_at.booked_at');
+    }
+
+    it('selects the whole of yesterday, including its last second', function (Closure $configure, string $state) {
+        $component = bookingsWithDefault(fn (DateRangeFilter $filter) => $configure($filter)->defaultYesterday());
+
+        expect(defaultFilterState($component))->toBe($state)
+            ->and(visibleBookingIds($component))->toBe([3]);
+    })->with([
+        '24h' => [fn (DateRangeFilter $filter) => $filter->timePicker()->timePicker24(), '09/06/2026 00:00 - 09/06/2026 23:59'],
+        '12h' => [fn (DateRangeFilter $filter) => $filter->timePicker(), '09/06/2026 12:00 AM - 09/06/2026 11:59 PM'],
+        '24h with seconds' => [fn (DateRangeFilter $filter) => $filter->timePicker()->timePicker24()->timePickerSecond(), '09/06/2026 00:00:00 - 09/06/2026 23:59:59'],
+        'no time picker' => [fn (DateRangeFilter $filter) => $filter, '09/06/2026 - 09/06/2026'],
+    ]);
+
+    it('covers the last 7 days to the end of today', function (Closure $configure, string $state) {
+        $component = bookingsWithDefault(fn (DateRangeFilter $filter) => $configure($filter)->defaultLast7Days());
+
+        expect(defaultFilterState($component))->toBe($state)
+            ->and(visibleBookingIds($component))->toBe([3, 4, 5, 6]);
+    })->with([
+        '24h' => [fn (DateRangeFilter $filter) => $filter->timePicker()->timePicker24(), '04/06/2026 00:00 - 10/06/2026 23:59'],
+        'no time picker' => [fn (DateRangeFilter $filter) => $filter, '04/06/2026 - 10/06/2026'],
+    ]);
+
+    it('covers the last 30 days to the end of today', function () {
+        $component = bookingsWithDefault(fn (DateRangeFilter $filter) => $filter->timePicker()->timePicker24()->defaultLast30Days());
+
+        expect(defaultFilterState($component))->toBe('12/05/2026 00:00 - 10/06/2026 23:59')
+            ->and(visibleBookingIds($component))->toBe([1, 2, 3, 4, 5, 6]);
+    });
+
+    it('does not depend on calling timePicker() before the default', function () {
+        $component = bookingsWithDefault(fn (DateRangeFilter $filter) => $filter->defaultYesterday()->timePicker()->timePicker24());
+
+        expect(defaultFilterState($component))->toBe('09/06/2026 00:00 - 09/06/2026 23:59')
+            ->and(visibleBookingIds($component))->toBe([3]);
+    });
+
+    it('keeps the explicit times of defaultCustom()', function () {
+        $component = bookingsWithDefault(fn (DateRangeFilter $filter) => $filter->timePicker()->timePicker24()
+            ->defaultCustom(Carbon::parse('2026-06-10 14:00', 'Asia/Riyadh'), Carbon::parse('2026-06-10 16:00', 'Asia/Riyadh')));
+
+        expect(defaultFilterState($component))->toBe('10/06/2026 14:00 - 10/06/2026 16:00')
+            ->and(visibleBookingIds($component))->toBe([5]);
+    });
+});
