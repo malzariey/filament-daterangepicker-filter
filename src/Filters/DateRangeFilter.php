@@ -25,6 +25,9 @@ class DateRangeFilter extends BaseFilter
     protected string|Closure|null $placeholder = null;
     protected bool|Closure $disableClear = false;
 
+    /** @var array<string, bool> */
+    protected array $dateColumnCache = [];
+
     public function disableClear(bool|Closure $disable = true): static
     {
         $this->disableClear = $disable;
@@ -89,7 +92,60 @@ class DateRangeFilter extends BaseFilter
             return $query;
         }
 
+        if ($this->isDateColumn($query)) {
+            // A DATE column holds a calendar date, not an instant, so there is
+            // nothing to convert: compare the calendar dates the user picked.
+            // Shifting them into the storage zone filed "1 June" in New York
+            // under 2 June. String bounds and an exclusive upper bound keep it
+            // index-friendly and portable: a DATE column on MySQL/Postgres and
+            // the "Y-m-d" or "Y-m-d 00:00:00" text SQLite keeps both match.
+            [$from, $to] = $this->parseLocalRange($datesString);
+
+            return $query
+                ->where($this->column, '>=', $from->toDateString())
+                ->where($this->column, '<', $to->copy()->addDay()->toDateString());
+        }
+
         return $query->whereBetween($this->column, [$startDate, $endDate]);
+    }
+
+    /**
+     * Whether the filtered column stores a calendar date with no time of day.
+     *
+     * True when the model casts the column as a date (`date`, `immutable_date`,
+     * `date:<format>`, `immutable_date:<format>`) or when the database reports
+     * the column type as `date`. Anything else, or a column that cannot be
+     * looked up, keeps the instant comparison.
+     */
+    protected function isDateColumn(Builder $query): bool
+    {
+        $model = $query->getModel();
+        $table = $model->getTable();
+        $column = $this->column;
+
+        if (($dot = strrpos($column, '.')) !== false) {
+            $table = substr($column, 0, $dot);
+            $column = substr($column, $dot + 1);
+        }
+
+        if ($table === $model->getTable()) {
+            $cast = $model->getCasts()[$column] ?? null;
+
+            if (is_string($cast) && preg_match('/^(immutable_)?date(:|$)/', $cast) === 1) {
+                return true;
+            }
+        }
+
+        $connection = $query->getQuery()->getConnection();
+        $key = $connection->getName() . '|' . $table . '|' . $column;
+
+        return $this->dateColumnCache[$key] ??= (function () use ($connection, $table, $column): bool {
+            try {
+                return strtolower($connection->getSchemaBuilder()->getColumnType($table, $column)) === 'date';
+            } catch (Throwable) {
+                return false;
+            }
+        })();
     }
 
     /**
@@ -107,6 +163,27 @@ class DateRangeFilter extends BaseFilter
      */
     protected function parseRange(mixed $datesString): array
     {
+        [$from, $to] = $this->parseLocalRange($datesString);
+
+        if ($from === null || $to === null) {
+            return [null, null];
+        }
+
+        return [
+            $from->timezone($this->getSystemTimezone()),
+            $to->timezone($this->getSystemTimezone()),
+        ];
+    }
+
+    /**
+     * The filter state as two instants in the display timezone, before the
+     * conversion to storage: the calendar dates the user picked. Same rules as
+     * parseRange().
+     *
+     * @return array{0: Carbon|null, 1: Carbon|null}
+     */
+    protected function parseLocalRange(mixed $datesString): array
+    {
         if (! is_string($datesString) || trim($datesString) === '') {
             return [null, null];
         }
@@ -122,8 +199,8 @@ class DateRangeFilter extends BaseFilter
             }
 
             return [
-                $this->startOfPeriod($day->copy())->timezone($this->getSystemTimezone()),
-                $this->endOfPeriod($day->copy())->timezone($this->getSystemTimezone()),
+                $this->startOfPeriod($day->copy()),
+                $this->endOfPeriod($day->copy()),
             ];
         }
 
@@ -147,10 +224,7 @@ class DateRangeFilter extends BaseFilter
             $to->endOfMinute();
         }
 
-        return [
-            $from->timezone($this->getSystemTimezone()),
-            $to->timezone($this->getSystemTimezone()),
-        ];
+        return [$from, $to];
     }
 
     /**
