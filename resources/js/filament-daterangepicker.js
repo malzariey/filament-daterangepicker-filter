@@ -333,6 +333,11 @@ export default function dateRangeComponent(config) {
             // Before the mask: its AM/PM block takes the locale's meridiem.
             this.setLocale(this.config.locale);
 
+            // viewDate was created (dayjs()) before the page locale was set,
+            // and every calendar cell inherits its locale: re-create it in
+            // the page locale or a calendar pick on an empty field is "en".
+            this.viewDate = this.viewDate.locale(dayjs.locale());
+
             // The 1-12 hour select has no 0 or 23: start the 12h picker at
             // 12:00 AM and 11:59 PM, the same instants as 00:00 and 23:59.
             if (!this.config.timePicker24) {
@@ -2105,6 +2110,10 @@ export default function dateRangeComponent(config) {
                 // Never store "Invalid Date".
                 if (!start.isValid() || !end.isValid()) return false;
 
+                // Saved in the page locale, the same text the input shows.
+                start = start.locale(dayjs.locale());
+                end = end.locale(dayjs.locale());
+
                 if (this.config.singleCalendar) {
                     value = start.format(format);
                 } else {
@@ -2133,11 +2142,11 @@ export default function dateRangeComponent(config) {
                 this.dualStateSnapshot = {
                     start: {
                         raw: dualStartState,
-                        display: start?.format(format) ?? null,
+                        display: start?.locale(dayjs.locale()).format(format) ?? null,
                     },
                     end: {
                         raw: dualEndState,
-                        display: end?.format(format) ?? null,
+                        display: end?.locale(dayjs.locale()).format(format) ?? null,
                     },
                 };
             }
@@ -2151,7 +2160,8 @@ export default function dateRangeComponent(config) {
         },
 
         serializeDualDate(date, boundary) {
-            const display = date.format(this.config.displayFormat);
+            // Read back below in the page locale, so write it in that locale.
+            const display = date.locale(dayjs.locale()).format(this.config.displayFormat);
             const snapshot = this.dualStateSnapshot[boundary];
 
             if (snapshot.raw !== null && snapshot.display === display) {
