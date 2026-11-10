@@ -74,6 +74,24 @@ class DemoPage extends Page
                             ->timePicker()
                             ->placeholder($isArabic ? 'تنسيق 12 ساعة' : '12-hour format'),
 
+                        DateRangePicker::make('time_24h_input')
+                            ->label($isArabic ? 'وقت 24 ساعة مع الكتابة' : 'Time Picker (24h) + Typing')
+                            ->timePicker()
+                            ->timePicker24()
+                            ->allowInput(),
+
+                        DateRangePicker::make('time_12h_input')
+                            ->label($isArabic ? 'وقت 12 ساعة مع الكتابة' : 'Time Picker (12h) + Typing')
+                            ->timePicker()
+                            ->allowInput(),
+
+                        DateRangePicker::make('time_seconds_input')
+                            ->label($isArabic ? 'وقت بالثواني مع الكتابة' : 'Time Picker (seconds) + Typing')
+                            ->timePicker()
+                            ->timePicker24()
+                            ->timePickerSecond()
+                            ->allowInput(),
+
                         DateRangePicker::make('auto_apply')
                             ->label($isArabic ? 'تطبيق تلقائي' : 'Auto Apply')
                             ->autoApply()
