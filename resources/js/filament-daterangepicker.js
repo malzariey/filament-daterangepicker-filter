@@ -679,10 +679,22 @@ export default function dateRangeComponent(config) {
                 return false;
             }
 
+            const typedPreset = this.presetsOnly
+                ? this.presetLabelForRange(result.start, result.end)
+                : null;
+
+            if (this.presetsOnly && typedPreset === null) {
+                if (options.revertOnInvalid) {
+                    this.updateInputValue();
+                }
+                return false;
+            }
+
             this.selection.start = result.start;
             this.selection.end = result.end;
             this.viewDate = result.start;
             this.showSelectionInUnlinkedCalendars();
+            if (typedPreset !== null) this.selectedPresetLabel = typedPreset;
             this.forgetStalePresetLabel();
 
             return this.syncState();
@@ -2057,7 +2069,9 @@ export default function dateRangeComponent(config) {
                     this.endTime = this.extractTime(this.selection.end);
                 }
 
-                if (this.config.autoApply) {
+                // Presets-only: the click is the whole choice, there is
+                // no Apply button to wait for.
+                if (this.config.autoApply || this.presetsOnly) {
                     this.applySelection();
                 } else {
                     this.updateInputValue();
@@ -2493,6 +2507,12 @@ export default function dateRangeComponent(config) {
                 return;
             }
 
+            // Presets-only: no calendar to drive. Escape still cancels;
+            // Enter / Space stay native so they press the focused preset.
+            if (this.presetsOnly && event.key !== 'Escape') {
+                return;
+            }
+
             switch (event.key) {
                 case 'Escape':
                     event.preventDefault();
@@ -2678,6 +2698,34 @@ export default function dateRangeComponent(config) {
 
         get hasRanges() {
             return !this.config.disableRange && Object.keys(this.config.ranges).length > 0;
+        },
+
+        /**
+         * disableCustomRange(): only presets can set the range. The view
+         * hides the calendars, time picker and Cancel / Apply, a preset
+         * click applies and closes, and the keyboard and typed input cannot
+         * pick another range. With no presets to show the option is ignored
+         * rather than opening an empty dropdown.
+         */
+        get presetsOnly() {
+            return !!this.config.disableCustomRange && this.hasRanges;
+        },
+
+        /**
+         * The enabled preset whose (clamped) bounds equal [start, end], or
+         * null. Lets a typed value through in presets-only mode only when it
+         * is one of the presets.
+         */
+        presetLabelForRange(start, end) {
+            return Object.keys(this.config.ranges || {}).find((label) => {
+                const range = this.config.ranges[label];
+                const bounds = range?.length === 2 ? this.constrainedPresetBounds(range) : null;
+
+                return !!bounds
+                    && bounds[0].isValid()
+                    && bounds[1].isValid()
+                    && this.matchesPresetRange(start, end, ...bounds);
+            }) ?? null;
         },
 
         get calendarCount() {

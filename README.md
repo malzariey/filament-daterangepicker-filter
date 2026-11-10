@@ -346,6 +346,7 @@ DateRangePicker::make('created_at')->useRangeLabels()
 ```
 
 ### Disable Custom Range Selection
+Limit the picker to its presets: the calendars, time picker and Cancel / Apply buttons are hidden, and clicking a preset applies it and closes the dropdown. With `allowInput()`, only a typed range equal to an available preset is accepted (clearing the field still works). If the field has no presets (`disableRanges()`), this option is ignored and the calendar is shown.
 ```php
 DateRangePicker::make('created_at')->disableCustomRange()
 ```
