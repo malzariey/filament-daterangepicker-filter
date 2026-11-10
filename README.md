@@ -144,8 +144,10 @@ DateRangePicker::make('dates')
     ->teleport();      // Enabled by default
 
 DateRangePicker::make('dates')
-    ->teleport(false); // Disable if needed
+    ->teleport(false); // Render the dropdown in place, inside the field
 ```
+
+With `teleport(false)` the dropdown is rendered inside the field's own wrapper and positioned against it (`position: absolute`), so it scrolls with the field and stays inside the modal or slide-over that holds it. Clicking outside, tabbing away, Escape and the time picker's focus inside a modal work the same either way. The limit is clipping: an ancestor with `overflow: hidden`, `auto` or `scroll` (a scrollable modal body, a table filter panel, a card) clips the dropdown or makes it scroll inside that container, and an ancestor with its own stacking context can draw over it. Keep the default `teleport()` wherever the field sits in such a container.
 
 ### Dual State Mode
 
@@ -345,6 +347,12 @@ Display preset labels instead of dates:
 DateRangePicker::make('created_at')->useRangeLabels()
 ```
 
+### Show the Calendars Only on "Custom"
+Like the original daterangepicker's `alwaysShowCalendars: false`: the dropdown first lists only the presets plus a **Custom** entry, and choosing Custom shows the calendars (and the time picker). A preset click selects and highlights it as usual and is applied by Apply (at once with `autoApply()`). When the field already holds a range that no preset matches, the picker opens on the calendars. With no presets (`disableRanges()`) the calendars always show, and `disableCustomRange()` wins: presets only, no Custom entry.
+```php
+DateRangePicker::make('created_at')->alwaysShowCalendar(false)
+```
+
 ### Disable Custom Range Selection
 Limit the picker to its presets: the calendars, time picker and Cancel / Apply buttons are hidden, and clicking a preset applies it and closes the dropdown. With `allowInput()`, only a typed range equal to an available preset is accepted (clearing the field still works). If the field has no presets (`disableRanges()`), this option is ignored and the calendar is shown.
 ```php
@@ -445,7 +453,7 @@ DateRangeFilter::make('created_at')->withIndicator()
 | `->monthPicker()` | Select months only |
 | `->yearPicker()` | Select years only |
 | `->allowInput()` | Enable keyboard date entry |
-| `->teleport(bool)` | Control dropdown positioning (enabled by default) |
+| `->teleport(bool)` | Teleport the dropdown to `<body>` (default), or render it in place with `false` |
 | `->useDualState(start, end)` | Store dates in separate properties |
 | `->format('d/m/Y')` | Set date format using PHP Carbon tokens (auto-converts to JS) |
 | `->pickerType(PickerType)` | Set picker granularity via enum |

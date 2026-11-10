@@ -446,7 +446,8 @@ class DateRangePicker extends Field implements HasAffixActions
 
     public function isAlwaysShowCalendar(): bool
     {
-
+        // Presets only: no calendars at all. The JS lets presets-only mode
+        // win over this flag anyway, and offers no "Custom" entry there.
         if ($this->getDisableCustomRange()) {
             return false;
         }

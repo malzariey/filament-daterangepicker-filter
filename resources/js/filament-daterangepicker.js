@@ -79,6 +79,10 @@ let instanceCounter = 0;
 // trap is actually there: when the picker that owns the dropdown sits in an
 // open Filament modal or slide-over (the only Filament component that uses
 // x-trap). Everywhere else the events propagate untouched.
+//
+// With teleport(false) the dropdown renders in place, inside the picker's
+// own root and so inside the modal's trap container: the trap accepts its
+// focus as it is, and the guard leaves those events alone too.
 // ─────────────────────────────────────────────────────────────
 
 const DROPDOWN_SELECTOR = '.fi-daterangepicker-dropdown';
@@ -89,8 +93,8 @@ const INSTANCE_ATTRIBUTE = 'data-fi-daterangepicker-instance';
 const TRAPPING_MODAL_SELECTOR = '.fi-modal.fi-modal-open:not(.fi-modal-click-through)';
 
 /**
- * True when the event comes from inside a picker dropdown whose picker field
- * is inside an open, focus-trapping Filament modal.
+ * True when the event comes from inside a teleported picker dropdown whose
+ * picker field is inside an open, focus-trapping Filament modal.
  */
 const isInsideTrappedDropdown = (target) => {
     if (!(target instanceof Element)) return false;
@@ -102,6 +106,9 @@ const isInsideTrappedDropdown = (target) => {
 
     for (const field of target.ownerDocument.querySelectorAll(`[${INSTANCE_ATTRIBUTE}]`)) {
         if (field.getAttribute(INSTANCE_ATTRIBUTE) === instance) {
+            // Rendered in place (teleport(false)): already inside the trap.
+            if (field.contains(dropdown)) return false;
+
             return field.closest(TRAPPING_MODAL_SELECTOR) !== null;
         }
     }
@@ -163,6 +170,9 @@ export default function dateRangeComponent(config) {
         // Core State
         // ─────────────────────────────────────────────────────────────
         open: false,
+        // alwaysShowCalendar(false): the user chose "Custom" in the preset
+        // list, so the calendars show. See calendarsShown.
+        customRangeShown: false,
         viewDate: dayjs(),
         // The right-hand day calendar's month under linkedCalendars(false).
         // Null means "the month after the left one". See calendarMonth().
@@ -2138,6 +2148,9 @@ export default function dateRangeComponent(config) {
             if (this._focusingInput) return;
 
             this._returnFocusOnClose = false;
+            // alwaysShowCalendar(false): a range no preset matches was made
+            // on the calendars, so open on them, as the original picker did.
+            this.customRangeShown = !!this.selection.start && !this.hasActivePreset();
             this.open = true;
             await this.$nextTick();
             this.setupPositioning();
@@ -2311,6 +2324,8 @@ export default function dateRangeComponent(config) {
 
                 [this.selection.start, this.selection.end] = bounds;
                 this.selectedPresetLabel = label;
+                // alwaysShowCalendar(false): back to the presets view.
+                this.customRangeShown = false;
                 this.viewDate = this.selection.start;
                 this.showSelectionInUnlinkedCalendars();
 
@@ -2337,7 +2352,7 @@ export default function dateRangeComponent(config) {
          */
         getPresetComparisonUnit() {
             if (!this.config.timePicker) return 'day';
-            return this.config.timePickerSeconds ? 'second' : 'minute';
+            return this.config.timePickerSecond ? 'second' : 'minute';
         },
 
         /**
@@ -2837,9 +2852,10 @@ export default function dateRangeComponent(config) {
                     }
                 }
 
-                // Presets-only: Up / Down step from the input into the list.
+                // Presets view (presets-only, or the calendars hidden until
+                // Custom): Up / Down step from the input into the list.
                 // Home / End stay native here, for the caret.
-                if (this.open && this.presetsOnly
+                if (this.open && !this.calendarsShown
                     && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
                     if (this.focusPreset(event.key)) event.preventDefault();
                     return;
@@ -2874,13 +2890,16 @@ export default function dateRangeComponent(config) {
             }
 
             // Keys inside the dropdown belong to handleGridKeydown /
-            // handlePresetKeydown (a dropdown that is not teleported bubbles here).
+            // handlePresetKeydown and the focused control (a button, a time
+            // <select>). A teleported dropdown never bubbles here; with
+            // teleport(false) it does. Escape still falls through to cancel.
             if (event.key !== 'Escape' && this.isInsideDropdown(event.target)) return;
 
-            // Presets-only: no calendar to drive. Escape still cancels;
-            // Enter / Space stay native so they press the focused preset.
-            // Keys inside the dropdown belong to handlePresetKeydown.
-            if (this.presetsOnly && event.key !== 'Escape') {
+            // Presets view (presets-only, or the calendars hidden until
+            // Custom): no calendar to drive. Escape still cancels; Enter /
+            // Space stay native so they press the focused preset. Keys
+            // inside the dropdown belong to handlePresetKeydown.
+            if (!this.calendarsShown && event.key !== 'Escape') {
                 if (!this.isInsideDropdown(event.target)
                     && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
                     && this.focusPreset(event.key)) {
@@ -2987,7 +3006,7 @@ export default function dateRangeComponent(config) {
          * cancels and hands focus back first, so it moves on from the field.
          */
         handlePresetKeydown(event) {
-            if (!this.open || !this.presetsOnly || !this.isInsideDropdown(event.target)) return;
+            if (!this.open || this.calendarsShown || !this.isInsideDropdown(event.target)) return;
 
             switch (event.key) {
                 case 'ArrowDown':
@@ -2996,7 +3015,15 @@ export default function dateRangeComponent(config) {
                 case 'End':
                     if (this.focusPreset(event.key)) event.preventDefault();
                     break;
+            }
 
+            // The rest is presets-only, where a preset click applies and
+            // closes. With the calendars hidden until Custom (alwaysShow-
+            // Calendar(false)) a preset waits for Apply, so Enter / Space /
+            // Tab stay native and Escape is the dropdown's own cancel.
+            if (!this.presetsOnly) return;
+
+            switch (event.key) {
                 case 'Enter':
                 case ' ':
                 case 'Escape':
@@ -3007,7 +3034,11 @@ export default function dateRangeComponent(config) {
                 // last thing in <body>, so a native Tab off it would land on
                 // nothing and leave the picker open. Cancel and put focus back
                 // in the input; the browser's Tab then carries on from there.
+                // In place (teleport(false)) the dropdown follows the input,
+                // so that Tab would land back on the closing list: there the
+                // native Tab walks on and focus leaving the picker closes it.
                 case 'Tab':
+                    if (!this.config.teleport) break;
                     this._returnFocusOnClose = true;
                     this.cancel();
                     break;
@@ -3338,6 +3369,49 @@ export default function dateRangeComponent(config) {
          */
         get presetsOnly() {
             return !!this.config.disableCustomRange && this.hasRanges;
+        },
+
+        /**
+         * Whether the calendars (and the time picker) show. Always, unless
+         * presets-only, or alwaysShowCalendar(false) with presets to offer:
+         * then only once the user chooses "Custom" in the list, as with the
+         * original daterangepicker's alwaysShowCalendars: false.
+         */
+        get calendarsShown() {
+            if (this.presetsOnly) return false;
+
+            return this.config.alwaysShowCalendars
+                || !this.hasRanges
+                || this.customRangeShown;
+        },
+
+        /**
+         * The "Custom" entry at the end of the preset list. Only with the
+         * calendars hidden until it is chosen; disableCustomRange() has none.
+         */
+        get showsCustomRangeEntry() {
+            return !this.config.alwaysShowCalendars
+                && this.hasRanges
+                && !this.presetsOnly;
+        },
+
+        /** "Custom" reads as active while the calendars show and no preset matches. */
+        get isCustomRangeActive() {
+            return this.showsCustomRangeEntry
+                && this.customRangeShown
+                && !this.hasActivePreset();
+        },
+
+        /** Choose "Custom": show the calendars. */
+        showCustomRange() {
+            if (!this.showsCustomRangeEntry) return;
+
+            this.customRangeShown = true;
+        },
+
+        hasActivePreset() {
+            return this.hasRanges
+                && Object.keys(this.config.ranges).some((label) => this.isActiveRange(label));
         },
 
         /**

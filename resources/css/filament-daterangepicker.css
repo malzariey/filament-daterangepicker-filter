@@ -837,26 +837,42 @@
 /* ─────────────────────────────────────────────────────────────
    Presets only (disableCustomRange): the list is the whole dropdown,
    so no sidebar divider and, on mobile, a plain vertical list instead
-   of the horizontal bar that sits above the calendars.
+   of the horizontal bar that sits above the calendars. The same list
+   shows while alwaysShowCalendar(false) hides the calendars.
    ───────────────────────────────────────────────────────────── */
 
 .fi-daterangepicker-presets-only {
     @apply p-2;
 }
 
-.fi-daterangepicker-presets-only .fi-daterangepicker-ranges {
+.fi-daterangepicker-presets-only .fi-daterangepicker-ranges,
+.fi-daterangepicker-calendars-hidden .fi-daterangepicker-ranges {
     @apply border-0 m-0 p-0;
     @apply overflow-visible;
     mask-image: none;
 }
 
+/* Cancel / Apply sit below the list and can be wider: let the list span. */
+.fi-daterangepicker-calendars-hidden .fi-daterangepicker-ranges {
+    @apply w-full;
+}
+
 @media (max-width: 640px) {
-    .fi-daterangepicker-presets-only .fi-daterangepicker-ranges ul {
+    .fi-daterangepicker-presets-only .fi-daterangepicker-ranges ul,
+    .fi-daterangepicker-calendars-hidden .fi-daterangepicker-ranges ul {
         @apply block space-y-1 pb-0;
     }
 
-    .fi-daterangepicker-presets-only .fi-daterangepicker-range-btn {
+    .fi-daterangepicker-presets-only .fi-daterangepicker-range-btn,
+    .fi-daterangepicker-calendars-hidden .fi-daterangepicker-range-btn {
         @apply flex w-full;
+    }
+
+    /* In place (teleport(false)) the dropdown is positioned against the
+       field, not the viewport: span the field instead of 1rem in from it. */
+    .fi-daterangepicker-dropdown.fi-daterangepicker-in-place {
+        left: 0 !important;
+        right: 0 !important;
     }
 }
 

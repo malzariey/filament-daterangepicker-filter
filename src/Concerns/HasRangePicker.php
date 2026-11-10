@@ -151,6 +151,11 @@ trait HasRangePicker
         return $this;
     }
 
+    /**
+     * False hides the calendars until the user chooses "Custom" in the preset list,
+     * like the original daterangepicker's alwaysShowCalendars. Ignored without presets;
+     * disableCustomRange() shows presets only, with no Custom entry.
+     */
     public function alwaysShowCalendar(bool|Closure $alwaysShow = true): static
     {
         $this->alwaysShowCalendar = $alwaysShow;
@@ -607,7 +612,9 @@ trait HasRangePicker
 
     /**
      * Enable/disable teleport to body (for modal/slideOver compatibility)
-     * When enabled, the dropdown is rendered at the document root to avoid z-index issues
+     * When enabled, the dropdown is rendered at the document root to avoid z-index issues.
+     * When disabled, it is rendered in place, inside the field's wrapper, and positioned
+     * against it; an ancestor with overflow hidden/auto/scroll can then clip it.
      */
     public function teleport(bool|Closure $condition = true): static
     {
