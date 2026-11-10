@@ -8,10 +8,10 @@ use Livewire\Livewire;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
 /**
- * A cleared field stores null, whichever way it was cleared: the Clear
- * action (DateRangePicker::clear()) and the picker in the browser alike.
- * These pin down what the server does with that value, and with the empty
- * string the picker sent from a keyboard clear before 5.0.12.
+ * A cleared field stores null from the Clear action
+ * (DateRangePicker::clear()) and '' from the picker in the browser (a
+ * keyboard clear, its clear()), as in 5.0.11. These pin down that the server
+ * treats both the same. Unifying every clear to null is planned for 6.0.
  */
 final class ClearedStateFormComponent extends Component implements HasSchemas
 {

@@ -237,6 +237,20 @@ class DemoPage extends Page
                             ->timePicker24()
                             ->disableRanges()
                             ->extraInputAttributes(['data-testid' => 'dual-ordinal-range']),
+
+                        // 12-hour picker over 24-hour storage: on an Arabic
+                        // page a PM pick ("م") has to reach the backing
+                        // fields (5.0.12 RC stored nothing).
+                        DateRangePicker::make('dual_12h_range')
+                            ->label($isArabic ? 'حالة مزدوجة 12 ساعة' : 'Dual state, 12-hour picker')
+                            ->useDualState('dual_12h_start', 'dual_12h_end', relative: true)
+                            ->format('Y-m-d H:i:s', enforceFormat: true)
+                            ->displayFormat('DD/MM/YYYY hh:mm A')
+                            ->timezone('Asia/Riyadh')
+                            ->timePicker()
+                            ->timePickerIncrement(1)
+                            ->disableRanges()
+                            ->extraInputAttributes(['data-testid' => 'dual-12h-range']),
                     ]),
 
                 // ─────────────────────────────────────────────────────

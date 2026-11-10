@@ -75,7 +75,7 @@ describe('Clearing manual input from the keyboard', () => {
 
             expect(component.selection.start).toBeNull();
             expect(component.selection.end).toBeNull();
-            expect(component.config.state).toBeNull();
+            expect(component.config.state).toBe('');
         });
 
         it('clears the state when Enter is pressed on the empty mask', async () => {
@@ -93,7 +93,7 @@ describe('Clearing manual input from the keyboard', () => {
             });
             await flushPromises();
 
-            expect(component.config.state).toBeNull();
+            expect(component.config.state).toBe('');
         });
 
         it('keeps the previous state while the input holds a partial value', async () => {
@@ -121,7 +121,7 @@ describe('Clearing manual input from the keyboard', () => {
 
         typeIntoInput(component, '');
         await flushPromises();
-        expect(component.config.state).toBeNull();
+        expect(component.config.state).toBe('');
 
         typeIntoInput(component, '07/2027');
         await flushPromises();
@@ -144,16 +144,18 @@ describe('Clearing manual input from the keyboard', () => {
         typeIntoInput(component, '');
         await flushPromises();
 
-        expect(component.config.state).toBeNull();
+        expect(component.config.state).toBe('');
         expect(component.config.dualStartState).toBeNull();
         expect(component.config.dualEndState).toBeNull();
     });
 
-    // The Clear action (DateRangePicker::clear() on the server) sets null,
-    // and so does the picker's own clear(): every way of emptying the field
-    // stores the same value.
+    // The browser clears store '' (the keyboard and the picker's own
+    // clear()), exactly as 5.0.11 did; the server's Clear action
+    // (DateRangePicker::clear()) stores null. 5.0.12's release candidate made
+    // every clear null, which could throw in app code typed `string $state`,
+    // so it was reverted for the patch. Unifying to null is planned for 6.0.
     describe.each(fields)('$name: one empty value for every clear', ({ config, state }) => {
-        it('stores null from the keyboard, clear() and the Clear action alike', async () => {
+        it("stores '' from the keyboard and from clear(), as 5.0.11", async () => {
             const keyboard = await createTestComponent({ ...config, allowInput: true, initialState: state });
             typeIntoInput(keyboard.component, '');
             await flushPromises();
@@ -162,11 +164,11 @@ describe('Clearing manual input from the keyboard', () => {
             button.component.clear();
             await flushPromises();
 
-            expect(keyboard.component.config.state).toBeNull();
-            expect(button.component.config.state).toBeNull();
+            expect(keyboard.component.config.state).toBe('');
+            expect(button.component.config.state).toBe('');
         });
 
-        it('leaves an empty field null when the picker is cancelled', async () => {
+        it('leaves an empty field empty when the picker is cancelled', async () => {
             const { component } = await createTestComponent({ ...config, allowInput: true, initialState: state });
             typeIntoInput(component, '');
             await flushPromises();
@@ -175,7 +177,7 @@ describe('Clearing manual input from the keyboard', () => {
             component.cancel();
             await flushPromises();
 
-            expect(component.config.state).toBeNull();
+            expect(component.config.state).toBe('');
             expect(component.selection.start).toBeNull();
         });
     });

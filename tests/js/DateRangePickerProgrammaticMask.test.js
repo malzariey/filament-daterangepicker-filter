@@ -132,7 +132,7 @@ describe('Programmatic mask updates are not user input', () => {
             typeIntoInput(component, '');
             await flushPromises();
 
-            expect(component.config.state).toBeNull();
+            expect(component.config.state).toBe('');
             expect(component.selection.start).toBeNull();
         });
     });

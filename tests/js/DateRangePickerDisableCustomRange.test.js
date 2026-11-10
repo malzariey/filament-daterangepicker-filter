@@ -244,7 +244,7 @@ describe('disableCustomRange', () => {
             const { component, accepted } = await typed('', { initialState: '08/11/2026 - 08/11/2026' });
 
             expect(accepted).toBe(true);
-            expect(component.config.state).toBeNull();
+            expect(component.config.state).toBe('');
         });
 
         it('still accepts any typed range without the option', async () => {
