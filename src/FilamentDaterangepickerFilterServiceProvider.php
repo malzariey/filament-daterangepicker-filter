@@ -7,6 +7,7 @@ use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
+use Malzariey\FilamentDaterangepickerFilter\Support\ReportedFormatTokens;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -24,6 +25,8 @@ class FilamentDaterangepickerFilterServiceProvider extends PackageServiceProvide
 
     public function packageRegistered(): void
     {
+        $this->app->scoped(ReportedFormatTokens::class);
+
         $assets = [
             AlpineComponent::make('dateRangeComponent', __DIR__ . '/../dist/filament-daterangepicker.js'),
             // Loaded on request by the field view (x-load-css): the stylesheet only

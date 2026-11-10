@@ -263,9 +263,13 @@ class DateRangePicker extends Field implements HasAffixActions
         ];
     }
 
+    /**
+     * The Day.js format of the backing values. They are in the STORAGE
+     * timezone, so an "e" in format() is written as that zone.
+     */
     public function getDualStateStorageFormat(): string
     {
-        return $this->convertPhpToJsFormat($this->getFormat());
+        return $this->convertPhpFormatIn($this->getFormat(), $this->getDualStateStorageTimezone());
     }
 
     /**

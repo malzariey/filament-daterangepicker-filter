@@ -215,6 +215,11 @@ Both backing values must be present before a range can be applied. If an
 external update provides only a start or end value, the picker preserves that
 value and disables Apply until the range is completed or explicitly cleared.
 
+When the picker shows minutes but no seconds (no `timePickerSecond()`) and the
+storage format keeps seconds, the end is stored through the end of its minute
+(`23:59` is stored as `23:59:59`) and the start at `:00` — the same values the
+server writes for a default range and the filter reads from a typed range.
+
 ---
 
 ## Custom Events
@@ -315,6 +320,35 @@ DateRangePicker::make('created_at')
 DateRangePicker::make('created_at')
     ->format('d M Y')      // Renders as DD MMM YYYY in the browser
 ```
+
+A few PHP tokens have no plain Day.js equivalent:
+
+| Token | Meaning | Support |
+|---|---|---|
+| `S` | ordinal suffix | Only as `jS` ("1st", "2nd"), written in English in every locale, as PHP does. Any other `S` is reported and shown as the letter `o`, as before. |
+| `e` | timezone identifier | Written as the zone the value is in (the picker `timezone()` on screen, the storage timezone for dual-state values). |
+| `N` | ISO weekday number | Reported; shown as the letter `E`, as before (Carbon cannot read it back). Use `D` or `l`. |
+| `W` | ISO week number | Reported; shown as the letter `W`, as before (Carbon cannot read it back). |
+| `z` | day of the year | Reported; written as Day.js `DDD` (day of month twice), as before. The browser cannot write or read a day of the year. |
+| `T` | timezone abbreviation | Reported; shown as the letter `z`, as before (the browser cannot write it for the picked date). Use `e`. |
+| `t` `L` `B` `I` `Z` | days in month, leap year, Swatch time, DST flag, offset in seconds | Reported; left out, as before (the browser cannot write them, Carbon cannot read them). |
+| `c` `r` | ISO 8601, RFC 2822 date | Reported; left out, as before. Spell the parts out (`Y-m-d\TH:i:s`, `D, d M Y H:i:s`) and use `e` for the zone. |
+
+An unsupported token never breaks the page in 5.x: the field renders with the
+same output as before, and the package reports an
+`Malzariey\FilamentDaterangepickerFilter\Exceptions\UnsupportedDateFormatToken`
+through Laravel's `report()` once per format per request. The message names the
+token, the format and what to use instead. **In 6.0 these tokens will throw.**
+To log it at a lower level, or not at all, in `bootstrap/app.php`:
+
+```php
+->withExceptions(function (Exceptions $exceptions) {
+    $exceptions->level(UnsupportedDateFormatToken::class, LogLevel::WARNING);
+    // or: $exceptions->dontReport(UnsupportedDateFormatToken::class);
+})
+```
+
+Escape a letter (`\W`) to show it literally.
 
 > **Note:** The deprecated `->displayFormat('DD/MM/YYYY')` method still works but is no longer recommended. Use `->format()` with PHP Carbon tokens instead — the JavaScript display format is auto-converted.
 

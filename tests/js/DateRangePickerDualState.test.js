@@ -121,7 +121,8 @@ describe("Dual State Mode", () => {
         await flushPromises();
 
         expect(component.config.dualStartState).toBe("2026-06-15 07:13:00");
-        expect(component.config.dualEndState).toBe("2026-06-16 15:47:00");
+        // No seconds on screen: the end runs through the end of 17:47.
+        expect(component.config.dualEndState).toBe("2026-06-16 15:47:59");
         expect(component.config.state).toBe(
             "15.06.2026 09:13 - 16.06.2026 17:47",
         );
