@@ -336,6 +336,7 @@
                                                         }"
                                                         role="gridcell"
                                                         :aria-selected="day.isSelected"
+                                                        :aria-current="day.isToday ? 'date' : null"
                                                         :aria-disabled="day.disabled"
                                                         :tabindex="isFocused(day.date) ? 0 : -1"
                                                     >
