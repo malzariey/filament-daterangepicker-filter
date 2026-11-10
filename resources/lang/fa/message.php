@@ -35,5 +35,5 @@ return [
     'this_year' =>"امسال",
     'last_year' =>"سال پیشین",
     'clear' => "پاک کردن",
-
+    'weekLabel' => 'هف',
 ];

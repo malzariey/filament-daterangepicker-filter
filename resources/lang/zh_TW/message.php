@@ -35,5 +35,5 @@ return [
     'this_year' => "今年",
     'last_year' => "去年",
     'clear' =>"清除",
-
+    'weekLabel' => '週',
 ];

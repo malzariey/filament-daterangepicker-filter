@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Closure;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Concerns\{HasAffixes, HasExtraInputAttributes, HasPlaceholder};
+use Filament\Forms\Components\Concerns\{CanBeReadOnly, HasAffixes, HasExtraInputAttributes, HasPlaceholder};
 use Filament\Schemas\Components\Contracts\HasAffixActions;
 use Filament\Forms\Components\Field;
 use Filament\Schemas\Components\Utilities\Get;
@@ -19,6 +19,7 @@ use Malzariey\FilamentDaterangepickerFilter\Concerns\HasRangePicker;
 
 class DateRangePicker extends Field implements HasAffixActions
 {
+    use CanBeReadOnly;
     use HasPlaceholder;
     use HasRangePicker;
     use HasAffixes;
@@ -340,16 +341,18 @@ class DateRangePicker extends Field implements HasAffixActions
     public function disableClear(bool|Closure $disable = true): static
     {
         $condition = $this->evaluate($disable);
-        $icon = $this->getIcon();
 
+        // The icon is read when the field renders, not here, so icon() works
+        // whether it is called before or after disableClear().
         if ($condition) {
             $this->suffixAction(fn() => null);
-            $this->suffixIcon($icon);
+            $this->suffixIcon(fn (): string => $this->getIcon());
         } else {
             $this->suffixAction(
                 Action::make('clear')
                     ->label(__('filament-daterangepicker-filter::message.clear'))
-                    ->icon($icon)
+                    ->icon(fn (): string => $this->getIcon())
+                    ->hidden(fn (): bool => $this->isReadOnly())
                     ->action(fn() => $this->clear())
             );
             $this->suffixIcon(null);

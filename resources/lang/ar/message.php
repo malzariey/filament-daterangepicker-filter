@@ -35,5 +35,5 @@ return [
     'this_year' =>"هذه السنة",
     'last_year' =>"السنة الماضية",
     'clear' =>"مسح",
-
+    'weekLabel' => 'أس',
 ];

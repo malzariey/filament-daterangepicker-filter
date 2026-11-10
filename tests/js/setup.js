@@ -239,6 +239,10 @@ export const createTestComponent = async (config = {}) => {
         dropdown: createMockElement('div', { id: `fi-daterangepicker-dropdown-${instance.instanceId}` }),
         input: createMockInput(),
     };
+    // Attributes the Blade view renders on the input (e.g. placeholder).
+    Object.entries(config.inputAttributes ?? {}).forEach(([name, value]) => {
+        instance.$refs.input.setAttribute(name, value);
+    });
     instance.$nextTick = (cb) => Promise.resolve().then(cb);
     const watchers = new Map();
     instance.$watch = vi.fn((path, callback) => watchers.set(path, callback));

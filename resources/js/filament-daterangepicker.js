@@ -199,6 +199,9 @@ export default function dateRangeComponent(config) {
         // Input masking
         inputMask: null,
         _inputMaskSyncHandler: null,
+        _inputMaskGuideHandler: null,
+        // placeholder() set on the field, shown while the mask is lazy.
+        _userPlaceholder: null,
         inputValue: '',
         allowManualInput: config.allowInput ?? false,
 
@@ -257,6 +260,7 @@ export default function dateRangeComponent(config) {
 
             // Picker type: 'day' (default), 'month', or 'year'
             pickerType: config.pickerType || 'day',
+            readOnly: config.readOnly ?? false,
 
             // Labels (localized from PHP)
             labels: {
@@ -422,6 +426,12 @@ export default function dateRangeComponent(config) {
                 });
                 this._inputMaskSyncHandler = null;
             }
+            if (this._inputMaskGuideHandler && this.$refs.input) {
+                ['focus', 'blur'].forEach((eventName) => {
+                    this.$refs.input.removeEventListener(eventName, this._inputMaskGuideHandler);
+                });
+                this._inputMaskGuideHandler = null;
+            }
             if (this._documentKeyHandler) {
                 document.removeEventListener('keydown', this._documentKeyHandler);
                 this._documentKeyHandler = null;
@@ -512,15 +522,26 @@ export default function dateRangeComponent(config) {
                 ? placeholder
                 : `${placeholder}${this.config.separator}${placeholder}`;
 
-            // Force update placeholder
-            input.placeholder = rangePlaceholder;
-            input.setAttribute('placeholder', rangePlaceholder);
+            // A placeholder() set on the field is rendered on the input. Keep
+            // it, and hold the mask guide back until the input is focused, so
+            // an empty field shows that placeholder rather than "__/__/____".
+            // The format placeholder below is ours, not the user's.
+            const renderedPlaceholder = (input.getAttribute('placeholder') ?? '').trim();
+            this._userPlaceholder = renderedPlaceholder !== '' && renderedPlaceholder !== rangePlaceholder
+                ? renderedPlaceholder
+                : null;
 
-            // Ensure it sticks (in case of race conditions)
-            setTimeout(() => {
+            if (!this._userPlaceholder) {
+                // Force update placeholder
                 input.placeholder = rangePlaceholder;
                 input.setAttribute('placeholder', rangePlaceholder);
-            }, 50);
+
+                // Ensure it sticks (in case of race conditions)
+                setTimeout(() => {
+                    input.placeholder = rangePlaceholder;
+                    input.setAttribute('placeholder', rangePlaceholder);
+                }, 50);
+            }
 
             // Get display format and separator
             const format = this.config.displayFormat; // e.g., "DD/MM/YYYY"
@@ -559,6 +580,41 @@ export default function dateRangeComponent(config) {
             ['focus', 'click', 'keydown'].forEach((eventName) => {
                 input.addEventListener(eventName, this._inputMaskSyncHandler, true);
             });
+
+            if (this._userPlaceholder) {
+                this._inputMaskGuideHandler = (event) => this.showInputMaskGuide(event.type === 'focus');
+                ['focus', 'blur'].forEach((eventName) => {
+                    input.addEventListener(eventName, this._inputMaskGuideHandler);
+                });
+                this.showInputMaskGuide(document.activeElement === input);
+            }
+        },
+
+        /**
+         * With a placeholder() set, the mask guide shows only while the input
+         * is focused or holds something typed; an empty, unfocused field is
+         * lazy so its placeholder shows. Toggling the guide rewrites the
+         * value, which is the picker's own write, not the user typing.
+         */
+        showInputMaskGuide(focused) {
+            const mask = this.inputMask;
+            if (!mask || !this._userPlaceholder) return;
+
+            const lazy = !focused && mask.unmaskedValue === '';
+            if (mask.masked.lazy === lazy) return;
+
+            const wasWriting = this._writingInputMask;
+            this._writingInputMask = true;
+            try {
+                // MaskedDate resets every option an update leaves out to its
+                // own defaults (pattern "d.m.Y", format, parse), so it gets
+                // its full options back.
+                mask.updateOptions(mask.masked instanceof IMask.MaskedDate
+                    ? { ...this.createDateMaskOptions(this.config.displayFormat), lazy }
+                    : { lazy });
+            } finally {
+                this._writingInputMask = wasWriting;
+            }
         },
 
         syncInputMaskFromElement() {
@@ -2057,6 +2113,9 @@ export default function dateRangeComponent(config) {
         },
 
         async openPicker() {
+            // readOnly(): the value shows and still submits, but cannot change.
+            if (this.config.readOnly) return;
+
             // Focus handed back to a field that opens on focus.
             if (this._focusingInput) return;
 
