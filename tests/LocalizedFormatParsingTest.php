@@ -240,9 +240,10 @@ it('reads back every string Day.js writes, in every shipped locale', function ()
         }
     }
 
-    // 31 non-English shipped locales x 10 formats x 24 samples.
+    // 33 non-English shipped lang folders (el and nb counted beside their
+    // legacy gr and no aliases) x 10 formats x 24 samples.
     expect($failures)->toBe([])
-        ->and($checked)->toBe(31 * 10 * 24);
+        ->and($checked)->toBe(33 * 10 * 24);
 });
 
 it('picks the Day.js locale the browser picks', function (string $locale, string $dayjs) {
@@ -251,7 +252,9 @@ it('picks the Day.js locale the browser picks', function (string $locale, string
     ['ar', 'ar'],
     ['ar_SA', 'ar'],
     ['ckb', 'ku'],
+    ['el', 'el'],
     ['gr', 'el'],
+    ['nb', 'nb'],
     ['no', 'nb'],
     ['pt_BR', 'pt-br'],
     ['zh_CN', 'zh-cn'],

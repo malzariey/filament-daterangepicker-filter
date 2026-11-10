@@ -1,343 +1,250 @@
 /**
- * DateRangePicker Playwright Test Suite
- * 
- * Comprehensive E2E tests for the Filament DateRangePicker component.
- * Run with: npx playwright test tests/playwright/picker-test.spec.js --headed
- * 
- * Configure your test URL in the BASE_URL constant below.
+ * DateRangePicker end-to-end checks on the workbench demo page.
+ *
+ * Until 5.0.12 this spec pointed at a hard-coded host
+ * (http://daterangepicker-test.test/admin/events/create) that no checkout
+ * has, so it could never run. It now drives the demo fields in
+ * workbench/app/Filament/Pages/DemoPage.php. The modal and slide-over time
+ * picker is covered by modal-focus.spec.ts and is not repeated here.
+ *
+ * Run against the demo app (see CONTRIBUTING.md), serially:
+ *   npm run build && vendor/bin/testbench filament:assets
+ *   vendor/bin/testbench serve --port=8000
+ *   DEMO_URL=http://localhost:8000 npx playwright test tests/playwright --workers=1
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 
-// Configure your test URL here
-const BASE_URL = 'http://daterangepicker-test.test/admin/events/create';
+const DEMO_URL = process.env.DEMO_URL ?? 'http://localhost:8000';
 
-// Test selectors
-const SELECTORS = {
-    standardRange: '#form\\.date_range', // Standard date range picker
-    timeRange: '#form\\.time_range', // Time picker variant
-    dropdown: '.fi-daterangepicker-dropdown',
-    day: '.fi-daterangepicker-day:not(.fi-disabled):not(.fi-off-month)',
-    applyBtn: 'button:has-text("Apply")',
-    cancelBtn: 'button:has-text("Cancel")',
-    rangePreset: '.fi-daterangepicker-range-btn',
-    timeSelect: '.fi-daterangepicker-select.fi-time',
-    calendarHeader: '.fi-daterangepicker-month-label',
-    prevMonth: '.fi-daterangepicker-nav-btn:first-child',
-    nextMonth: '.fi-daterangepicker-nav-btn:last-child',
-};
+const DAY = '.fi-daterangepicker-day:not(.fi-disabled):not(.fi-off-month)';
 
-test.describe('DateRangePicker Component', () => {
+/** The input of a demo field, by its name in DemoPage::form(). */
+function input(page: Page, field: string): Locator {
+    return page.locator(`input[id$=".${field}"]`);
+}
+
+/** The (teleported) dropdown that belongs to a demo field. */
+function dropdown(page: Page, field: string): Locator {
+    return page.locator(`.fi-daterangepicker-dropdown[aria-label$=".${field}"]`);
+}
+
+async function openPicker(page: Page, field: string): Promise<Locator> {
+    await input(page, field).click();
+    const panel = dropdown(page, field);
+    await expect(panel).toBeVisible();
+
+    return panel;
+}
+
+function applyButton(panel: Locator): Locator {
+    return panel.locator('.fi-daterangepicker-actions button').last();
+}
+
+function cancelButton(panel: Locator): Locator {
+    return panel.locator('.fi-daterangepicker-actions button').first();
+}
+
+/** dd/mm/yyyy, the picker's default display format, for a local date. */
+function ddmmyyyy(date: Date): string {
+    return [date.getDate(), date.getMonth() + 1].map((n) => String(n).padStart(2, '0')).join('/') + `/${date.getFullYear()}`;
+}
+
+function daysAgo(days: number): Date {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+
+    return date;
+}
+
+/** Submit the page form and return what the server received for one field. */
+async function submitted(page: Page, field: string): Promise<unknown> {
+    await page.locator('#demo-submit-form').click();
+    const line = page.locator('#demo-last-submitted');
+    await expect(line).toContainText('Form:');
+    const json = (await line.textContent())!.replace(/^[\s\S]*?Form:\s*/, '').trim();
+
+    return JSON.parse(json)[field];
+}
+
+test.describe('DateRangePicker on the demo page', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto(BASE_URL);
+        await page.goto(`${DEMO_URL}/demo/demo-page?locale=en`);
         await page.waitForLoadState('networkidle');
     });
 
-    test.describe('Happy Path', () => {
-        test('should open picker, select date range, and apply', async ({ page }) => {
-            // 1. Click on the date range picker
-            await page.locator(SELECTORS.standardRange).click();
+    test.describe('Happy path', () => {
+        test('picks a range, applies it, and the server receives it', async ({ page }) => {
+            const panel = await openPicker(page, 'default_range');
 
-            // 2. Wait for dropdown to be visible
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
+            const days = panel.locator(DAY);
+            await days.nth(9).click();
+            await days.nth(19).click();
+            await applyButton(panel).click();
 
-            // 3. Select start date (click first available day)
-            const days = page.locator(SELECTORS.day);
-            await days.nth(9).click(); // ~10th of the month
+            await expect(panel).toBeHidden();
+            const value = await input(page, 'default_range').inputValue();
+            expect(value).toMatch(/^\d{2}\/\d{2}\/\d{4} - \d{2}\/\d{2}\/\d{4}$/);
 
-            // 4. Select end date
-            await days.nth(19).click(); // ~20th of the month
-
-            // 5. Click Apply
-            await page.locator(SELECTORS.applyBtn).first().click();
-
-            // 6. Verify dropdown is closed
-            await expect(page.locator(SELECTORS.dropdown)).not.toBeVisible();
-
-            // 7. Verify input has a value
-            const inputValue = await page.locator(SELECTORS.standardRange).inputValue();
-            expect(inputValue).toMatch(/\d{2}\/\d{2}\/\d{4}\s-\s\d{2}\/\d{2}\/\d{4}/);
+            expect(await submitted(page, 'default_range')).toBe(value);
         });
 
-        test('should close picker on Cancel without applying', async ({ page }) => {
-            // Get initial value
-            const initialValue = await page.locator(SELECTORS.standardRange).inputValue();
+        test('Cancel closes the picker and keeps the old value', async ({ page }) => {
+            const before = await input(page, 'default_range').inputValue();
+            const panel = await openPicker(page, 'default_range');
 
-            // Open picker
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
-
-            // Select some dates
-            const days = page.locator(SELECTORS.day);
+            const days = panel.locator(DAY);
             await days.nth(5).click();
             await days.nth(15).click();
+            await cancelButton(panel).click();
 
-            // Click Cancel
-            await page.locator(SELECTORS.cancelBtn).first().click();
-
-            // Verify value unchanged
-            const finalValue = await page.locator(SELECTORS.standardRange).inputValue();
-            expect(finalValue).toBe(initialValue);
+            await expect(panel).toBeHidden();
+            await expect(input(page, 'default_range')).toHaveValue(before);
         });
     });
 
-    test.describe('Time Picker', () => {
-        test('should select time values and include them in output', async ({ page }) => {
-            // Open time picker variant
-            await page.locator(SELECTORS.timeRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
+    test.describe('Time picker', () => {
+        test('24-hour: the chosen start time is in the value', async ({ page }) => {
+            const panel = await openPicker(page, 'with_time_24h');
 
-            // Select dates first
-            const days = page.locator(SELECTORS.day);
+            const days = panel.locator(DAY);
             await days.nth(5).click();
             await days.nth(10).click();
 
-            // Wait for time pickers to be visible
-            const timeSelects = page.locator(SELECTORS.timeSelect);
-            await expect(timeSelects.first()).toBeVisible();
+            const selects = panel.locator('select.fi-time');
+            await expect(selects.first()).toBeVisible();
+            await selects.nth(0).selectOption('10');
+            await selects.nth(1).selectOption('30');
+            await applyButton(panel).click();
 
-            // Change start hour
-            await timeSelects.nth(0).selectOption('10');
-
-            // Change start minute
-            await timeSelects.nth(1).selectOption('30');
-
-            // Apply
-            await page.locator(SELECTORS.applyBtn).first().click();
-
-            // Verify time is included in format
-            const inputValue = await page.locator(SELECTORS.timeRange).inputValue();
-            expect(inputValue).toContain('10:30');
+            await expect(input(page, 'with_time_24h')).toHaveValue(/^\d{2}\/\d{2}\/\d{4} 10:30 - /);
         });
 
-        test('should switch between AM/PM in 12-hour mode', async ({ page }) => {
-            // This test requires a 12-hour time picker variant
-            // Skip if not available on the test page
-            const ampmPicker = page.locator('#form\\.time_range_12h');
-            if (await ampmPicker.count() === 0) {
-                test.skip();
-                return;
-            }
+        test('12-hour: switching the start to PM writes PM', async ({ page }) => {
+            const panel = await openPicker(page, 'with_time_12h');
 
-            await ampmPicker.click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
+            const days = panel.locator(DAY);
+            await days.nth(5).click();
+            await days.nth(10).click();
 
-            const ampmSelect = page.locator('.fi-daterangepicker-select.fi-ampm');
-            await expect(ampmSelect.first()).toBeVisible();
-            await ampmSelect.first().selectOption('PM');
+            const ampm = panel.locator('select.fi-ampm');
+            await expect(ampm.first()).toBeVisible();
+            await ampm.first().selectOption('PM');
+            await applyButton(panel).click();
+
+            await expect(input(page, 'with_time_12h')).toHaveValue(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2} PM - /);
         });
     });
 
-    test.describe('Preset Ranges (Shortcuts)', () => {
-        test('should select "Today" preset and apply correct dates', async ({ page }) => {
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
+    test.describe('Preset ranges', () => {
+        const presets = [
+            { label: 'Today', from: 0, to: 0 },
+            { label: 'Yesterday', from: 1, to: 1 },
+            { label: 'Last 7 Days', from: 6, to: 0 },
+        ];
 
-            // Look for Today preset
-            const todayPreset = page.locator(`${SELECTORS.rangePreset}:has-text("Today")`);
-            if (await todayPreset.count() > 0) {
-                await todayPreset.click();
+        for (const { label, from, to } of presets) {
+            test(`"${label}" fills the expected dates`, async ({ page }) => {
+                const panel = await openPicker(page, 'default_range');
 
-                // If autoApply, check input immediately
-                // Otherwise, click Apply
-                const applyBtn = page.locator(SELECTORS.applyBtn).first();
-                if (await applyBtn.isVisible()) {
-                    await applyBtn.click();
+                await panel.locator('.fi-daterangepicker-range-btn', { hasText: label }).first().click();
+                if (await applyButton(panel).isVisible()) {
+                    await applyButton(panel).click();
                 }
 
-                const inputValue = await page.locator(SELECTORS.standardRange).inputValue();
-                const today = new Date();
-                const expectedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-                expect(inputValue).toContain(expectedDate);
-            }
-        });
-
-        test('should select "Last 7 Days" preset', async ({ page }) => {
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
-
-            const last7Days = page.locator(`${SELECTORS.rangePreset}:has-text("Last 7 Days")`);
-            if (await last7Days.count() > 0) {
-                await last7Days.click();
-
-                const applyBtn = page.locator(SELECTORS.applyBtn).first();
-                if (await applyBtn.isVisible()) {
-                    await applyBtn.click();
-                }
-
-                const inputValue = await page.locator(SELECTORS.standardRange).inputValue();
-                expect(inputValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
-            }
-        });
-
-        test('should select "Yesterday" preset', async ({ page }) => {
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
-
-            const yesterday = page.locator(`${SELECTORS.rangePreset}:has-text("Yesterday")`);
-            if (await yesterday.count() > 0) {
-                await yesterday.click();
-
-                const applyBtn = page.locator(SELECTORS.applyBtn).first();
-                if (await applyBtn.isVisible()) {
-                    await applyBtn.click();
-                }
-
-                const inputValue = await page.locator(SELECTORS.standardRange).inputValue();
-                const yesterdayDate = new Date();
-                yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-                const expectedDate = `${String(yesterdayDate.getDate()).padStart(2, '0')}/${String(yesterdayDate.getMonth() + 1).padStart(2, '0')}/${yesterdayDate.getFullYear()}`;
-                expect(inputValue).toContain(expectedDate);
-            }
-        });
-    });
-
-    test.describe('Input Mask', () => {
-        test('should allow manual date entry via keyboard', async ({ page }) => {
-            // Focus the input
-            await page.locator(SELECTORS.standardRange).focus();
-
-            // Clear existing value
-            await page.locator(SELECTORS.standardRange).fill('');
-
-            // Type a date manually
-            await page.locator(SELECTORS.standardRange).type('01/01/2024 - 15/01/2024');
-
-            // Trigger blur to process
-            await page.locator(SELECTORS.standardRange).blur();
-
-            // Wait a bit for processing
-            await page.waitForTimeout(200);
-
-            // Open picker to verify calendar updated
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
-
-            // Check that January 2024 is shown
-            const header = page.locator(SELECTORS.calendarHeader);
-            await expect(header.first()).toContainText('January');
-            await expect(header.first()).toContainText('2024');
-        });
-    });
-
-    test.describe('Livewire Sync', () => {
-        test('should dispatch custom events on apply', async ({ page }) => {
-            // Set up event listener
-            await page.evaluate(() => {
-                window.__testEvents = [];
-                document.addEventListener('apply.daterangepicker', (e) => {
-                    window.__testEvents.push({
-                        type: 'apply',
-                        detail: e.detail
-                    });
-                });
+                await expect(input(page, 'default_range')).toHaveValue(`${ddmmyyyy(daysAgo(from))} - ${ddmmyyyy(daysAgo(to))}`);
             });
+        }
+    });
 
-            // Open picker and make selection
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
+    test.describe('Manual input', () => {
+        test('a typed range moves the calendar to it', async ({ page }) => {
+            const field = input(page, 'allow_input');
+            await field.click();
+            // Digits only: the mask writes the "/" and " - " itself. (A typed
+            // Space while the picker is open picks the focused day instead of
+            // reaching the mask, so typing the literal " - " ends on today.)
+            await field.pressSequentially('0101202415012024');
+            await expect(field).toHaveValue('01/01/2024 - 15/01/2024');
 
-            const days = page.locator(SELECTORS.day);
+            const panel = dropdown(page, 'allow_input');
+            await expect(panel).toBeVisible();
+            await expect(panel.locator('.fi-daterangepicker-month-label').first()).toContainText('January');
+            await expect(panel.locator('.fi-daterangepicker-month-label').first()).toContainText('2024');
+        });
+    });
+
+    test.describe('Events', () => {
+        async function listen(page: Page, name: string): Promise<void> {
+            await page.evaluate((eventName) => {
+                (window as any).__testEvents = [];
+                document.addEventListener(eventName, (e: Event) => {
+                    (window as any).__testEvents.push({ type: e.type, detail: (e as CustomEvent).detail });
+                });
+            }, name);
+        }
+
+        test('apply.daterangepicker carries the range', async ({ page }) => {
+            await listen(page, 'apply.daterangepicker');
+            const panel = await openPicker(page, 'default_range');
+
+            const days = panel.locator(DAY);
             await days.nth(5).click();
             await days.nth(15).click();
+            await applyButton(panel).click();
 
-            await page.locator(SELECTORS.applyBtn).first().click();
-
-            // Check event was dispatched
-            const events = await page.evaluate(() => window.__testEvents);
-            expect(events.length).toBeGreaterThan(0);
-            expect(events[0].type).toBe('apply');
+            const events = await page.evaluate(() => (window as any).__testEvents);
+            expect(events).toHaveLength(1);
             expect(events[0].detail).toHaveProperty('startDate');
             expect(events[0].detail).toHaveProperty('endDate');
+            expect(events[0].detail.formattedValue).toBe(await input(page, 'default_range').inputValue());
         });
 
-        test('should dispatch cancel event on cancel', async ({ page }) => {
-            // Set up event listener
-            await page.evaluate(() => {
-                window.__testEvents = [];
-                document.addEventListener('cancel.daterangepicker', (e) => {
-                    window.__testEvents.push({ type: 'cancel' });
-                });
-            });
+        test('cancel.daterangepicker fires on Cancel', async ({ page }) => {
+            await listen(page, 'cancel.daterangepicker');
+            const panel = await openPicker(page, 'default_range');
+            await cancelButton(panel).click();
 
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
-
-            await page.locator(SELECTORS.cancelBtn).first().click();
-
-            const events = await page.evaluate(() => window.__testEvents);
-            expect(events.some(e => e.type === 'cancel')).toBe(true);
+            const events = await page.evaluate(() => (window as any).__testEvents);
+            expect(events.map((e: { type: string }) => e.type)).toEqual(['cancel.daterangepicker']);
         });
     });
 
     test.describe('Navigation', () => {
-        test('should navigate to previous month', async ({ page }) => {
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
+        for (const [direction, label] of [['previous', 'Previous month'], ['next', 'Next month']] as const) {
+            test(`the ${direction}-month button changes the month`, async ({ page }) => {
+                const panel = await openPicker(page, 'default_range');
+                const month = panel.locator('.fi-daterangepicker-month-label').first();
+                const before = await month.textContent();
 
-            // Get current month
-            const initialMonth = await page.locator(SELECTORS.calendarHeader).first().textContent();
+                await panel.locator(`.fi-daterangepicker-nav-btn[aria-label="${label}"]:visible`).first().click();
 
-            // Click previous month button
-            await page.locator(SELECTORS.prevMonth).first().click();
-
-            // Verify month changed
-            const newMonth = await page.locator(SELECTORS.calendarHeader).first().textContent();
-            expect(newMonth).not.toBe(initialMonth);
-        });
-
-        test('should navigate to next month', async ({ page }) => {
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
-
-            const initialMonth = await page.locator(SELECTORS.calendarHeader).first().textContent();
-
-            // Use the second nav button for single calendar, last for dual
-            const nextBtn = page.locator(SELECTORS.nextMonth);
-            await nextBtn.last().click();
-
-            const newMonth = await page.locator(SELECTORS.calendarHeader).first().textContent();
-            expect(newMonth).not.toBe(initialMonth);
-        });
-    });
-
-    test.describe('Keyboard Navigation', () => {
-        test('should close on Escape key', async ({ page }) => {
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
-
-            await page.keyboard.press('Escape');
-
-            await expect(page.locator(SELECTORS.dropdown)).not.toBeVisible();
-        });
-    });
-
-    test.describe('Error Handling', () => {
-        test('should not throw console errors during normal usage', async ({ page }) => {
-            const errors: string[] = [];
-            page.on('console', msg => {
-                if (msg.type() === 'error') {
-                    errors.push(msg.text());
-                }
+                await expect(month).not.toHaveText(before!);
             });
+        }
+    });
 
-            // Perform typical interactions
-            await page.locator(SELECTORS.standardRange).click();
-            await expect(page.locator(SELECTORS.dropdown)).toBeVisible();
+    test('Escape closes the picker', async ({ page }) => {
+        const panel = await openPicker(page, 'default_range');
+        await page.keyboard.press('Escape');
 
-            const days = page.locator(SELECTORS.day);
-            await days.nth(5).click();
-            await days.nth(15).click();
-            await page.locator(SELECTORS.applyBtn).first().click();
+        await expect(panel).toBeHidden();
+    });
 
-            // Filter out unrelated errors (network, etc)
-            const relevantErrors = errors.filter(e =>
-                e.includes('daterangepicker') ||
-                e.includes('Alpine') ||
-                e.includes('handleTimeChange')
-            );
-
-            expect(relevantErrors).toHaveLength(0);
+    test('no console errors while picking and applying', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('console', (msg) => {
+            if (msg.type() === 'error') errors.push(msg.text());
         });
+        page.on('pageerror', (error) => errors.push(error.message));
+
+        const panel = await openPicker(page, 'default_range');
+        const days = panel.locator(DAY);
+        await days.nth(5).click();
+        await days.nth(15).click();
+        await applyButton(panel).click();
+        await expect(panel).toBeHidden();
+
+        expect(errors).toEqual([]);
     });
 });

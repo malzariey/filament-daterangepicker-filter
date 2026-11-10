@@ -120,6 +120,30 @@ describe('localized month state in the picker', () => {
         expect(component.config.state).toBe('أكتوبر 2026 - نوفمبر 2026');
     });
 
+    // Laravel and Filament call Greek "el" and Norwegian Bokmål "nb"; the
+    // legacy lang folders "gr" and "no" must land on the same Day.js locale.
+    it.each([
+        ['el', 'el', 'Οκτώβριος 2026 - Νοέμβριος 2026'],
+        ['gr', 'el', 'Οκτώβριος 2026 - Νοέμβριος 2026'],
+        ['nb', 'nb', 'oktober 2026 - november 2026'],
+        ['no', 'nb', 'oktober 2026 - november 2026'],
+    ])('writes and reads back a %s month range in Day.js "%s"', async (locale, dayjsLocale, state) => {
+        const { component } = await createTestComponent({
+            locale,
+            displayFormat: 'MMMM YYYY',
+            pickerType: 'month',
+            initialState: state,
+        });
+
+        expect(dayjs.locale()).toBe(dayjsLocale);
+        expect(component.selection.start?.format('YYYY-MM-DD')).toBe('2026-10-01');
+        expect(component.selection.end?.format('YYYY-MM-DD')).toBe('2026-11-30');
+
+        component.syncState();
+
+        expect(component.config.state).toBe(state);
+    });
+
     it('shows an English state on an Arabic page (a default built on the server)', async () => {
         // DateRangePicker::buildDefaultValue() formats with PHP, so its names
         // are English whatever the page locale; the server reads them, so the
