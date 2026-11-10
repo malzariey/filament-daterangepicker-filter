@@ -163,6 +163,10 @@ export default function dateRangeComponent(config) {
     // Generate unique instance ID
     const instanceId = ++instanceCounter;
 
+    // config.disabledDates parsed into day keys (see disabledDayKeys()).
+    // Kept outside the Alpine data so reading it never triggers reactivity.
+    const disabledDatesCache = { source: null, copy: null, format: null, locale: null, keys: new Set() };
+
     return {
         // ─────────────────────────────────────────────────────────────
         // Instance Identity (for multi-instance support)
@@ -942,7 +946,7 @@ export default function dateRangeComponent(config) {
             if (this.config.singleCalendar) {
                 const date = this.parseDisplayDate(input, format);
 
-                if (!date.isValid() || !this.isDateAllowedForPicker(date)) {
+                if (!date.isValid() || !this.isDateAllowedForPicker(date) || !this.isWithinTimeBounds(date)) {
                     return { status: 'invalid' };
                 }
 
@@ -963,7 +967,8 @@ export default function dateRangeComponent(config) {
             const end = this.parseDisplayDate(parts[1].trim(), format);
 
             if (!start.isValid() || !end.isValid() ||
-                !this.isDateAllowedForPicker(start) || !this.isDateAllowedForPicker(end)) {
+                !this.isDateAllowedForPicker(start) || !this.isDateAllowedForPicker(end) ||
+                !this.isWithinTimeBounds(start) || !this.isWithinTimeBounds(end)) {
                 return { status: 'invalid' };
             }
 
@@ -1612,6 +1617,7 @@ export default function dateRangeComponent(config) {
                 // Single date mode
                 this.selection.start = clickedDate;
                 this.selection.end = clickedDate;
+                this.clampTimesToBounds();
                 if (this.config.autoApply) {
                     this.applySelection();
                 }
@@ -1628,6 +1634,8 @@ export default function dateRangeComponent(config) {
                     this.selection.end = clickedDate;
                 }
 
+                this.clampTimesToBounds();
+
                 if (this.config.autoApply) {
                     this.applySelection();
                 }
@@ -1643,6 +1651,7 @@ export default function dateRangeComponent(config) {
                 this.selection.start = clickedDate;
                 this.selection.end = null;
                 this.tempEndDate = null;
+                this.clampTimesToBounds();
             } else {
                 // Complete selection
                 if (clickedDate.isBefore(this.selection.start, 'day')) {
@@ -1652,6 +1661,8 @@ export default function dateRangeComponent(config) {
                 } else {
                     this.selection.end = clickedDate;
                 }
+
+                this.clampTimesToBounds();
 
                 if (this.config.autoApply) {
                     this.applySelection();
@@ -1721,18 +1732,9 @@ export default function dateRangeComponent(config) {
             }
 
             // Disabled dates array
-            if (this.config.disabledDates?.length) {
-                const format = this.config.displayFormat;
-                const isDisabled = this.config.disabledDates.some(d => {
-                    // Try parsing with custom format first
-                    let disabledDate = this.parseDisplayDate(d, format);
-                    if (!disabledDate.isValid()) {
-                        // Fallback to standard parsing
-                        disabledDate = dayjs(d);
-                    }
-                    return disabledDate.isValid() && disabledDate.isSame(date, 'day');
-                });
-                if (isDisabled) return true;
+            if (this.config.disabledDates?.length
+                && this.disabledDayKeys().has(this.dayKey(date))) {
+                return true;
             }
 
             // Max span validation (only when selecting end date)
@@ -1742,6 +1744,45 @@ export default function dateRangeComponent(config) {
             }
 
             return false;
+        },
+
+        /** A day as a numeric "year-month-day" key, whatever its locale's digits. */
+        dayKey(date) {
+            return `${date.year()}-${date.month()}-${date.date()}`;
+        },
+
+        /**
+         * config.disabledDates as day keys. Each date is read in the display
+         * format first (page locale, then English), then by Day.js's own
+         * parser (ISO), as isDisabled always did; one that reads as neither
+         * is skipped. Parsed once and rebuilt only when the list, the
+         * display format or the page locale changes: isDisabled runs for
+         * every cell of every grid render, and again on every hover.
+         */
+        disabledDayKeys() {
+            const source = this.config.disabledDates || [];
+            const format = this.config.displayFormat;
+            const locale = dayjs.locale();
+            const cache = disabledDatesCache;
+
+            const unchanged = cache.source === source
+                && cache.format === format
+                && cache.locale === locale
+                && cache.copy.length === source.length
+                && cache.copy.every((value, index) => value === source[index]);
+
+            if (unchanged) return cache.keys;
+
+            const keys = new Set();
+            for (const value of source) {
+                let disabledDate = this.parseDisplayDate(value, format);
+                if (!disabledDate.isValid()) disabledDate = dayjs(value);
+                if (disabledDate.isValid()) keys.add(this.dayKey(disabledDate));
+            }
+
+            Object.assign(cache, { source, copy: [...source], format, locale, keys });
+
+            return keys;
         },
 
         isOutsideConfiguredYears(date) {
@@ -2255,6 +2296,124 @@ export default function dateRangeComponent(config) {
             return { hour, minute, second };
         },
 
+        /**
+         * minDate / maxDate as instants whose time of day the time picker
+         * keeps to, or null when there is none: only in the day picker with
+         * timePicker(), and only for a bound that carries a time. A
+         * date-only string ("2026-11-13") or one at exactly 00:00:00 (what
+         * today(), startOfDay() and a date cast send) keeps the whole-day
+         * behaviour of 5.0.11: a maxDate of midnight is never read as "no
+         * later than 00:00" on that day. Like isDisabled, the bounds are
+         * wall-clock strings in the display timezone.
+         */
+        timeBounds() {
+            if (!this.config.timePicker || !this.isDayPicker) return { min: null, max: null };
+
+            const read = (value) => {
+                if (value === null || value === undefined || value === '') return null;
+                if (typeof value === 'string' && /^\s*\d{4}-\d{2}-\d{2}\s*$/.test(value)) return null;
+
+                const date = dayjs(value);
+                if (!date.isValid()) return null;
+
+                const midnight = date.hour() === 0 && date.minute() === 0
+                    && date.second() === 0 && date.millisecond() === 0;
+
+                return midnight ? null : date;
+            };
+
+            return { min: read(this.config.minDate), max: read(this.config.maxDate) };
+        },
+
+        /** The unit time bounds are compared in: what the selects can show. */
+        timeBoundUnit() {
+            return this.config.timePickerSecond ? 'second' : 'minute';
+        },
+
+        /** Whether `date`, with its time, lies inside timeBounds(). */
+        isWithinTimeBounds(date) {
+            const { min, max } = this.timeBounds();
+            const unit = this.timeBoundUnit();
+
+            if (min && date.isBefore(min, unit)) return false;
+            if (max && date.isAfter(max, unit)) return false;
+
+            return true;
+        },
+
+        /**
+         * Whether a time select option is disabled: on minDate's (maxDate's)
+         * day, every time the option leads to is earlier (later) than the
+         * bound. An hour option covers its whole hour and AM / PM its half
+         * of the day, so an hour stays enabled while any minute of it is
+         * allowed. Days away from the bound days disable nothing.
+         */
+        isTimeOptionDisabled(isStart, field, value) {
+            const date = isStart ? this.selection.start : this.selection.end;
+            if (!date?.isValid()) return false;
+
+            const { min, max } = this.timeBounds();
+            const onMin = !!min && date.isSame(min, 'day');
+            const onMax = !!max && date.isSame(max, 'day');
+            if (!onMin && !onMax) return false;
+
+            const day = date.startOf('day');
+            let from;
+            let to;
+
+            if (field === 'ampm') {
+                from = day.hour(value === 'PM' ? 12 : 0);
+                to = from.add(12, 'hour').subtract(1, 'millisecond');
+            } else {
+                const row = isStart ? this.startTime : this.endTime;
+                const parts = this.readTime({ ...row, [field]: value });
+                if (!parts) return false;
+
+                const at = day.hour(parts.hour).minute(parts.minute).second(parts.second);
+                const span = field === 'hour' ? 'hour' : (field === 'minute' ? 'minute' : 'second');
+                from = at.startOf(span);
+                to = at.endOf(span);
+            }
+
+            const unit = this.timeBoundUnit();
+
+            return (onMin && to.isBefore(min, unit)) || (onMax && from.isAfter(max, unit));
+        },
+
+        /**
+         * Move a time row that a user action left outside timeBounds() on a
+         * bound's day to that bound's exact time. Only user actions (a day
+         * click, a time select change) call this: a default value from the
+         * server is shown as sent, as 5.0.11 decided.
+         */
+        clampTimeToBounds(isStart) {
+            const date = isStart ? this.selection.start : this.selection.end;
+            if (!date?.isValid()) return;
+
+            const { min, max } = this.timeBounds();
+            if (!min && !max) return;
+
+            const parts = this.readTime(isStart ? this.startTime : this.endTime);
+            if (!parts) return;
+
+            const at = date.startOf('day').hour(parts.hour).minute(parts.minute).second(parts.second);
+            const unit = this.timeBoundUnit();
+            let bound = null;
+
+            if (min && at.isSame(min, 'day') && at.isBefore(min, unit)) bound = min;
+            else if (max && at.isSame(max, 'day') && at.isAfter(max, unit)) bound = max;
+
+            if (!bound) return;
+
+            if (isStart) this.startTime = this.extractTime(bound);
+            else this.endTime = this.extractTime(bound);
+        },
+
+        clampTimesToBounds() {
+            this.clampTimeToBounds(true);
+            this.clampTimeToBounds(false);
+        },
+
         /** Both time rows hold a real time (always true without timePicker). */
         get timesAreValid() {
             return !this.config.timePicker
@@ -2308,6 +2467,9 @@ export default function dateRangeComponent(config) {
          */
         handleTimeChange(isStart = true) {
             this.selectedPresetLabel = null;
+
+            // A time outside minDate / maxDate on a bound's day goes to the bound.
+            this.clampTimeToBounds(isStart);
 
             // Update input preview
             this.updateInputValue();
@@ -2501,6 +2663,16 @@ export default function dateRangeComponent(config) {
                 end = this.config.timePicker
                     ? spanEnd.endOf('day')
                     : spanEnd.startOf('day');
+            }
+
+            // minDate / maxDate with a time (timeBounds): start and end at
+            // the exact bound time; none left means no allowed instant.
+            const { min: minTime, max: maxTime } = this.timeBounds();
+            if (minTime || maxTime) {
+                const timeUnit = this.timeBoundUnit();
+                if (minTime && start.isBefore(minTime, timeUnit)) start = minTime;
+                if (maxTime && end.isAfter(maxTime, timeUnit)) end = maxTime;
+                if (start.isAfter(end, timeUnit)) return null;
             }
 
             return [start, end];
@@ -2756,50 +2928,95 @@ export default function dateRangeComponent(config) {
         },
 
         /**
-         * Whether a day calendar's arrow may move. The arrows stop where the
-         * year dropdown stops (getMinConstraintYear / getMaxConstraintYear),
-         * counting the calendar an unlinked move would push along.
+         * The first and last months the day calendars may show, as the
+         * start of each month, or null: the tighter of the year bounds
+         * (getMinConstraintYear / getMaxConstraintYear, as the year dropdown)
+         * and the months of minDate / maxDate, a month before or after them
+         * having no allowed day. Without minDate / maxDate this is exactly
+         * the year bounds 5.0.11 used.
          */
-        canShowPreviousMonth(offset = 0) {
+        dayMonthBounds() {
             const minYear = this.getMinConstraintYear();
-            if (minYear === null) return true;
-
-            const [left] = this.dayViewAfterMove(offset, this.calendarMonth(offset).subtract(1, 'month'));
-
-            return left.year() >= minYear;
-        },
-
-        canShowNextMonth(offset = 0) {
             const maxYear = this.getMaxConstraintYear();
-            if (maxYear === null) return true;
+            let min = minYear === null ? null : dayjs(`${minYear}-01-01`).startOf('month');
+            let max = maxYear === null ? null : dayjs(`${maxYear}-12-01`).startOf('month');
 
-            const [, right] = this.dayViewAfterMove(offset, this.calendarMonth(offset).add(1, 'month'));
+            const minDate = this.config.minDate ? dayjs(this.config.minDate) : null;
+            const maxDate = this.config.maxDate ? dayjs(this.config.maxDate) : null;
 
-            return right.year() <= maxYear;
+            if (minDate?.isValid() && (min === null || minDate.isAfter(min, 'month'))) {
+                min = minDate.startOf('month');
+            }
+
+            if (maxDate?.isValid() && (max === null || maxDate.isBefore(max, 'month'))) {
+                max = maxDate.startOf('month');
+            }
+
+            return { min, max };
         },
 
         /**
-         * Show `month` in day calendar `offset`, kept inside the year bounds:
+         * Whether a day calendar's arrow may move. The arrows stop at the
+         * first / last month with an allowed day (dayMonthBounds), counting
+         * the calendar an unlinked move would push along.
+         */
+        canShowPreviousMonth(offset = 0) {
+            const { min } = this.dayMonthBounds();
+            if (min === null) return true;
+
+            const [left] = this.dayViewAfterMove(offset, this.calendarMonth(offset).subtract(1, 'month'));
+
+            return !left.isBefore(min, 'month');
+        },
+
+        canShowNextMonth(offset = 0) {
+            const { max } = this.dayMonthBounds();
+            if (max === null) return true;
+
+            const [, right] = this.dayViewAfterMove(offset, this.calendarMonth(offset).add(1, 'month'));
+
+            return !right.isAfter(max, 'month');
+        },
+
+        /**
+         * Whether a month dropdown option leads to a month with no allowed
+         * day in that calendar's year, so the option is disabled. Only
+         * minDate / maxDate disable options: the year bounds already limit
+         * the year dropdown, and a pick the pair cannot show is clamped by
+         * showDayCalendarMonth.
+         */
+        isDayMonthOptionDisabled(monthIndex, offset = 0) {
+            const month = this.calendarMonth(offset).month(parseInt(monthIndex));
+            const minDate = this.config.minDate ? dayjs(this.config.minDate) : null;
+            const maxDate = this.config.maxDate ? dayjs(this.config.maxDate) : null;
+
+            if (minDate?.isValid() && month.isBefore(minDate, 'month')) return true;
+            if (maxDate?.isValid() && month.isAfter(maxDate, 'month')) return true;
+
+            return false;
+        },
+
+        /**
+         * Show `month` in day calendar `offset`, kept inside dayMonthBounds:
          * linked, the pair shifts as one; unlinked, the other side is pushed
          * along as showUnlinkedCalendarMonth does.
          */
         showDayCalendarMonth(month, offset = 0) {
             let [left, right] = this.dayViewAfterMove(offset, month);
-            const minYear = this.getMinConstraintYear();
-            const maxYear = this.getMaxConstraintYear();
+            const { min, max } = this.dayMonthBounds();
 
             if (this.calendarsLinked) {
                 const last = right.diff(left, 'month');
-                if (maxYear !== null && right.year() > maxYear) left = right.year(maxYear).month(11).subtract(last, 'month');
-                if (minYear !== null && left.year() < minYear) left = left.year(minYear).month(0);
+                if (max !== null && right.isAfter(max, 'month')) left = max.subtract(last, 'month');
+                if (min !== null && left.isBefore(min, 'month')) left = min;
 
                 this.viewDate = left;
                 return;
             }
 
-            const rightClamped = maxYear !== null && right.year() > maxYear;
-            if (rightClamped) right = right.year(maxYear).month(11);
-            if (minYear !== null && left.year() < minYear) left = left.year(minYear).month(0);
+            const rightClamped = max !== null && right.isAfter(max, 'month');
+            if (rightClamped) right = max;
+            if (min !== null && left.isBefore(min, 'month')) left = min;
             if (!right.isAfter(left, 'month')) {
                 if (rightClamped) left = right.subtract(1, 'month');
                 else right = left.add(1, 'month');

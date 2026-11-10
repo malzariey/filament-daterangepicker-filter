@@ -274,6 +274,7 @@
                                                             <option
                                                                 :value="m.value"
                                                                 x-text="m.label"
+                                                                :disabled="isDayMonthOptionDisabled(m.value, offset)"
                                                                 :selected="calendarMonth(offset).month() === m.value"
                                                             ></option>
                                                         </template>
@@ -540,13 +541,13 @@
                                     <div class="fi-daterangepicker-time-inputs" dir="ltr">
                                         <select x-model="startTime.hour" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-time">
                                             <template x-for="h in hourOptions" :key="h.value">
-                                                <option :value="h.value" :selected="Number(startTime.hour) === h.value" x-text="h.label"></option>
+                                                <option :value="h.value" :disabled="isTimeOptionDisabled(true, 'hour', h.value)" :selected="Number(startTime.hour) === h.value" x-text="h.label"></option>
                                             </template>
                                         </select>
                                         <span class="fi-daterangepicker-time-separator">:</span>
                                         <select x-model="startTime.minute" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-time">
                                             <template x-for="m in minuteOptions" :key="m.value">
-                                                <option :value="m.value" :selected="Number(startTime.minute) === m.value" x-text="m.label"></option>
+                                                <option :value="m.value" :disabled="isTimeOptionDisabled(true, 'minute', m.value)" :selected="Number(startTime.minute) === m.value" x-text="m.label"></option>
                                             </template>
                                         </select>
                                         <template x-if="config.timePickerSecond">
@@ -555,14 +556,14 @@
                                         <template x-if="config.timePickerSecond">
                                             <select x-model="startTime.second" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-time">
                                                 <template x-for="s in secondOptions" :key="s.value">
-                                                    <option :value="s.value" :selected="Number(startTime.second) === s.value" x-text="s.label"></option>
+                                                    <option :value="s.value" :disabled="isTimeOptionDisabled(true, 'second', s.value)" :selected="Number(startTime.second) === s.value" x-text="s.label"></option>
                                                 </template>
                                             </select>
                                         </template>
                                         <template x-if="!config.timePicker24">
                                             <select x-model="startTime.ampm" x-on:change="handleTimeChange(true)" class="fi-daterangepicker-select fi-ampm">
-                                                <option value="AM" x-text="meridiemLabel(startTime, 'AM')"></option>
-                                                <option value="PM" x-text="meridiemLabel(startTime, 'PM')"></option>
+                                                <option value="AM" :disabled="isTimeOptionDisabled(true, 'ampm', 'AM')" x-text="meridiemLabel(startTime, 'AM')"></option>
+                                                <option value="PM" :disabled="isTimeOptionDisabled(true, 'ampm', 'PM')" x-text="meridiemLabel(startTime, 'PM')"></option>
                                             </select>
                                         </template>
                                     </div>
@@ -575,13 +576,13 @@
                                         <div class="fi-daterangepicker-time-inputs" dir="ltr">
                                             <select x-model="endTime.hour" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-time">
                                                 <template x-for="h in hourOptions" :key="h.value">
-                                                    <option :value="h.value" :selected="Number(endTime.hour) === h.value" x-text="h.label"></option>
+                                                    <option :value="h.value" :disabled="isTimeOptionDisabled(false, 'hour', h.value)" :selected="Number(endTime.hour) === h.value" x-text="h.label"></option>
                                                 </template>
                                             </select>
                                             <span class="fi-daterangepicker-time-separator">:</span>
                                             <select x-model="endTime.minute" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-time">
                                                 <template x-for="m in minuteOptions" :key="m.value">
-                                                    <option :value="m.value" :selected="Number(endTime.minute) === m.value" x-text="m.label"></option>
+                                                    <option :value="m.value" :disabled="isTimeOptionDisabled(false, 'minute', m.value)" :selected="Number(endTime.minute) === m.value" x-text="m.label"></option>
                                                 </template>
                                             </select>
                                             <template x-if="config.timePickerSecond">
@@ -590,14 +591,14 @@
                                             <template x-if="config.timePickerSecond">
                                                 <select x-model="endTime.second" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-time">
                                                     <template x-for="s in secondOptions" :key="s.value">
-                                                        <option :value="s.value" :selected="Number(endTime.second) === s.value" x-text="s.label"></option>
+                                                        <option :value="s.value" :disabled="isTimeOptionDisabled(false, 'second', s.value)" :selected="Number(endTime.second) === s.value" x-text="s.label"></option>
                                                     </template>
                                                 </select>
                                             </template>
                                             <template x-if="!config.timePicker24">
                                                 <select x-model="endTime.ampm" x-on:change="handleTimeChange(false)" class="fi-daterangepicker-select fi-ampm">
-                                                    <option value="AM" x-text="meridiemLabel(endTime, 'AM')"></option>
-                                                    <option value="PM" x-text="meridiemLabel(endTime, 'PM')"></option>
+                                                    <option value="AM" :disabled="isTimeOptionDisabled(false, 'ampm', 'AM')" x-text="meridiemLabel(endTime, 'AM')"></option>
+                                                    <option value="PM" :disabled="isTimeOptionDisabled(false, 'ampm', 'PM')" x-text="meridiemLabel(endTime, 'PM')"></option>
                                                 </select>
                                             </template>
                                         </div>

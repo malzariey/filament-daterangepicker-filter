@@ -187,6 +187,50 @@ export function formatNeedsReader(format) {
     return tokenize(format).some(([, token]) => READER_TOKENS.has(token));
 }
 
+const readerCache = new WeakMap();
+
+/**
+ * The format's segments and the regex that reads it in `locale`, or null
+ * when the format has no name, meridiem, ordinal or weekday. Built once per
+ * (Day.js, locale, format): the name tables are cached the same way
+ * (cachedTables), and the regex has no global flag, so exec keeps no state.
+ */
+function cachedReader(dayjs, format, locale) {
+    if (!readerCache.has(dayjs)) readerCache.set(dayjs, new Map());
+    const byKey = readerCache.get(dayjs);
+    const key = `${locale}\u0000${format}`;
+
+    if (byKey.has(key)) return byKey.get(key);
+
+    const segments = tokenize(format);
+    let reader = null;
+
+    if (segments.some(([type]) => type === 'name' || type === 'weekday')) {
+        const names = cachedTables(dayjs, locale);
+        const candidates = (token) => {
+            const list = token === 'A' || token === 'a'
+                ? Object.keys(names.meridiem[token])
+                : names[NAME_TABLES[token]].flat();
+
+            // Longest first, so "تشرینی دووەم" is not read as a shorter prefix.
+            return unique(list).sort((a, b) => b.length - a.length).map(escapeRegExp).join('|');
+        };
+
+        const pattern = segments.map(([type, value]) => {
+            if (type === 'literal') return escapeRegExp(value);
+            if (type === 'value') return '(.*?)';
+            if (type === 'weekday') return '([0-6])';
+            return `(${candidates(value)})`;
+        }).join('');
+
+        reader = { segments, regex: new RegExp(`^${pattern}$`, 'iu') };
+    }
+
+    byKey.set(key, reader);
+
+    return reader;
+}
+
 /**
  * `text` written by Day.js with `format` in `locale`, read as a Day.js date
  * (strict), or null when the format has no names, meridiem, ordinal or
@@ -201,27 +245,13 @@ export function formatNeedsReader(format) {
 export function readLocalizedDate(dayjs, text, format, locale) {
     if (!dayjs.Ls[locale]) return null;
 
-    const segments = tokenize(format);
-    if (!segments.some(([type]) => type === 'name' || type === 'weekday')) return null;
+    const reader = cachedReader(dayjs, format, locale);
+    if (!reader) return null;
 
+    const { segments, regex } = reader;
     const names = cachedTables(dayjs, locale);
-    const candidates = (token) => {
-        const list = token === 'A' || token === 'a'
-            ? Object.keys(names.meridiem[token])
-            : names[NAME_TABLES[token]].flat();
 
-        // Longest first, so "تشرینی دووەم" is not read as a shorter prefix.
-        return unique(list).sort((a, b) => b.length - a.length).map(escapeRegExp).join('|');
-    };
-
-    const pattern = segments.map(([type, value]) => {
-        if (type === 'literal') return escapeRegExp(value);
-        if (type === 'value') return '(.*?)';
-        if (type === 'weekday') return '([0-6])';
-        return `(${candidates(value)})`;
-    }).join('');
-
-    const match = new RegExp(`^${pattern}$`, 'iu').exec(String(text).trim());
+    const match = regex.exec(String(text).trim());
     if (!match) return null;
 
     const captures = [];
