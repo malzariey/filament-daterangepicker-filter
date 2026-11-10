@@ -361,6 +361,8 @@ export default function dateRangeComponent(config) {
                 if (!this.open) return;
                 if (this.isEventInsidePicker(event)) return;
 
+                // Focus has a new home; don't pull it back to the input.
+                this._returnFocusOnClose = false;
                 this.cancel();
             };
             document.addEventListener('focusin', this._documentFocusInHandler);
@@ -370,6 +372,14 @@ export default function dateRangeComponent(config) {
             // capture runs before the dropdown's own Escape handler.
             this._presetKeyHandler = (event) => this.handlePresetKeydown(event);
             document.addEventListener('keydown', this._presetKeyHandler, true);
+
+            // Calendar keys inside the dropdown, for the same reason.
+            this._gridKeyHandler = (event) => this.handleGridKeydown(event);
+            document.addEventListener('keydown', this._gridKeyHandler, true);
+
+            // A pointer took over: a later close is not the keyboard's.
+            this._pointerDownHandler = () => { this._returnFocusOnClose = false; };
+            document.addEventListener('pointerdown', this._pointerDownHandler, true);
         },
 
         /**
@@ -429,6 +439,14 @@ export default function dateRangeComponent(config) {
             if (this._presetKeyHandler) {
                 document.removeEventListener('keydown', this._presetKeyHandler, true);
                 this._presetKeyHandler = null;
+            }
+            if (this._gridKeyHandler) {
+                document.removeEventListener('keydown', this._gridKeyHandler, true);
+                this._gridKeyHandler = null;
+            }
+            if (this._pointerDownHandler) {
+                document.removeEventListener('pointerdown', this._pointerDownHandler, true);
+                this._pointerDownHandler = null;
             }
             if (this._syncDebounceTimer) {
                 clearTimeout(this._syncDebounceTimer);
@@ -2434,6 +2452,9 @@ export default function dateRangeComponent(config) {
             else if (this.config.opens === 'right') placement += '-start';
             else if (this.config.opens === 'center') placement += '';
 
+            const [side, alignment] = placement.split('-');
+            const flippedPlacement = (side === 'top' ? 'bottom' : 'top') + (alignment ? `-${alignment}` : '');
+
             const updatePos = async () => {
                 // Ensure reference and floating elements are still connected to DOM
                 if (!reference.isConnected || !floating.isConnected) {
@@ -2450,7 +2471,11 @@ export default function dateRangeComponent(config) {
                     strategy: this.config.teleport ? 'fixed' : 'absolute',
                     middleware: [
                         offset(8),
-                        flip({ fallbackPlacements: ['top', 'bottom', 'top-start', 'top-end', 'bottom-start', 'bottom-end'] }),
+                        // Flip the side only. opens() is the alignment
+                        // (-start / -end, which Floating UI mirrors in
+                        // RTL); a bare 'top' first in this list centred
+                        // the dropdown on every flip.
+                        flip({ fallbackPlacements: [flippedPlacement] }),
                         // crossAxis: on a phone the dropdown (up to 85vh) fits
                         // neither above nor below the field, and flip() then
                         // left it hanging off the top of the screen with the
@@ -2579,6 +2604,19 @@ export default function dateRangeComponent(config) {
                     return;
                 }
 
+                // ArrowDown steps from the input into the calendar. The
+                // other arrows stay with the input (caret, mask blocks).
+                if (this.open && !this.presetsOnly && event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    // Right after opening, openPicker() may not have set
+                    // the focused day yet (x-transition holds $nextTick).
+                    if (this.isDayPicker && !this.focusedDate) {
+                        this.focusedDate = this.selection.start || this.today();
+                    }
+                    if (!this.focusGridCell()) queueMicrotask(() => this.focusGridCell());
+                    return;
+                }
+
                 // Allow other navigation keys
                 const nativeKeys = ['ArrowUp', 'ArrowDown', 'Home', 'End'];
                 if (nativeKeys.includes(event.key)) {
@@ -2593,6 +2631,10 @@ export default function dateRangeComponent(config) {
                 }
                 return;
             }
+
+            // Keys inside the dropdown belong to handleGridKeydown /
+            // handlePresetKeydown (a dropdown that is not teleported bubbles here).
+            if (event.key !== 'Escape' && this.isInsideDropdown(event.target)) return;
 
             // Presets-only: no calendar to drive. Escape still cancels;
             // Enter / Space stay native so they press the focused preset.
@@ -2729,6 +2771,152 @@ export default function dateRangeComponent(config) {
                     this.cancel();
                     break;
             }
+        },
+
+        /**
+         * Calendar keys from inside the dropdown (not presets-only).
+         *
+         * Escape, Enter and Space mark the close they may cause as the
+         * keyboard's, so close() hands focus back to the input instead of
+         * leaving it on a hidden button. On a day cell: ← / → one day
+         * (mirrored in RTL), ↑ / ↓ one week, Home / End the start / end of
+         * the week, PageUp / PageDown one month (Shift: one year), skipping
+         * disabled days; Enter / Space select the focused day. Month and
+         * year cells: the arrows and Home / End move along the grid.
+         */
+        handleGridKeydown(event) {
+            if (!this.open || this.presetsOnly || !this.isInsideDropdown(event.target)) return;
+
+            if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+                this._returnFocusOnClose = true;
+            }
+
+            const target = event.target instanceof Element ? event.target : null;
+            if (target?.closest('.fi-daterangepicker-day')) {
+                if (this.isDayPicker) this.handleDayCellKeydown(event);
+            } else if (target?.closest('.fi-daterangepicker-month-cell, .fi-daterangepicker-year-cell')) {
+                this.handlePeriodCellKeydown(event, target.closest('.fi-daterangepicker-month-cell, .fi-daterangepicker-year-cell'));
+            }
+        },
+
+        handleDayCellKeydown(event) {
+            const from = this.focusedDate || this.selection.start || this.today();
+            const rtl = this.isRtl(event.target);
+            // [first candidate, step while it is disabled, max steps]
+            let move;
+
+            switch (event.key) {
+                case 'ArrowLeft':
+                case 'ArrowRight': {
+                    const step = (event.key === 'ArrowRight') !== rtl ? 1 : -1;
+                    move = [from.add(step, 'day'), [step, 'day'], 366];
+                    break;
+                }
+                case 'ArrowUp':
+                case 'ArrowDown': {
+                    const step = event.key === 'ArrowDown' ? 1 : -1;
+                    move = [from.add(step, 'week'), [step, 'week'], 53];
+                    break;
+                }
+                case 'Home': {
+                    const start = from.subtract((from.day() - this.config.firstDay + 7) % 7, 'day');
+                    move = [start, [1, 'day'], 6];
+                    break;
+                }
+                case 'End': {
+                    const end = from.subtract((from.day() - this.config.firstDay + 7) % 7, 'day').add(6, 'day');
+                    move = [end, [-1, 'day'], 6];
+                    break;
+                }
+                case 'PageUp':
+                case 'PageDown': {
+                    const step = event.key === 'PageDown' ? 1 : -1;
+                    move = [from.add(step, event.shiftKey ? 'year' : 'month'), [step, 'day'], 366];
+                    break;
+                }
+                case 'Enter':
+                case ' ':
+                    event.preventDefault();
+                    if (!this.isDisabled(from)) {
+                        this.handleDayClick({ date: from, disabled: false });
+                    }
+                    return;
+                default:
+                    return;
+            }
+
+            event.preventDefault();
+
+            let [date, [amount, unit], limit] = move;
+            while (limit > 0 && this.isDisabled(date)) {
+                date = date.add(amount, unit);
+                limit--;
+            }
+            if (this.isDisabled(date)) return;
+
+            this.focusedDate = date;
+            this.ensureFocusedDateVisible();
+            this.$nextTick(() => this.focusGridCell());
+        },
+
+        handlePeriodCellKeydown(event, cell) {
+            const cells = [...cell.parentElement.querySelectorAll(':scope > button')];
+            const columns = getComputedStyle(cell.parentElement).gridTemplateColumns?.split(' ').filter(Boolean).length || 3;
+            const rtl = this.isRtl(cell);
+            const index = cells.indexOf(cell);
+            let step;
+            let next;
+
+            switch (event.key) {
+                case 'ArrowLeft': step = rtl ? 1 : -1; break;
+                case 'ArrowRight': step = rtl ? -1 : 1; break;
+                case 'ArrowUp': step = -columns; break;
+                case 'ArrowDown': step = columns; break;
+                case 'Home': next = cells.findIndex((c) => !c.disabled); break;
+                case 'End': next = cells.length - 1 - [...cells].reverse().findIndex((c) => !c.disabled); break;
+                default: return;
+            }
+
+            event.preventDefault();
+
+            if (step !== undefined) {
+                next = index + step;
+                while (cells[next]?.disabled) next += step;
+            }
+
+            cells[next]?.focus();
+        },
+
+        /**
+         * Focus the calendar's focused day (the in-month copy when linked
+         * calendars show it twice), or in the month / year pickers the
+         * selected or first enabled cell. False when there is none.
+         */
+        focusGridCell() {
+            const dropdown = this.getDropdownElement();
+            if (!dropdown) return false;
+
+            let cell;
+            if (this.isDayPicker) {
+                const days = [...dropdown.querySelectorAll('.fi-daterangepicker-day.fi-focused')];
+                cell = days.find((day) => !day.classList.contains('fi-off-month')) ?? days[0];
+            } else {
+                const cells = [...dropdown.querySelectorAll('.fi-daterangepicker-month-cell, .fi-daterangepicker-year-cell')]
+                    .filter((c) => !c.disabled);
+                cell = cells.find((c) => c.classList.contains('fi-selected')) ?? cells[0];
+            }
+
+            if (!cell) return false;
+            cell.focus();
+
+            return true;
+        },
+
+        isRtl(element) {
+            if (!(element instanceof Element)) return false;
+
+            return getComputedStyle(element).direction === 'rtl'
+                || element.closest('[dir]')?.getAttribute('dir') === 'rtl';
         },
 
         /**
