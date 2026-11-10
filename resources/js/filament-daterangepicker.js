@@ -1732,7 +1732,7 @@ export default function dateRangeComponent(config) {
             const separator = this.config.separator;
 
             if (this.config.singleCalendar) {
-                const date = dayjs(stateString.trim(), format, true);
+                const date = this.parseDisplayDate(stateString.trim(), format);
                 if (date.isValid()) {
                     this.selection.start = this.normalizeSelectionStart(date);
                     this.selection.end = this.normalizeSelectionEnd(date);
@@ -1748,15 +1748,15 @@ export default function dateRangeComponent(config) {
                     // A lone date (only the start was picked, then persisted):
                     // the server filters it as that whole day, so show it as
                     // that day rather than an empty input over an active filter.
-                    const date = dayjs(parts[0], format, true);
+                    const date = this.parseDisplayDate(parts[0], format);
                     if (date.isValid()) {
                         this.selection.start = this.normalizeSelectionStart(date.startOf('day'));
                         this.selection.end = this.normalizeSelectionEnd(date.endOf('day'));
                         this.viewDate = this.selection.start;
                     }
                 } else if (parts.length === 2) {
-                    const start = dayjs(parts[0].trim(), format, true);
-                    const end = dayjs(parts[1].trim(), format, true);
+                    const start = this.parseDisplayDate(parts[0].trim(), format);
+                    const end = this.parseDisplayDate(parts[1].trim(), format);
 
                     if (start.isValid() && end.isValid()) {
                         this.selection.start = this.normalizeSelectionStart(start);
@@ -1771,6 +1771,27 @@ export default function dateRangeComponent(config) {
                 this.startTime = this.extractTime(this.selection.start);
                 this.endTime = this.extractTime(this.selection.end);
             }
+        },
+
+        /**
+         * One date of the state, in the display format.
+         *
+         * The picker writes month, weekday and AM/PM names in the page locale,
+         * but a default built on the server (DateRangePicker::buildDefaultValue()
+         * formats with PHP) carries English names, and the server reads both.
+         * Read English as well, so an Arabic page shows that default instead of
+         * an empty box over an active filter.
+         */
+        parseDisplayDate(text, format) {
+            const date = dayjs(text, format, true);
+
+            if (date.isValid() || dayjs.locale() === 'en') {
+                return date;
+            }
+
+            const english = dayjs(text, format, 'en', true);
+
+            return english.isValid() ? english.locale(dayjs.locale()) : date;
         },
 
         extractTime(date) {

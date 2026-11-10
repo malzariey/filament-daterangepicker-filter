@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Concerns\HasRangePicker;
 use Malzariey\FilamentDaterangepickerFilter\Enums\PickerType;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
+use Malzariey\FilamentDaterangepickerFilter\Support\DayjsDateNames;
 use Throwable;
 
 class DateRangeFilter extends BaseFilter
@@ -263,6 +264,24 @@ class DateRangeFilter extends BaseFilter
             $format = '!' . $format;
         }
 
+        // The browser writes month, weekday and AM/PM names with Day.js in the
+        // page locale ("أكتوبر 2026"), which createFromFormat() cannot read.
+        // Read them back through Day.js's own names first; then the value as
+        // it is, for English pages and for an English state (a default built
+        // on the server, or one persisted before names were read).
+        if (DayjsDateNames::formatHasNames($format)) {
+            foreach (DayjsDateNames::englishReadings($value, $format, app()->getLocale()) as $english) {
+                if (($date = $this->readStrict($format, $english)) !== null) {
+                    return $date;
+                }
+            }
+        }
+
+        return $this->readStrict($format, $value);
+    }
+
+    private function readStrict(string $format, string $value): ?Carbon
+    {
         try {
             $date = Carbon::createFromFormat($format, $value, $this->getTimezone());
         } catch (Throwable) {
