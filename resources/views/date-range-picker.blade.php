@@ -227,6 +227,7 @@
                                         <button
                                             type="button"
                                             @click="prevMonth(offset)"
+                                            :disabled="!canShowPreviousMonth(offset)"
                                             x-show="offset === 0 || !calendarsLinked"
                                             class="fi-daterangepicker-nav-btn"
                                             aria-label="Previous month"
@@ -242,7 +243,7 @@
                                             <template x-if="config.showDropdowns">
                                                 <div class="fi-daterangepicker-month-year-selects">
                                                     <select
-                                                        x-model="calendarMonth(offset).month()"
+                                                        :value="calendarMonth(offset).month()"
                                                         @change="setMonth($event.target.value, offset)"
                                                         class="fi-daterangepicker-select"
                                                     >
@@ -255,6 +256,7 @@
                                                         </template>
                                                     </select>
                                                     <select
+                                                        :value="calendarMonth(offset).year()"
                                                         @change="setYear($event.target.value, offset)"
                                                         class="fi-daterangepicker-select"
                                                     >
@@ -279,6 +281,7 @@
                                         <button
                                             type="button"
                                             @click="nextMonth(offset)"
+                                            :disabled="!canShowNextMonth(offset)"
                                             x-show="config.singleCalendar || offset === 1 || !calendarsLinked"
                                             class="fi-daterangepicker-nav-btn"
                                             aria-label="Next month"

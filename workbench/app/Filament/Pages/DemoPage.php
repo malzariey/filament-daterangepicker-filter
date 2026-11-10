@@ -274,6 +274,37 @@ class DemoPage extends Page
                     ]),
 
                 // ─────────────────────────────────────────────────────
+                // maxSpan and minYear / maxYear: presets longer than the
+                // span are clamped, typed ranges longer are rejected, and
+                // the month arrows stop at the year bounds.
+                // ─────────────────────────────────────────────────────
+                Section::make($isArabic ? 'أقصى نطاق وحدود السنوات' : 'Max Span and Year Bounds')
+                    ->columns(2)
+                    ->schema([
+                        DateRangePicker::make('max_span_presets')
+                            ->label($isArabic ? 'أقصى نطاق شهر مع الإدخال' : 'Max span 1 month (This Year is clamped, typing is checked)')
+                            ->maxSpan(['months' => 1])
+                            ->allowInput()
+                            ->extraInputAttributes(['data-testid' => 'max-span-presets']),
+
+                        DateRangePicker::make('year_bounds_dropdowns')
+                            ->label($isArabic ? 'قوائم مع حدود 2024-2027' : 'Dropdowns, years 2024-2027')
+                            ->showDropdowns()
+                            ->minYear(2024)
+                            ->maxYear(2027)
+                            ->allowInput()
+                            ->extraInputAttributes(['data-testid' => 'year-bounds-dropdowns']),
+
+                        DateRangePicker::make('year_bounds_unlinked')
+                            ->label($isArabic ? 'غير مرتبطة مع حدود 2024-2027' : 'Unlinked dropdowns, years 2024-2027')
+                            ->showDropdowns()
+                            ->linkedCalendars(false)
+                            ->minYear(2024)
+                            ->maxYear(2027)
+                            ->extraInputAttributes(['data-testid' => 'year-bounds-unlinked']),
+                    ]),
+
+                // ─────────────────────────────────────────────────────
                 // Display Formats
                 // ─────────────────────────────────────────────────────
                 Section::make($isArabic ? 'تنسيقات العرض' : 'Display Formats')
