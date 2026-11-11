@@ -2,7 +2,7 @@
 
 ## Run & deploy
 Environments: none — public Composer package; verify in a consuming app or the testbench demo (`vendor/bin/testbench serve`, CONTRIBUTING.md)
-Deploy: an annotated tag on `x5` plus a GitHub release (latest 5.0.12, 10 Nov 2026); Packagist picks the tag up within a minute; apps take it with `composer update`   Test DB: Testbench `testing` connection (`tests/TestCase.php`)   Tests: `composer test` (Pest; purges the Testbench skeleton first) and `npm test` (vitest); `--parallel` works (CI uses it)
+Deploy: an annotated tag on `x5` plus a GitHub release (latest 5.0.13, 11 Nov 2026); Packagist picks the tag up within a minute; apps take it with `composer update`   Test DB: Testbench `testing` connection (`tests/TestCase.php`)   Tests: `composer test` (Pest; purges the Testbench skeleton first) and `npm test` (vitest); `--parallel` works (CI uses it)
 Start: `git status -sb` must not show "behind" before you build or edit.
 
 ## Standing approvals
