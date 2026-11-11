@@ -461,7 +461,9 @@ use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 DateRangeFilter::make('created_at')
     ->modifyQueryUsing(fn(Builder $query, ?Carbon $startDate, ?Carbon $endDate, $dateString) =>
         $query->when(!empty($dateString),
-            fn(Builder $query) => $query->whereBetween('created_at', [$startDate, $endDate])
+            fn(Builder $query) => $query
+                ->where('created_at', '>=', $startDate)
+                ->where('created_at', '<', $endDate->copy()->endOfSecond()->addMicrosecond())
         )
     )
 ```
@@ -471,6 +473,12 @@ timezone (`config('app.timezone')`, or `->systemTimezone()`): the picked day,
 read in the display timezone, converted for a datetime column. To compare a
 date-only column yourself, convert them back first, for example
 `$startDate->copy()->timezone(FilamentTimezone::get())->toDateString()`.
+
+`$endDate` is inclusive, the last microsecond of the range (23:59:59.999999).
+Laravel binds dates as `Y-m-d H:i:s`, so `whereBetween()` would compare
+against 23:59:59 and drop rows stored in the last second with a fraction:
+compare with `<` against the next whole second, as above and as the filter
+itself does.
 
 ### Date Columns
 
