@@ -54,22 +54,26 @@ function pickerFilter(string $picker, string $format): DateRangeFilter
     };
 }
 
-/** @return array{0: string|null, 1: string|null} the whereBetween bounds, UTC */
+/** @return array{0: string|null, 1: string|null} the first and the last second the filter lets in, UTC */
 function pickerBounds(DateRangeFilter $filter, string $state): array
 {
     $query = PickerTypeBoundsRow::query();
     $filter->apply($query, ['at' => $state]);
 
-    $where = collect($query->getQuery()->wheres)->firstWhere('type', 'between');
+    $wheres = collect($query->getQuery()->wheres);
+    $from = $wheres->firstWhere('operator', '>=');
+    $before = $wheres->firstWhere('operator', '<');
 
-    if ($where === null) {
+    if ($from === null || $before === null) {
         return [null, null];
     }
 
-    return array_map(
-        fn ($value) => Carbon::parse($value)->utc()->format('Y-m-d H:i:s'),
-        $where['values'],
-    );
+    // The upper bound is exclusive on the next whole second: report the last
+    // second it lets in, so the datasets read as the range the user picked.
+    return [
+        Carbon::parse($from['value'])->utc()->format('Y-m-d H:i:s'),
+        Carbon::parse($before['value'])->utc()->subSecond()->format('Y-m-d H:i:s'),
+    ];
 }
 
 dataset('picker bounds', [

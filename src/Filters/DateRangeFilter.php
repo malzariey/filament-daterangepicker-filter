@@ -108,7 +108,18 @@ class DateRangeFilter extends BaseFilter
                 ->where($this->column, '<', $to->copy()->addDay()->toDateString());
         }
 
-        return $query->whereBetween($this->column, [$startDate, $endDate]);
+        // An exclusive upper bound on the next whole second, not whereBetween.
+        // The end is the last microsecond of the picked day, month, year or
+        // minute (23:59:59.999999), but Laravel binds a date with the
+        // grammar's format, "Y-m-d H:i:s", so between() compared against
+        // 23:59:59 and dropped every row stored in the last second with a
+        // fraction (a timestamp(3) column, Postgres's default timestamp,
+        // DATETIME(6)). "< 00:00:00 of the next day" loses nothing in that
+        // format, never counts the boundary instant in two adjacent ranges,
+        // and keeps the condition on the bare column for the index.
+        return $query
+            ->where($this->column, '>=', $startDate)
+            ->where($this->column, '<', $endDate->copy()->endOfSecond()->addMicrosecond());
     }
 
     /**
