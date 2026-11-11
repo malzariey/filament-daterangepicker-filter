@@ -460,7 +460,9 @@ use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 DateRangeFilter::make('created_at')
     ->modifyQueryUsing(fn(Builder $query, ?Carbon $startDate, ?Carbon $endDate, $dateString) =>
-        $query->when(!empty($dateString),
+        // Both dates are null when the state can't be read (an old or
+        // malformed persisted value), so guard on them, not on $dateString.
+        $query->when($startDate && $endDate,
             fn(Builder $query) => $query
                 ->where('created_at', '>=', $startDate)
                 ->where('created_at', '<', $endDate->copy()->endOfSecond()->addMicrosecond())
