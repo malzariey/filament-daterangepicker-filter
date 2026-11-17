@@ -258,19 +258,22 @@ describe('closures reach the rendered picker', function () {
         BookingsTable::$configureFilter = fn (DateRangeFilter $filter) => $filter
             ->timezone('Asia/Riyadh')
             ->firstDayOfWeek(fn (): int => 6)
-            ->autoApply(fn (): bool => true);
+            ->autoApply(fn (): bool => true)
+            ->applyOnOutsideClick(fn (): bool => true);
 
         Livewire::test(BookingsTable::class)
             ->assertOk()
             ->assertSeeHtml('firstDay: 6')
-            ->assertSeeHtml('autoApply: true');
+            ->assertSeeHtml('autoApply: true')
+            ->assertSeeHtml('applyOnOutsideClick: true');
     });
 
     it('renders the defaults when no closure is given', function () {
         Livewire::test(BookingsTable::class)
             ->assertOk()
             ->assertSeeHtml('firstDay: 1')
-            ->assertSeeHtml('autoApply: false');
+            ->assertSeeHtml('autoApply: false')
+            ->assertSeeHtml('applyOnOutsideClick: false');
     });
 });
 

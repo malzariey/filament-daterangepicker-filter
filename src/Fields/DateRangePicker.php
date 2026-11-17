@@ -574,6 +574,11 @@ class DateRangePicker extends Field implements HasAffixActions
         return (bool) $this->evaluate($this->autoApply);
     }
 
+    public function getApplyOnOutsideClick(): bool
+    {
+        return (bool) $this->evaluate($this->applyOnOutsideClick);
+    }
+
     public function singleCalendar(bool|Closure $condition = true): static
     {
         $this->singleCalendar = $condition;

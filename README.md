@@ -316,6 +316,17 @@ DateRangePicker::make('created_at')
 DateRangePicker::make('created_at')->autoApply()
 ```
 
+### Apply on Outside Click
+By default, clicking or tabbing away from an open picker discards a range that was picked but not applied, like Cancel. With `applyOnOutsideClick()` a complete range is applied instead, as the original daterangepicker did when it closed. This is useful when the field is confirmed by a button outside the picker, such as the Apply of a filter panel or the Next of a wizard, especially with `timePicker()`, where the picker stays open until Apply.
+
+```php
+DateRangePicker::make('created_at')
+    ->timePicker()
+    ->applyOnOutsideClick()
+```
+
+Escape and Cancel still discard the pending range, and so does an incomplete range (only a start date) or one that Apply would refuse.
+
 ### Single Calendar
 ```php
 DateRangePicker::make('created_at')->singleCalendar()
