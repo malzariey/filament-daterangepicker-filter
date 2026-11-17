@@ -102,6 +102,7 @@
             useRangeLabels: @js($getUseRangeLabels()),
 
             autoApply: @js($getAutoApply()),
+            applyOnOutsideClick: @js($getApplyOnOutsideClick()),
             opens: @js($getOpens()),
             drops: @js($getDrops()),
             teleport: @js($getTeleport()),

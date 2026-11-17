@@ -74,6 +74,7 @@ trait HasRangePicker
     protected bool|Closure $timePickerSecond = false;
     protected int|Closure $timePickerIncrement = 30;
     protected bool|Closure $autoApply = false;
+    protected bool|Closure $applyOnOutsideClick = false;
     protected bool|Closure $linkedCalendars = true;
 
     protected string|Closure|null $timezone = null;
@@ -202,6 +203,18 @@ trait HasRangePicker
     public function autoApply(bool|Closure $condition = true): static
     {
         $this->autoApply = $condition;
+
+        return $this;
+    }
+
+    /**
+     * Apply a complete pending range when the picker closes because the user
+     * clicked or tabbed away, instead of discarding it. Escape and Cancel
+     * still discard; an incomplete range is still discarded.
+     */
+    public function applyOnOutsideClick(bool|Closure $condition = true): static
+    {
+        $this->applyOnOutsideClick = $condition;
 
         return $this;
     }

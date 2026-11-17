@@ -282,6 +282,7 @@ export default function dateRangeComponent(config) {
 
             // Behavior
             autoApply: config.autoApply ?? false,
+            applyOnOutsideClick: config.applyOnOutsideClick ?? false,
             opens: config.opens || 'right',
             drops: config.drops || 'down',
             teleport: config.teleport ?? true,
@@ -397,7 +398,7 @@ export default function dateRangeComponent(config) {
                 if (!this.open) return;
                 if (this.isEventInsidePicker(event)) return;
 
-                this.cancel();
+                this.dismiss();
             };
             document.addEventListener('click', this._documentClickHandler);
 
@@ -416,7 +417,7 @@ export default function dateRangeComponent(config) {
 
                 // Focus has a new home; don't pull it back to the input.
                 this._returnFocusOnClose = false;
-                this.cancel();
+                this.dismiss();
             };
             document.addEventListener('focusin', this._documentFocusInHandler);
 
@@ -2607,6 +2608,25 @@ export default function dateRangeComponent(config) {
             this.close();
         },
 
+        /**
+         * The picker closes because the user clicked or tabbed away from it.
+         * By default that discards a pending selection, like Cancel. With
+         * applyOnOutsideClick a complete, valid range is applied instead, as
+         * the original daterangepicker did on hide: a field whose "Apply" is
+         * a button outside the picker (a filter panel's Apply, a wizard's
+         * Next) keeps what was picked. A selection Apply would refuse is
+         * still discarded.
+         */
+        dismiss() {
+            if (this.config.applyOnOutsideClick && this.selection.start && this.selection.end) {
+                this.applySelection();
+
+                if (!this.open) return;
+            }
+
+            this.cancel();
+        },
+
         cancel() {
             this.parseConfiguredState(); // Reset to original
             this.updateInputValue();
@@ -3529,7 +3549,7 @@ export default function dateRangeComponent(config) {
                 case 'Tab':
                     if (!this.config.teleport) break;
                     this._returnFocusOnClose = true;
-                    this.cancel();
+                    this.dismiss();
                     break;
             }
         },

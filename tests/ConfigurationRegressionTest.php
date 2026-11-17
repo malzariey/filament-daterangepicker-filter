@@ -39,6 +39,12 @@ it('evaluates a closure passed to autoApply()', function () {
         ->and(DateRangeFilter::make('at')->autoApply(fn () => true)->getSchemaComponents()[0]->getAutoApply())->toBeTrue();
 });
 
+it('applyOnOutsideClick() is off by default and evaluates a closure, on the field and the filter', function () {
+    expect(DateRangePicker::make('x')->getApplyOnOutsideClick())->toBeFalse()
+        ->and(DateRangePicker::make('x')->applyOnOutsideClick(fn () => true)->getApplyOnOutsideClick())->toBeTrue()
+        ->and(DateRangeFilter::make('at')->applyOnOutsideClick()->getSchemaComponents()[0]->getApplyOnOutsideClick())->toBeTrue();
+});
+
 it('builds the default value from string start and end dates', function () {
     // startDate()/endDate()/defaultCustom() accept strings, but the default
     // value called ->format() on them: "Call to a member function format() on string".

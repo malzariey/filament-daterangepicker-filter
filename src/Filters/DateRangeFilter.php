@@ -419,6 +419,7 @@ class DateRangeFilter extends BaseFilter
             ->timePicker24($this->timePicker24)
             ->timePickerIncrement($this->timePickerIncrement)
             ->autoApply($this->autoApply)
+            ->applyOnOutsideClick($this->applyOnOutsideClick)
             ->linkedCalendars($this->linkedCalendars)
             ->disabledDates($this->disabledDates)
             ->minDate($this->minDate)
